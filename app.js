@@ -168,7 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
       sign.appendChild(letter);
     });
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const supportsDecorativeMotion = window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+      && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      && window.innerWidth > 720;
+    if (!supportsDecorativeMotion) return;
     const letters = Array.from(sign.querySelectorAll('.neon-letter'));
 
     const triggerFault = () => {
@@ -1484,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="deck-channel deck-channel-a">
             <div class="deck-cover-stage">
               <span class="deck-orbit" aria-hidden="true"></span>
-              <img src="${escapeMarkup(p.plA.cover)}" alt="${escapeMarkup(p.plA.name)}" class="deck-thumb">
+              <img src="${escapeMarkup(p.plA.cover)}" alt="${escapeMarkup(p.plA.name)}" class="deck-thumb" loading="lazy" decoding="async">
               <span class="deck-channel-code" aria-hidden="true">A</span>
             </div>
             <div class="deck-copy">
@@ -1513,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="deck-cover-stage">
               <span class="deck-orbit" aria-hidden="true"></span>
-              <img src="${escapeMarkup(p.plB.cover)}" alt="${escapeMarkup(p.plB.name)}" class="deck-thumb">
+              <img src="${escapeMarkup(p.plB.cover)}" alt="${escapeMarkup(p.plB.name)}" class="deck-thumb" loading="lazy" decoding="async">
               <span class="deck-channel-code" aria-hidden="true">B</span>
             </div>
           </div>
@@ -1628,10 +1631,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (filteredPlaylists.length === 0) {
+      const safeCatalogSearchQuery = escapeMarkup(currentCatalogSearchQuery);
       playlistsCatalogGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align:center; padding: 30px 20px; color: var(--t-muted);">
           <i class="fa-solid fa-magnifying-glass text-dim" style="font-size:28px; margin-bottom:10px; display:block;"></i>
-          "${currentCatalogSearchQuery}" aramasına uygun çalma listesi bulunamadı.
+          "${safeCatalogSearchQuery}" aramasına uygun çalma listesi bulunamadı.
         </div>
       `;
       return;
@@ -1644,17 +1648,20 @@ document.addEventListener('DOMContentLoaded', () => {
           ? pl.trackTotal
           : (Array.isArray(pl.tracks) ? pl.tracks.length : 0);
 
-        const coverSrc = pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80';
+        const coverSrc = escapeMarkup(pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80');
+        const playlistId = escapeMarkup(pl.id);
+        const playlistName = escapeMarkup(pl.name);
+        const playlistOwner = escapeMarkup(pl.owner || 'SOOND');
         const numStr = String(idx + 1).padStart(2, '0');
 
         return `
-          <div class="rack-channel-strip" role="button" tabindex="0" data-action="select-playlist" data-playlist-id="${pl.id}">
+          <div class="rack-channel-strip" role="button" tabindex="0" data-action="select-playlist" data-playlist-id="${playlistId}">
             <div class="rack-channel-left">
               <span class="rack-index-num">#${numStr}</span>
-              <img src="${coverSrc}" alt="${pl.name}" class="rack-thumb">
+              <img src="${coverSrc}" alt="${playlistName}" class="rack-thumb" loading="lazy" decoding="async">
               <div class="rack-channel-info">
-                <h5>${pl.name}</h5>
-                <p>${t('curator')}: ${pl.owner || 'SOOND'}</p>
+                <h5>${playlistName}</h5>
+                <p>${t('curator')}: ${playlistOwner}</p>
               </div>
             </div>
 
@@ -1677,22 +1684,25 @@ document.addEventListener('DOMContentLoaded', () => {
           ? pl.trackTotal
           : (Array.isArray(pl.tracks) ? pl.tracks.length : 0);
 
-        const coverSrc = pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80';
+        const coverSrc = escapeMarkup(pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80');
+        const playlistId = escapeMarkup(pl.id);
+        const playlistName = escapeMarkup(pl.name);
+        const playlistOwner = escapeMarkup(pl.owner || 'SOOND');
 
         return `
-          <div class="playlist-grid-card" role="button" tabindex="0" data-action="select-playlist" data-playlist-id="${pl.id}">
+          <div class="playlist-grid-card" role="button" tabindex="0" data-action="select-playlist" data-playlist-id="${playlistId}">
             <div class="p-card-bg-layer">
-              <img src="${coverSrc}" alt="${pl.name}" class="p-card-bg-img">
+              <img src="${coverSrc}" alt="${playlistName}" class="p-card-bg-img" loading="lazy" decoding="async">
             </div>
             <div class="p-card-overlay"></div>
-            <button class="p-card-play-hover" data-action="play-playlist" data-playlist-id="${pl.id}" title="Spotify" aria-label="Spotify">
+            <button class="p-card-play-hover" data-action="play-playlist" data-playlist-id="${playlistId}" title="Spotify" aria-label="Spotify">
               <i class="fa-solid fa-play"></i>
             </button>
             <span class="p-card-badge">${displayTrackCount} ${t('tracks')}</span>
             <div class="p-card-footer">
-              <h4 class="p-card-title">${pl.name}</h4>
+              <h4 class="p-card-title">${playlistName}</h4>
               <div class="p-card-meta">
-                <span>${pl.owner || 'SOOND'}</span>
+                <span>${playlistOwner}</span>
                 ${pl.isPrivate ? `<span style="color:#c084fc; margin-left:5px;">🔒 ${t('private')}</span>` : `<span style="color:var(--neon); margin-left:5px;">🟢 ${t('public')}</span>`}
               </div>
               <div class="p-card-signal"><span><i class="fa-solid fa-wave-square"></i> TIFY DNA</span><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
@@ -2050,17 +2060,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const visibleOtherPlaylists = otherPlaylists.slice(0, 3);
       const remainingCount = otherPlaylists.length - visibleOtherPlaylists.length;
       const spotifySearchUrl = `https://open.spotify.com/search/${encodeURIComponent(t.title + ' ' + t.artist)}`;
+      const safeTrackId = escapeMarkup(t.id);
+      const safeTrackTitle = escapeMarkup(t.title);
+      const safeTrackArtist = escapeMarkup(t.artist);
+      const safeTrackCover = escapeMarkup(t.cover || playlist.cover);
+      const safeTrackGenre = escapeMarkup(t.genre || 'Spotify Parçası');
+      const safePlaylistCover = escapeMarkup(playlist.cover);
+      const safePlaylistName = escapeMarkup(playlist.name);
 
       return `
-        <tr class="${isChecked ? 'selected-row' : ''}" data-row-id="${t.id}">
+        <tr class="${isChecked ? 'selected-row' : ''}" data-row-id="${safeTrackId}">
           <td style="text-align:center;">
-            <input type="checkbox" class="track-select-checkbox" data-track-id="${t.id}" ${isChecked ? 'checked' : ''} accent-color="var(--neon-green)">
+            <input type="checkbox" class="track-select-checkbox" data-track-id="${safeTrackId}" ${isChecked ? 'checked' : ''} accent-color="var(--neon-green)">
           </td>
           <td style="text-align:center;"><strong style="color: var(--t-dim); font-family: var(--f-mono); font-size:12px;">${globalIdx + 1}</strong></td>
           <td>
             <div class="t-song-cell">
-              <div class="t-thumb-wrapper" role="button" tabindex="0" data-action="play-track" data-track-id="${t.id}" title="Oynat: ${t.title}">
-                <img src="${t.cover || playlist.cover}" alt="${t.title}" class="t-thumb">
+              <div class="t-thumb-wrapper" role="button" tabindex="0" data-action="play-track" data-track-id="${safeTrackId}" title="Oynat: ${safeTrackTitle}">
+                <img src="${safeTrackCover}" alt="${safeTrackTitle}" class="t-thumb" loading="lazy" decoding="async">
                 <div class="t-thumb-play-overlay">
                   <i class="fa-solid fa-play"></i>
                 </div>
@@ -2068,26 +2085,26 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="t-info">
                 <h5>
                   <a href="${spotifySearchUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;" title="Spotify'da Dinle">
-                    ${t.title} <i class="fa-brands fa-spotify text-green" style="font-size: 11px; margin-left: 3px;"></i>
+                    ${safeTrackTitle} <i class="fa-brands fa-spotify text-green" style="font-size: 11px; margin-left: 3px;"></i>
                   </a>
                 </h5>
-                <p>${t.artist}</p>
+                <p>${safeTrackArtist}</p>
               </div>
             </div>
           </td>
           <td>
-            <span class="genre-badge">${t.genre || 'Spotify Parçası'}</span>
+            <span class="genre-badge">${safeTrackGenre}</span>
           </td>
           <td>
             <div class="presence-chips-wrapper">
               <span class="presence-chip" style="background: rgba(0, 255, 122, 0.1); color: var(--neon); font-weight:700;">
-                <img src="${playlist.cover}" alt="${playlist.name}" class="presence-thumb">
-                <span>${playlist.name}</span>
+                <img src="${safePlaylistCover}" alt="${safePlaylistName}" class="presence-thumb" loading="lazy" decoding="async">
+                <span>${safePlaylistName}</span>
               </span>
               ${visibleOtherPlaylists.map(op => `
                 <span class="presence-chip">
-                  <img src="${op.plCoverUrl}" alt="${op.plName}" class="presence-thumb">
-                  <span>${op.plName}</span>
+                  <img src="${escapeMarkup(op.plCoverUrl)}" alt="${escapeMarkup(op.plName)}" class="presence-thumb" loading="lazy" decoding="async">
+                  <span>${escapeMarkup(op.plName)}</span>
                 </span>
               `).join('')}
               ${remainingCount > 0 ? `
@@ -2105,10 +2122,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `}
           </td>
           <td style="text-align: right; white-space: nowrap;">
-            <button class="btn btn-secondary btn-sm" data-action="play-track" data-track-id="${t.id}" title="Web Player ile Dinle / Önizle" style="padding: 4px 8px; margin-right: 4px;">
+            <button class="btn btn-secondary btn-sm" data-action="play-track" data-track-id="${safeTrackId}" title="Web Player ile Dinle / Önizle" style="padding: 4px 8px; margin-right: 4px;">
               <i class="fa-solid fa-play text-green"></i> Dinle
             </button>
-            <button class="btn btn-secondary btn-sm" data-action="quick-transfer" data-track-id="${t.id}" title="Başka Listeye Aktar" style="padding: 4px 8px;">
+            <button class="btn btn-secondary btn-sm" data-action="quick-transfer" data-track-id="${safeTrackId}" title="Başka Listeye Aktar" style="padding: 4px 8px;">
               <i class="fa-solid fa-arrow-right-to-bracket text-cyan"></i> Aktar
             </button>
           </td>
@@ -4311,30 +4328,35 @@ document.addEventListener('DOMContentLoaded', () => {
   initLanguageSelector();
   initFrequencyNeon();
 
-  // Pointer-aware spatial lighting; one delegated listener also covers dynamically rendered cards.
-  let spatialFrame = 0;
-  document.addEventListener('pointermove', event => {
-    if (!event.target.closest || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const card = event.target.closest('.spatial-card');
-    if (!card) return;
-    cancelAnimationFrame(spatialFrame);
-    spatialFrame = requestAnimationFrame(() => {
-      const rect = card.getBoundingClientRect();
-      const x = clamp01((event.clientX - rect.left) / rect.width);
-      const y = clamp01((event.clientY - rect.top) / rect.height);
-      card.style.setProperty('--pointer-x', `${x * 100}%`);
-      card.style.setProperty('--pointer-y', `${y * 100}%`);
-      card.style.setProperty('--tilt-y', `${(x - .5) * 5}deg`);
-      card.style.setProperty('--tilt-x', `${(.5 - y) * 5}deg`);
-    });
-  }, { passive: true });
+  // Pointer lighting is desktop-only. Touch pointermove events must remain free
+  // for the browser's compositor-driven vertical scrolling.
+  const supportsSpatialPointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    && window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  if (supportsSpatialPointer) {
+    let spatialFrame = 0;
+    document.addEventListener('pointermove', event => {
+      if (!event.target.closest) return;
+      const card = event.target.closest('.spatial-card');
+      if (!card) return;
+      cancelAnimationFrame(spatialFrame);
+      spatialFrame = requestAnimationFrame(() => {
+        const rect = card.getBoundingClientRect();
+        const x = clamp01((event.clientX - rect.left) / rect.width);
+        const y = clamp01((event.clientY - rect.top) / rect.height);
+        card.style.setProperty('--pointer-x', `${x * 100}%`);
+        card.style.setProperty('--pointer-y', `${y * 100}%`);
+        card.style.setProperty('--tilt-y', `${(x - .5) * 5}deg`);
+        card.style.setProperty('--tilt-x', `${(.5 - y) * 5}deg`);
+      });
+    }, { passive: true });
 
-  document.addEventListener('pointerout', event => {
-    const card = event.target.closest?.('.spatial-card');
-    if (!card || card.contains(event.relatedTarget)) return;
-    card.style.setProperty('--tilt-x', '0deg');
-    card.style.setProperty('--tilt-y', '0deg');
-  });
+    document.addEventListener('pointerout', event => {
+      const card = event.target.closest?.('.spatial-card');
+      if (!card || card.contains(event.relatedTarget)) return;
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
+    }, { passive: true });
+  }
 
   // --- INITIAL CHECK ---
   if (state.accessToken) {
