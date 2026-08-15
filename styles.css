@@ -2869,6 +2869,7 @@ body.modal-open { overflow: hidden; }
     background: #0d121a; box-shadow: none;
   }
   .url-slot-inner .pill { border-radius: 14px; box-shadow: none; }
+  #btnAnalyze, .view-toggle-btn { min-height: 44px; }
 
   .player-area, .hero-player-box { min-height: 0; margin-top: 10px; }
   .cassette, .cassette-deck-card {
