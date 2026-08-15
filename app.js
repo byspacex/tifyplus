@@ -2,6 +2,21 @@
  * Tify Plus Pulse - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
  */
 
+// The removed mobile dock used URL fragments such as #catalogSection. Mobile
+// browsers persist that fragment between visits and otherwise jump halfway down
+// the page before the app becomes interactive.
+const LEGACY_MOBILE_NAV_HASHES = new Set(['#catalogsection', '#studio']);
+if (LEGACY_MOBILE_NAV_HASHES.has(window.location.hash.toLowerCase())) {
+  if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+  window.history.replaceState(window.history.state, document.title, `${window.location.pathname}${window.location.search}`);
+
+  const restorePageStart = () => window.scrollTo(0, 0);
+  restorePageStart();
+  window.requestAnimationFrame(restorePageStart);
+  window.addEventListener('load', restorePageStart, { once: true });
+  window.addEventListener('pageshow', restorePageStart, { once: true });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // Security migration: OAuth secrets belong to the current tab session, not
