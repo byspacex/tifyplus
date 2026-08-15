@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Sitemap URL should be added after the final production domain is confirmed.

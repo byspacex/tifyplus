@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#060812">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://sdk.scdn.co; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://musicbrainz.org https://*.spotify.com https://*.scdn.co wss://*.spotify.com; media-src 'self' blob: https://*.scdn.co; worker-src 'self' blob:; frame-src https://*.spotify.com; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.spotify.com; upgrade-insecure-requests">
+  <title>Tify Pulse — Küresel Müzik ve Düzenleme Stüdyosu</title>
+  
+  <!-- Font ve ikonlar yayın gizliliği için uygulama paketinden yerel olarak sunulur. -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Dynamic Floating Luminous Aurora Ribbons -->
+  <div class="aurora">
+    <div class="ribbon r1"></div>
+    <div class="ribbon r2"></div>
+    <div class="ribbon r3"></div>
+  </div>
+
+  <div class="app-wrapper">
+    
+    <!-- FUTURISTIC FLOATING APP HEADER -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="pulse-symbol-logo" title="Tify Pulse Frequency Engine">
+          <svg viewBox="0 0 32 32" class="pulse-svg" aria-hidden="true">
+            <path d="M3 16h6l3-9 5 18 4-12 3 5h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="brand-text-container">
+          <h1 class="brand-title">Tify <span>Pulse</span></h1>
+          <span class="app-mode-badge" id="appModeBadge">ÜCRETSİZ // GİRİŞ GEREKMEZ</span>
+        </div>
+      </div>
+      
+      <div class="header-actions-group">
+        <label class="language-picker" title="Language / Dil">
+          <i class="fa-solid fa-globe"></i>
+          <select id="languageSelector" aria-label="Language"></select>
+        </label>
+        <!-- Logged Out View Buttons -->
+        <div id="loggedOutHeaderActions" style="display:flex; align-items:center; gap:8px;">
+          <button id="btnTryDemo" class="btn btn-secondary btn-pill">
+            <i class="fa-solid fa-play text-cyan"></i> <span>Örnek Demo</span>
+          </button>
+          <button id="btnConnectSpotify" class="btn pill join">
+            <i class="fa-brands fa-spotify"></i> <span>Spotify ile Giriş</span>
+          </button>
+        </div>
+
+        <!-- Logged In User Profile View with Interactive Dropdown Menu -->
+        <div id="loggedInHeaderActions" class="hidden" style="display:flex; align-items:center; gap:10px;">
+          
+          <button id="btnHeaderCreatePlaylist" class="btn pill join" title="Yeni Çalma Listesi Oluştur">
+            <i class="fa-solid fa-plus"></i> <span>Yeni Liste</span>
+          </button>
+
+          <div class="user-profile-menu-container" id="userProfileMenuContainer">
+            <button class="profile-avatar-btn" id="btnToggleProfileMenu" aria-expanded="false" title="Hesap ve Sistem Menüsü">
+              <div class="profile-avatar-wrapper">
+                <img id="headerUserAvatarImg" class="profile-avatar-img hidden" src="" alt="Spotify profil fotoğrafı">
+                <div id="headerUserAvatarFallback" class="profile-avatar-fallback hidden">
+                  <i class="fa-brands fa-spotify" aria-hidden="true"></i>
+                </div>
+                <span class="profile-pulse-dot" title="Spotify Canlı Bağlantı Aktif"></span>
+              </div>
+              <span class="profile-user-name-text" id="headerUserName">S O O N D</span>
+              <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: var(--muted); margin-left: 2px;"></i>
+            </button>
+
+            <!-- Dropdown Menu Box -->
+            <div class="user-dropdown-menu hidden" id="userDropdownMenu">
+              <div class="dropdown-header">
+                <div class="profile-avatar-wrapper">
+                  <img id="dropdownUserAvatarImg" class="profile-avatar-img hidden" src="" alt="Spotify profil fotoğrafı">
+                  <div id="dropdownUserAvatarFallback" class="profile-avatar-fallback hidden">
+                    <i class="fa-brands fa-spotify" aria-hidden="true"></i>
+                  </div>
+                </div>
+                <div class="dropdown-header-info">
+                  <h5 id="dropdownUserName">S O O N D</h5>
+                  <p id="dropdownUserEmail">spotify.live@session.ready</p>
+                </div>
+              </div>
+
+              <div class="profile-connection-strip">
+                <span><i class="fa-brands fa-spotify"></i> Spotify veri bağlantısı</span>
+                <strong id="profileDataBadge">CANLI</strong>
+              </div>
+
+              <button class="dropdown-item" id="menuItemNewPlaylist">
+                <i class="fa-solid fa-folder-plus" style="color:var(--lime);"></i>
+                <span>Yeni Çalma Listesi Oluştur</span>
+              </button>
+              
+              <button class="dropdown-item" id="menuItemBackups">
+                <i class="fa-solid fa-clock-rotate-left" style="color:var(--lime);"></i>
+                <span>Yedekler & Kurtarma Noktaları</span>
+              </button>
+
+              <button class="dropdown-item dropdown-item-feature" id="menuItemDnaResearch">
+                <i class="fa-solid fa-microscope" style="color:var(--cyan);"></i>
+                <span><strong>Türleri Araştır &amp; DNA'yı Yenile</strong><small>Spotify + açık müzik metaverisi</small></span>
+              </button>
+
+              <button class="dropdown-item" id="menuItemSystemMap">
+                <i class="fa-solid fa-diagram-project text-cyan"></i>
+                <span>Sistem Mimarisi & Harita</span>
+              </button>
+
+              <button class="dropdown-item" id="menuItemSettings">
+                <i class="fa-solid fa-sliders text-muted"></i>
+                <span>Gelişmiş Ayarlar (BYOC API)</span>
+              </button>
+
+              <button class="dropdown-item" id="menuItemPrivacy">
+                <i class="fa-solid fa-shield-halved" style="color:var(--cyan);"></i>
+                <span>Gizlilik &amp; Veri Kontrolleri</span>
+              </button>
+
+              <div class="dropdown-divider"></div>
+
+              <button class="dropdown-item danger" id="btnLogout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Güvenli Çıkış Yap</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- SPOTIFY REAL LIVE SYNC ANIMATED LOADER MODAL -->
+    <div id="syncLoaderModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 460px; text-align: center; padding: 32px 24px;">
+        <div class="loader-pulse-ring">
+          <i class="fa-brands fa-spotify" style="font-size: 54px; color:var(--lime);"></i>
+        </div>
+        <h3 id="loaderTitle" style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 18px; margin-bottom: 6px;">
+          Spotify Kütüphanesi Senkronize Ediliyor...
+        </h3>
+        <p id="loaderSubtitle" style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+          Gerçek çalma listeleriniz ve orijinal şarkı sayılarınız Spotify'dan çekiliyor.
+        </p>
+
+        <!-- Minimal Progress Bar -->
+        <div class="sync-progress-bar-container">
+          <div id="syncProgressBarFill" class="sync-progress-bar-fill"></div>
+        </div>
+        
+        <div class="sync-stage-step" id="loaderStageText">
+          <i class="fa-solid fa-spinner fa-spin" style="color:var(--lime);"></i> <span>1/3 - Spotify Hesabı Doğrulanıyor...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUTH / SETTINGS MODAL -->
+    <div id="authModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 560px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h3 style="font-family: var(--f-display); font-size: 18px; font-weight: 800; color:#fff;">
+            <i class="fa-solid fa-bolt" style="color:var(--lime);"></i> Spotify Bağlantı Ayarları
+          </h3>
+          <button id="btnCloseAuthModal" class="pill" style="padding:6px 12px; font-size:12px; cursor:pointer;" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- App Mode Toggle Tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
+          <button id="btnUseDefault" class="pill join" style="flex:1; cursor:pointer;">
+            <i class="fa-solid fa-bolt"></i> Varsayılan Uygulama
+          </button>
+          <button id="btnUseCustom" class="pill" style="flex:1; cursor:pointer;">
+            <i class="fa-solid fa-plug"></i> Kendi Uygulamam (BYOC)
+          </button>
+        </div>
+
+        <!-- DEFAULT MODE PANEL -->
+        <div id="defaultModePanel">
+          <div style="background:rgba(60,245,255,0.08); padding:14px 16px; border-radius:12px; font-size:12.5px; color:var(--text); margin-bottom:16px; line-height:1.6;">
+            <i class="fa-solid fa-circle-info text-cyan"></i>
+            <span>PKCE ile güvenli bağlantı kurulur. Tam parça çalma Spotify Web Playback SDK üzerinden çalışır ve Spotify Premium hesabı gerektirir.</span>
+          </div>
+          <div class="auth-box" style="margin-bottom:16px;">
+            <label for="accessTokenInput" style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Access Token <span style="color:var(--dim);">(İsteğe Bağlı — manuel yapıştırma)</span></label>
+            <input type="text" id="accessTokenInput" placeholder="Bearer Access Token varsa yapıştırın..." class="pill" style="width:100%; border-radius:12px; text-align:left; background:rgba(0,0,0,0.5); padding:10px 14px; font-size:13px;">
+          </div>
+          <button id="btnStartOAuth" class="cta primary" style="width:100%; cursor:pointer;">
+            <i class="fa-brands fa-spotify"></i> Spotify ile Oturumu Başlat
+          </button>
+        </div>
+
+        <!-- CUSTOM (BYOC) MODE PANEL -->
+        <div id="customModePanel" class="hidden">
+          <div style="background:rgba(168,255,38,0.08); padding:14px 16px; border-radius:12px; font-size:12.5px; color:var(--text); margin-bottom:16px; line-height:1.6;">
+            <i class="fa-solid fa-shield-halved" style="color:var(--lime);"></i>
+            <span>Spotify Developer Dashboard'dan aldığınız <strong>Client ID</strong> ile kendi özel API kotanızı kullanabilirsiniz.</span>
+          </div>
+
+          <div style="background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="color:var(--muted); display:block; font-size:11px;">Redirect URI (Spotify Dashboard'a ekleyin):</span>
+              <code id="byocRedirectUriDisplay" style="color:var(--cyan); font-family:var(--f-mono);">http://127.0.0.1:5173/</code>
+            </div>
+            <button id="btnCopyRedirectUri" class="pill" style="padding:4px 10px; font-size:11px; cursor:pointer;" title="Panoya Kopyala">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+
+          <div class="auth-box" style="margin-bottom:16px;">
+            <label for="clientIdInput" style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Spotify Client ID</label>
+            <input type="text" id="clientIdInput" placeholder="32 haneli Client ID..." class="pill" style="width:100%; border-radius:12px; text-align:left; background:rgba(0,0,0,0.5); padding:10px 14px; font-size:13px;">
+          </div>
+
+          <button id="btnSaveCustomAuth" class="cta primary" style="width:100%; cursor:pointer;">
+            <i class="fa-solid fa-key"></i> Kaydet ve Bağlan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKUPS & RECOVERY MODAL -->
+    <div id="historyModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 680px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h3 style="font-family: var(--f-display); font-size: 18px; font-weight: 800; color:#fff;">
+            <i class="fa-solid fa-clock-rotate-left" style="color:var(--lime);"></i> Kurtarma Noktaları & Yedek Arşivi
+          </h3>
+          <button id="btnCloseHistoryModal" class="pill" style="padding:6px 12px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="historyListContainer" style="max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SMART MATCH / COMPARISON MODAL -->
+    <div id="smartMatchModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 750px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h3 style="font-family: var(--f-display); font-size: 18px; font-weight: 800; color:#fff;">
+            <i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> Akıllı DNA & Çakışma Karşılaştırması
+          </h3>
+          <button id="btnCloseSmartMatchModal" class="pill" style="padding:6px 12px; font-size:12px;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="smartMatchContent">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastNotification" class="toast-notification hidden" style="position:fixed; bottom:25px; right:25px; z-index:9999; background:rgba(8,14,24,0.95); backdrop-filter:blur(25px); padding:14px 22px; border-radius:999px; box-shadow:var(--shadow-lg); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px;">
+      <i class="fa-solid fa-circle-info" style="color:var(--lime);"></i>
+      <span id="toastMessage">İşlem başarıyla gerçekleştirildi.</span>
+    </div>
+
+    <!-- UNDO SAFETY FLOATING BAR -->
+    <div id="undoSafetyBar" class="undo-safety-bar hidden" style="position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:9999; background:rgba(8,14,24,0.96); backdrop-filter:blur(30px); padding:12px 24px; border-radius:999px; box-shadow:0 20px 60px rgba(0,0,0,0.8); display:flex; align-items:center; gap:16px;">
+      <span style="font-size:13px; font-weight:600; color:#fff;"><i class="fa-solid fa-shield-halved" style="color:var(--lime);"></i> Değişiklik uygulandı.</span>
+      <button id="btnTriggerUndo" class="pill join" style="padding:6px 16px; font-size:12px;">Geri Al (Undo)</button>
+    </div>
+
+    <!-- VORTEX AUDIO HERO & ROTATED RETRO CASSETTE WEB PLAYER -->
+    <section class="hero" id="studio">
+      <div>
+        <div class="eyebrow" data-i18n="eyebrow">● DÜZENLE. BAĞLAN. KONTROL ET.</div>
+        <h1 id="heroMainTitle" aria-label="Frekansı Şekillendir">
+          <span class="hero-title-line hero-title-accent h1-green frequency-neon" id="frequencyNeon" data-text="FREKANSI">FREKANSI</span>
+          <span class="hero-title-line">ŞEKİLLENDİR</span>
+        </h1>
+        <p class="sub" data-i18n="heroDescription">Spotify arşivinizi algoritmik tekrarlardan ve ölü parçalardan arındırın. Gerçek rastgelelik, Camelot ton uyumu ve analog kaset önizleme çaları ile listelerinizi profesyonelce yönetin.</p>
+        
+        <div class="cta-row">
+          <div id="cockpitLoggedOutActions" style="display:flex; gap:12px; align-items:center;">
+            <button id="btnHeroLogin" class="cta primary">Stüdyoya Bağlan&nbsp; →</button>
+            <button id="btnHeroDemo" class="pill">SOOND Koleksiyonu</button>
+          </div>
+          <div id="cockpitLoggedInActions" class="hidden" style="display:flex; gap:12px; align-items:center;">
+            <button class="pill" style="background:var(--lime-dim); color:var(--lime); font-weight:700;">
+              <i class="fa-solid fa-circle-check"></i> <span id="dashDisplayName">SOOND</span>
+            </button>
+            <button id="btnRefreshSync" class="pill">
+              <i class="fa-solid fa-rotate text-green"></i> Yenile
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-url-slot">
+          <div class="url-slot-inner">
+            <i class="fa-solid fa-link" style="color:var(--muted); font-size:13px;"></i>
+            <input type="text" id="playlistUrlInput" placeholder="Spotify Playlist / Profil bağlantısı yapıştırın...">
+            <button id="btnAnalyze" class="pill join" style="padding:6px 16px; font-size:12px;">
+              <span>İncele</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Rotated Luxury Cassette Web Player -->
+      <div class="player-area">
+        <div class="player-glow"></div>
+        <div class="cassette" id="cassetteDeckCard">
+          <div class="cassette-shell">
+            <div class="cassette-label">
+              <div class="label-top">
+                <span>TIFY PULSE C-90</span>
+                <span>TYPE II CHROME</span>
+                <span>120μs EQ</span>
+              </div>
+              
+              <div class="tape-window">
+                <div class="reel" id="tapeReelLeft"></div>
+                <div class="reel" id="tapeReelRight"></div>
+              </div>
+
+              <div class="label-bottom" id="tapeTrackArtist">A / TIFY PULSE / SOOND</div>
+            </div>
+
+            <div class="panel">
+              <div class="now">
+                <div style="min-width:0;">
+                  <strong id="tapeTrackTitle" style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Global Cheri Mix</strong>
+                  <small id="cassetteSubtitle">SOOND • Tify Pulse Canlı</small>
+                </div>
+                <div class="time" id="tapeCounter">00:00</div>
+              </div>
+
+              <div class="wave" id="wave"></div>
+
+              <div class="controls">
+                <button id="btnCassettePrev" title="Önceki">⏮</button>
+                <button class="bigplay" id="btnCassettePlay" title="Çal / Duraklat">▶</button>
+                <button id="btnCassetteNext" title="Sonraki">⏭</button>
+                <input type="range" id="cassetteVolume" min="0" max="1" step="0.05" value="0.85" style="width:60px; accent-color:var(--lime); cursor:pointer;">
+              </div>
+
+              <!-- Track Progress Bar -->
+              <div style="margin-top:10px; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; cursor:pointer; overflow:hidden;" id="cassetteProgressBar">
+                <div id="cassetteProgressFill" style="height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--lime));"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Hidden HTML5 Audio Element for Real Playback -->
+      <audio id="cassetteAudioPlayer" preload="none"></audio>
+    </section>
+
+    <!-- SMART FUSION LAB (AKILLI ÇALMA LİSTESİ EŞLEŞMELERİ) -->
+    <section id="recommendationsSection" class="fusion-studio-section margin-top">
+      <div class="section-title-line">
+        <div class="title-cluster">
+          <span class="studio-tag" data-i18n="fusionEngine">FÜZYON MOTORU</span>
+          <h3><i class="fa-solid fa-wand-magic-sparkles text-cyan"></i> <span data-i18n="fusionTitle">Akıllı Playlist Eşleşmeleri & DNA Analizi</span></h3>
+        </div>
+        <span class="title-subtext" data-i18n="fusionSubtitle">Ortak müzik türleri ve frekans benzerlikleriyle tespit edilen önerilen eşleşmeler</span>
+      </div>
+
+      <div class="fusion-grid-fluid" id="recommendationsGrid">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- MASTER CURATION WORKSPACE (ÇALMA LİSTELERİ VİTRİNİ) -->
+    <section id="catalogSection" class="master-workspace-section margin-top">
+      
+      <!-- Workspace Top Bar -->
+      <div class="workspace-header-bar">
+        <div class="workspace-title-box">
+          <span class="studio-tag green" data-i18n="collectionLabel">KOLEKSİYON</span>
+          <h3 id="catalogTitleText"><i class="fa-solid fa-compact-disc text-green"></i> Çalma Listeleri</h3>
+          <span class="catalog-badge-total" id="catalogTotalCount">10 Liste</span>
+        </div>
+
+        <div class="workspace-controls-box">
+          <div class="search-box-fluid">
+            <i class="fa-solid fa-magnifying-glass text-dim"></i>
+            <input type="text" id="catalogSearchInput" placeholder="Koleksiyonda ara...">
+            <button id="btnClearCatalogSearch" class="btn btn-secondary btn-sm hidden" style="padding: 2px 6px;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- View Mode Switcher: Vinyl Art Gallery vs Sleek List Mode -->
+          <div class="view-toggle-capsule">
+            <button class="view-toggle-btn active" id="btnViewVinyl" title="Vinil Albüm Sanat Galerisi">
+              <i class="fa-solid fa-grid-2"></i> <span>Albüm Vitrini</span>
+            </button>
+            <button class="view-toggle-btn" id="btnViewRack" title="Kompakt Stüdyo Listesi">
+              <i class="fa-solid fa-list-ul"></i> <span>Liste Modu</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYLISTS CONTAINER -->
+      <div class="playlists-catalog-grid view-mode-vinyl" id="playlistsCatalogGrid">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- FOCUSED PLAYLIST INSPECTOR (DETAY & TOPLU İŞLEM MASASI) -->
+    <section id="analysisResults" class="analysis-results margin-top hidden">
+      
+      <!-- Selected Playlist High-End Studio Banner -->
+      <div class="playlist-banner-studio">
+        <div class="banner-cover-wrapper">
+          <img class="banner-cover" id="bannerCover" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80" alt="Cover">
+          <div class="banner-cover-overlay"></div>
+        </div>
+
+        <div class="banner-details">
+          <div class="banner-breadcrumbs">
+            <span>Spotify Kütüphanesi</span>
+            <i class="fa-solid fa-chevron-right"></i>
+            <span id="bannerBreadcrumbName">Çalma Listesi</span>
+          </div>
+
+          <h2 class="banner-title" id="bannerTitle">Playlist Başlığı</h2>
+          
+          <!-- Clean High-End Metadata (No cheap box borders, clean typography) -->
+          <div class="banner-meta-clean" id="bannerMetaClean">
+            <span class="meta-item bold-white" id="bannerOwner">Oluşturan: S O O N D</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-item" id="bannerTrackCount">87 Şarkı</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-item" id="bannerFollowers">0 Takipçi</span>
+            <span class="meta-dot">•</span>
+            <span class="meta-item" id="bannerPrivacy">Herkese Açık 🟢</span>
+          </div>
+
+          <p class="banner-desc" id="bannerDesc">Spotify hesabınızdan canlı senkronize edilen resmi çalma listesi.</p>
+
+          <!-- Quick Action Badges / Health Score / DJ Mode on Banner -->
+          <div class="banner-action-pills">
+            <button id="btnOpenHealthModal" class="studio-pill-btn health-pill" title="Sağlık Skoru ve Kalite İndeksi">
+              <i class="fa-solid fa-heart-pulse text-green"></i>
+              <span id="bannerHealthScoreText">Sağlık Skoru: %98 (Mükemmel)</span>
+            </button>
+
+            <button id="btnOpenDjModal" class="studio-pill-btn dj-pill" title="Camelot Wheel Harmonik Sıralama">
+              <i class="fa-solid fa-sliders text-cyan"></i>
+              <span>Harmonik DJ & Enerji Sıralayıcı</span>
+            </button>
+
+            <button id="btnTriggerAntiShuffle" class="studio-pill-btn shuffle-pill" title="Fisher-Yates Deterministik Anti-Shuffle">
+              <i class="fa-solid fa-shuffle text-purple"></i>
+              <span>Anti-Shuffle (Gerçek Rastgelelik)</span>
+            </button>
+
+            <button id="btnOpenZombieModal" class="studio-pill-btn zombie-pill" title="Ölü / Grileşen Parçaları Tara ve Canlı Sürümlerle Değiştir">
+              <i class="fa-solid fa-wand-magic-sparkles text-warning"></i>
+              <span>Ölü Parça Taraması</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMMAND DECK: BATCH SELECTION & ACTION BAR -->
+      <div class="batch-command-deck margin-top">
+        <div class="command-deck-top-row">
+          <!-- Selection Controls with Quick Select Chips -->
+          <div class="selection-group">
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="checkAllTracks" accent-color="var(--neon-green)">
+              <span>Tümünü Seç</span>
+            </label>
+            <span class="selected-pill-counter" id="selectedTracksCountText">0 Şarkı Seçildi</span>
+
+            <!-- Quick Selector Chips -->
+            <div class="quick-select-chips">
+              <button class="chip-btn" id="btnSelectAllVisible" title="Bu sayfada görünen tüm şarkıları seç">
+                <i class="fa-solid fa-check-double"></i> Sayfayı Seç
+              </button>
+              <button class="chip-btn" id="btnSelectAllDuplicates" title="Tüm mükerrer şarkıları seç">
+                <i class="fa-solid fa-clone text-warning"></i> Mükerrerleri Seç
+              </button>
+              <button class="chip-btn" id="btnSelectAllUnique" title="Tüm benzersiz şarkıları seç">
+                <i class="fa-solid fa-sparkles text-green"></i> Benzersizleri Seç
+              </button>
+              <button class="chip-btn" id="btnClearSelection" title="Seçimi temizle">
+                <i class="fa-solid fa-xmark"></i> Seçimi Bırak
+              </button>
+            </div>
+          </div>
+          
+          <!-- Transfer Action Group -->
+          <div class="transfer-action-group">
+            <span style="font-size:12px; color:var(--text-muted); font-weight:700;">Seçilenleri Şuraya Aktar:</span>
+            <select id="selectBatchTargetPlaylist" class="custom-select-dark">
+              <!-- Options injected by JS -->
+            </select>
+            <button id="btnApplyBatchTransfer" class="btn btn-spotify btn-pill">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i> <span>Seçilenleri Aktar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Row -->
+        <div class="command-deck-filter-row">
+          <div class="search-input-box" style="flex: 1; max-width: 400px;">
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-dim); font-size: 12px;"></i>
+            <input type="text" id="trackSearchInput" placeholder="Bu listede şarkı, sanatçı veya albüm ara...">
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div class="filter-pills-cluster">
+              <button class="filter-pill active" id="filterPillAll" data-filter="all">Tümü (<span id="countFilterAll">0</span>)</button>
+              <button class="filter-pill" id="filterPillDup" data-filter="duplicate">Mükerrerler ⚠️ (<span id="countFilterDup">0</span>)</button>
+              <button class="filter-pill" id="filterPillUnique" data-filter="unique">Benzersizler 🟢 (<span id="countFilterUnique">0</span>)</button>
+            </div>
+
+            <button id="btnOpenFuzzyModal" class="btn btn-secondary btn-sm" title="Farklı albüm ve remaster sürümlerindeki kopyaları analiz et">
+              <i class="fa-solid fa-fingerprint text-purple"></i> Bulanık Mükerrer Analizi
+            </button>
+
+            <button id="btnFetchLiveGenres" class="btn btn-secondary btn-sm" title="Spotify'dan Gerçek Müzik Türlerini Çek">
+              <i class="fa-solid fa-bolt text-green"></i> Spotify Türlerini Çöz
+            </button>
+
+            <button id="btnExportPlaylist" class="btn btn-secondary btn-sm" title="JSON & CSV Dışa Aktar">
+              <i class="fa-solid fa-file-export text-cyan"></i> Dışa Aktar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRACKS MASTER TABLE -->
+      <div class="track-table-card margin-top">
+        <div class="table-header-bar">
+          <div class="table-title-group">
+            <h3><i class="fa-solid fa-list-ol text-green"></i> Çalma Listesindeki Parçalar & Çapraz Kütüphane Dağılımı</h3>
+            <span class="badge-count" id="tabTrackCountBadge">0 Şarkı</span>
+          </div>
+
+          <div class="table-quick-info">
+            <span id="selectedCountIndicator" style="font-size:12px; color:var(--neon-green); font-weight:700;"></span>
+          </div>
+        </div>
+        
+        <div class="track-table-container">
+          <table class="pro-track-table">
+            <thead>
+              <tr>
+                <th style="width: 44px; text-align:center;">Seç</th>
+                <th style="width: 44px; text-align:center;">#</th>
+                <th>Şarkı & Sanatçı</th>
+                <th>Müzik Türü (Canlı Spotify)</th>
+                <th>Diğer Hangi Listelerde Var?</th>
+                <th>Mükerrerlik Durumu</th>
+                <th style="text-align: right; width: 140px;">Dinle & Aktar</th>
+              </tr>
+            </thead>
+            <tbody id="proTrackTableBody">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Track Table Pagination Bar -->
+        <div id="trackPaginationBar" class="pagination-bar">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11.5px; color: var(--text-muted);">Gösterim:</span>
+            <select id="selectTracksPerPage" class="custom-input-sm" style="padding: 4px 8px; font-size: 11.5px; width: 80px;">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+              <option value="9999">Tümü</option>
+            </select>
+            <span id="trackPageInfo" style="font-size: 11.5px; color: var(--text-dim); font-weight: 600;">1 - 50 / 87 Şarkı</span>
+          </div>
+          <div id="trackPageButtons" class="pagination-nav-group" style="display: flex; align-items: center; gap: 4px;">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- HARMONIC DJ & CAMELOT ENERGY MODAL (BÖLÜM 1) -->
+    <div id="djMixingModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 680px; padding: 24px;">
+        <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-sliders text-cyan"></i> Harmonik DJ Miksaj & Camelot Wheel Sıralayıcısı
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              Müzik teorisindeki Camelot Wheel prensiplerine göre parçaları ton ve tempo (BPM) uyumuyla mükemmel geçişlere dizin.
+            </p>
+          </div>
+          <button id="btnCloseDjModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="padding: 18px 0;">
+          <label style="font-size: 12px; font-weight: 800; color: #fff; display: block; margin-bottom: 10px;">Enerji ve Geçiş Profili Seçin:</label>
+          
+          <div class="dj-profile-grid">
+            <label class="dj-profile-card active" data-profile="harmonic_flow">
+              <input type="radio" name="djProfile" value="harmonic_flow" checked style="display:none;">
+              <div class="dj-card-icon"><i class="fa-solid fa-water text-cyan"></i></div>
+              <div class="dj-card-body">
+                <h5>Akıcı Harmonik Geçiş (Smooth Flow)</h5>
+                <p>Aynı ve komşu anahtarlar (8A → 8A / 8A → 7A/9A) arasında yumuşak ton geçişleri.</p>
+              </div>
+            </label>
+
+            <label class="dj-profile-card" data-profile="energy_ramp">
+              <input type="radio" name="djProfile" value="energy_ramp" style="display:none;">
+              <div class="dj-card-icon"><i class="fa-solid fa-bolt text-green"></i></div>
+              <div class="dj-card-body">
+                <h5>Enerji Rampası (Isınma / Kardiyo)</h5>
+                <p>Düşük BPM'den başlayıp parçaları kademeli olarak en yüksek tempoya doğru tırmandırır.</p>
+              </div>
+            </label>
+
+            <label class="dj-profile-card" data-profile="festival_wave">
+              <input type="radio" name="djProfile" value="festival_wave" style="display:none;">
+              <div class="dj-card-icon"><i class="fa-solid fa-wave-square text-purple"></i></div>
+              <div class="dj-card-body">
+                <h5>Festival DJ Seti (Sinüzoidal Dalga)</h5>
+                <p>Doruk noktaları ve sakinleşme anlarıyla profesyonel canlı DJ set dinamiği oluşturur.</p>
+              </div>
+            </label>
+          </div>
+
+          <div style="margin-top: 20px; background: rgba(0,0,0,0.5); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
+              <span>Uygulanacak Çalma Listesi:</span>
+              <strong id="djTargetPlaylistName" style="color:#fff;">-</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted);">
+              <span>Toplam Parça Sayısı:</span>
+              <strong id="djTargetTrackCount" style="color:var(--neon-green);">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="btnCancelDj" class="btn btn-secondary btn-sm">İptal</button>
+          <button id="btnApplyDjSort" class="btn btn-spotify btn-sm">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Harmonik Sıralamayı Uygula
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYLIST HEALTH & OPTIMIZATION REPORT MODAL (BÖLÜM 2) -->
+    <div id="playlistHealthModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 640px; padding: 24px;">
+        <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-heart-pulse text-green"></i> Çalma Listesi Sağlık Skoru & Kalite İndeksi
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              Mükerrerlik, ölü parçalar ve sanatçı çeşitliliği üzerinden hesaplanan derin kütüphane sağlık analizi.
+            </p>
+          </div>
+          <button id="btnCloseHealthModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="padding: 20px 0;">
+          <!-- Circular Health Score Deck -->
+          <div class="health-score-deck">
+            <div class="health-gauge-box">
+              <span class="health-score-number" id="healthModalScoreNumber">96</span>
+              <span class="health-score-label">/ 100 PUAN</span>
+            </div>
+            <div class="health-gauge-info">
+              <h4 id="healthModalStatusTitle" style="font-size:16px; font-weight:800; color:#fff;">Çok Yüksek Kalite</h4>
+              <p id="healthModalStatusDesc" style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Bu listede mükerrer veya ölü parça yoğunluğu minimum seviyede.
+              </p>
+            </div>
+          </div>
+
+          <!-- Health Factors Breakdown -->
+          <div class="health-factors-list">
+            <div class="health-factor-row">
+              <div class="factor-left">
+                <i class="fa-solid fa-clone text-warning"></i>
+                <div>
+                  <h6>Mükerrer Parça Yoğunluğu</h6>
+                  <p id="healthFactorDupDesc">46 parça diğer listelerde de mevcut</p>
+                </div>
+              </div>
+              <span class="factor-badge" id="healthFactorDupBadge">-4 Puan</span>
+            </div>
+
+            <div class="health-factor-row">
+              <div class="factor-left">
+                <i class="fa-solid fa-users text-cyan"></i>
+                <div>
+                  <h6>Sanatçı Dağılımı ve Çeşitlilik</h6>
+                  <p id="healthFactorArtistDesc">Dengeli dağılım, aşırı sanatçı yığılması yok</p>
+                </div>
+              </div>
+              <span class="factor-badge green" id="healthFactorArtistBadge">Tam Puan</span>
+            </div>
+
+            <div class="health-factor-row">
+              <div class="factor-left">
+                <i class="fa-solid fa-skull text-muted"></i>
+                <div>
+                  <h6>Grileşen / Ölü Parçalar</h6>
+                  <p id="healthFactorDeadDesc">0 adet çalınamaz parça tespit edildi</p>
+                </div>
+              </div>
+              <span class="factor-badge green" id="healthFactorDeadBadge">0 Kayıp</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items:center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="btnAutoHealPlaylist" class="btn btn-spotify btn-sm">
+            <i class="fa-solid fa-shield-halved"></i> 1-Tıkla Sağlık Reçetesini Uygula
+          </button>
+          <button id="btnCloseHealthModalBottom" class="btn btn-secondary btn-sm">Kapat</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZOMBIE / GREYED-OUT TRACKS MODAL (BÖLÜM 3) -->
+    <div id="zombieTrackModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 720px; padding: 24px;">
+        <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Zombi Parça Diriltme & Lisans Eşleme Motoru
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              Telif/lisans süresi biten gri parçaları Spotify kataloğundaki canlı, resmi alternatifleriyle eşler.
+            </p>
+          </div>
+          <button id="btnCloseZombieModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="padding: 18px 0; max-height: 50vh; overflow-y: auto;" id="zombieResultsContainer">
+          <!-- Injected by JS -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="btnCloseZombieBottom" class="btn btn-secondary btn-sm">Kapat</button>
+          <button id="btnResurrectAll" class="btn btn-spotify btn-sm hidden">
+            <i class="fa-solid fa-rotate"></i> Bulunan Tüm Canlı Sürümleri Takas Et
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUZZY DUPLICATES MODAL (BÖLÜM 4) -->
+    <div id="fuzzyDuplicatesModal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width: 780px; padding: 24px;">
+        <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-fingerprint text-purple"></i> İleri Düzey Bulanık (Fuzzy) & Sürüm Mükerrer Analizi
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              Remastered, Live, Radio Edit ve farklı albüm sürümlerindeki gizli mükerrerleri Levenshtein mesafesiyle yakalar.
+            </p>
+          </div>
+          <button id="btnCloseFuzzyModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div style="padding: 18px 0; max-height: 52vh; overflow-y: auto;" id="fuzzyResultsContainer">
+          <!-- Injected by JS -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button id="btnCloseFuzzyBottom" class="btn btn-secondary btn-sm">Kapat</button>
+          <button id="btnConsolidateFuzzy" class="btn btn-primary btn-sm hidden">
+            <i class="fa-solid fa-check-double"></i> Seçilen Kopya Sürümleri Temizle
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CREATE PLAYLIST MODAL -->
+    <div id="createPlaylistModal" class="modal-overlay hidden">
+      <div class="modal-card glass-panel" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800;">
+            <i class="fa-solid fa-folder-plus text-green"></i> Yeni Çalma Listesi Oluştur
+          </h3>
+          <button id="btnCloseCreatePlaylistModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 16px 20px 20px;">
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+            Oluşturulan liste doğrudan Spotify kütüphanenize ve SpotifyPulse çalışma masanıza anında eklenecektir.
+          </p>
+
+          <div style="margin-bottom: 14px;">
+            <label style="font-size: 12px; font-weight: 700; color: #fff; display: block; margin-bottom: 6px;">Çalma Listesi Adı *</label>
+            <input type="text" id="inputNewPlaylistName" placeholder="Örn: 2026 Favorilerim, Gece Sürüşü..." class="custom-input-sm" style="width: 100%; padding: 10px 12px; font-size: 13px;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label style="font-size: 12px; font-weight: 700; color: #fff; display: block; margin-bottom: 6px;">Açıklama (İsteğe Bağlı)</label>
+            <textarea id="inputNewPlaylistDesc" placeholder="Çalma listesi hakkında kısa bir not..." class="custom-input-sm" style="width: 100%; height: 70px; padding: 10px 12px; font-size: 12px; resize: none;"></textarea>
+          </div>
+
+          <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border);">
+            <input type="checkbox" id="chkNewPlaylistPrivate" accent-color="var(--purple-accent)">
+            <div>
+              <label for="chkNewPlaylistPrivate" style="font-size: 12px; font-weight: 700; color: #fff; cursor: pointer;">Gizli çalma listesi yap 🔒</label>
+              <p style="font-size: 11px; color: var(--text-muted);">Sadece sizin görebileceğiniz gizli liste olarak oluşturulur.</p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button id="btnCancelCreatePlaylist" class="btn btn-secondary btn-sm">İptal</button>
+            <button id="btnSubmitCreatePlaylist" class="btn btn-spotify btn-sm">
+              <i class="fa-brands fa-spotify"></i> Spotify'da Oluştur
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM MAP & ARCHITECTURE MODAL -->
+    <div id="systemMapModal" class="modal-overlay hidden">
+      <div class="modal-card glass-panel" style="max-width: 720px;">
+        <div class="modal-header">
+          <h3 style="font-family: var(--font-heading); font-size: 16px; font-weight: 800;">
+            <i class="fa-solid fa-diagram-project text-cyan"></i> SpotifyPulse Mimari & Sistem Haritası
+          </h3>
+          <button id="btnCloseSystemMapModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" style="padding: 16px 20px 24px; max-height: 520px; overflow-y: auto;">
+          <p style="font-size: 12px; color: var(--text-muted);">
+            SpotifyPulse, istemci tarafında (Client-Side) çalışan, sıfır sunucu veri tutulumuyla tam gizlilik sağlayan ve resmi Spotify Web API ile doğrudan haberleşen bir Principal Mimaridir.
+          </p>
+
+          <div class="system-map-grid">
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-key text-green"></i> 1. OAuth 2.0 PKCE</h4>
+              <p>Client Secret gerektirmeyen, SHA-256 Code Challenge ile tarayıcıda doğrudan üretilen en güvenli yetkilendirme akışı.</p>
+            </div>
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-database text-cyan"></i> 2. Akıllı Önbellek</h4>
+              <p>Kütüphane ve şarkı verileri yerel localStorage'a önbelleklenir; gereksiz API çağrıları ve 429 Rate Limit önlenir.</p>
+            </div>
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-network-wired text-purple"></i> 3. Mükerrer Matrisi</h4>
+              <p>Tüm listelerinizdeki şarkılar global bir hash tablosunda taranarak çapraz listede varlık haritası (Cross-Presence) çıkarılır.</p>
+            </div>
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-shield-halved text-warning"></i> 4. Güvenlik Geri Al</h4>
+              <p>Yapılan her aktarma veya birleştirmeden önce otomatik Safety Snapshot alınır; istenilen ana tek tıkla dönülür.</p>
+            </div>
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-wand-magic-sparkles text-green"></i> 5. Akıllı Füzyon</h4>
+              <p>Müzik türü ve ortak şarkı oranını analiz eden eşleştirme motoru listeleri mükerrersiz birleştirir.</p>
+            </div>
+            <div class="system-map-node">
+              <h4><i class="fa-solid fa-headphones text-cyan"></i> 6. Web Mini Player</h4>
+              <p>Spotify hesabı bağlandıktan sonra Web Playback SDK ile doğrudan orijinal tam parça oynatma.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING MINI WEB PLAYER -->
+    <div id="floatingWebPlayer" class="floating-web-player hidden">
+      <div class="player-left">
+        <img id="playerCoverImg" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&q=80" alt="Cover" class="player-cover">
+        <div class="player-track-info">
+          <h5 id="playerTrackTitle">Şarkı Başlığı</h5>
+          <p id="playerTrackArtist">Sanatçı Adı</p>
+        </div>
+      </div>
+
+      <div class="player-center">
+        <div class="player-controls">
+          <button class="player-ctrl-btn" id="btnPlayerPrev" title="Önceki Şarkı"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="player-play-btn" id="btnPlayerPlayToggle" title="Oynat / Duraklat">
+            <i class="fa-solid fa-play" id="playerPlayIcon"></i>
+          </button>
+          <button class="player-ctrl-btn" id="btnPlayerNext" title="Sonraki Şarkı"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+
+        <div class="player-timeline-wrapper">
+          <span class="player-time-label" id="playerCurrentTime">0:00</span>
+          <div class="energy-timeline" id="playerEnergyTimeline" style="--progress:0%;">
+            <div class="energy-track" aria-hidden="true">
+              <span class="energy-charge"></span>
+              <span class="energy-lightning lightning-a"></span>
+              <span class="energy-lightning lightning-b"></span>
+              <span class="energy-head"><i class="fa-solid fa-bolt"></i></span>
+            </div>
+            <input type="range" id="playerSeekSlider" class="player-seek-slider" min="0" max="100" value="0" aria-label="Şarkı konumu">
+          </div>
+          <span class="player-time-label" id="playerDuration">0:00</span>
+        </div>
+      </div>
+
+      <div class="player-right">
+        <div class="player-signal-module">
+          <div class="signal-module-topline">
+            <span class="player-source-badge" id="playerSourceBadge" title="Oynatma kaynağı"><i class="fa-brands fa-spotify"></i> Spotify</span>
+            <span class="signal-live-label"><i></i> CANLI SİNYAL</span>
+          </div>
+          <div class="audio-visualizer-bars" id="playerVisualizerBars" aria-hidden="true">
+            <div class="spectrum-bar"></div><div class="spectrum-bar"></div><div class="spectrum-bar"></div><div class="spectrum-bar"></div>
+            <div class="spectrum-bar"></div><div class="spectrum-bar"></div><div class="spectrum-bar"></div><div class="spectrum-bar"></div>
+          </div>
+        </div>
+        <div class="player-device-control">
+          <button id="btnPlayerDevices" class="player-utility-btn" title="Spotify cihazları" aria-expanded="false"><i class="fa-solid fa-desktop"></i><span>Cihaz</span></button>
+          <div id="playerDevicesPopover" class="player-devices-popover hidden">
+            <div class="devices-popover-head"><strong>Spotify Connect</strong><small>Oynatma cihazları</small></div>
+            <div id="playerDevicesList" class="player-devices-list"><span class="device-empty">Cihazlar henüz yüklenmedi.</span></div>
+          </div>
+        </div>
+        <div class="player-volume-control">
+          <button id="btnPlayerMute" class="player-icon-btn" title="Sesi kapat"><i class="fa-solid fa-volume-high"></i></button>
+          <input id="playerVolumeSlider" class="player-volume-slider" type="range" min="0" max="100" value="85" aria-label="Ses seviyesi">
+        </div>
+        <a id="playerOpenSpotifyBtn" href="https://open.spotify.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" title="Spotify'da Aç">
+          <i class="fa-brands fa-spotify text-green"></i>
+        </a>
+        <button id="btnCloseWebPlayer" class="player-ctrl-btn" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Hidden Native Audio Object -->
+      <audio id="nativeAudioPlayer" preload="none"></audio>
+    </div>
+
+    <!-- MOBILE APP DOCK: thumb-friendly primary navigation -->
+    <nav class="mobile-app-dock" id="mobileAppDock" aria-label="Mobil ana menü">
+      <a href="#studio" class="mobile-dock-item is-active" data-mobile-section="studio">
+        <i class="fa-solid fa-house-signal" aria-hidden="true"></i><span>Ana Sayfa</span>
+      </a>
+      <a href="#catalogSection" class="mobile-dock-item" data-mobile-section="catalogSection">
+        <i class="fa-solid fa-compact-disc" aria-hidden="true"></i><span>Listeler</span>
+      </a>
+      <button type="button" class="mobile-dock-item mobile-dock-player" id="btnMobilePlayer">
+        <span class="mobile-player-orb"><i class="fa-solid fa-play" aria-hidden="true"></i></span><span>Player</span>
+      </button>
+      <button type="button" class="mobile-dock-item" id="btnMobilePrivacy">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>Gizlilik</span>
+      </button>
+      <button type="button" class="mobile-dock-item" id="btnMobileAccount">
+        <i class="fa-brands fa-spotify" aria-hidden="true"></i><span>Hesap</span>
+      </button>
+    </nav>
+
+    <div id="privacyNotice" class="privacy-notice hidden" role="region" aria-labelledby="storageConsentTitle" aria-describedby="storageConsentDescription">
+      <div><span class="consent-icon"><i class="fa-solid fa-cookie-bite"></i></span><span><strong id="storageConsentTitle">Yerel depolama tercihiniz</strong><small id="storageConsentDescription">Tify Pulse reklam veya analitik çerezi kullanmaz. İzninizle dil, playlist önbelleği, güvenlik yedekleri ve tür etiketleri bu tarayıcıda saklanabilir. Spotify bağlantısı ayrı hizmet koşullarına tabidir.</small></span></div>
+      <div class="privacy-notice-actions"><button id="btnManageStorage" class="pill">Ayarla</button><button id="btnNecessaryOnly" class="pill">Sadece Gerekli</button><button id="btnAcceptFunctional" class="pill join">İşlevseli Kabul Et</button></div>
+    </div>
+
+    <!-- GLOBAL PRIVACY & PUBLISHER FOOTER -->
+    <footer class="app-footer legal-footer" id="footer">
+      <div class="legal-footer-grid">
+        <section class="publisher-block">
+          <div class="publisher-brand"><span class="publisher-lcl">LCL</span><div><strong>LOCKED CO LABS</strong><small>TIFY PULSE PRODUCT STUDIO</small></div></div>
+          <p>Tify Pulse, <strong>Locked Co Labs</strong> markasına ait bağımsız bir müzik kütüphanesi ürünüdür. Ürün geliştirme ve deneyim tasarımı: <strong>SOOND</strong>.</p>
+          <p class="trademark-note">Spotify®, Spotify AB'nin tescilli markasıdır. Tify Pulse; Spotify tarafından desteklenmez, sponsor edilmez veya Spotify'ın resmi ürünü değildir.</p>
+          <div class="publisher-links">
+            <a href="https://lockedcolab.com/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-globe"></i> lockedcolab.com</a>
+            <a href="mailto:info.lockedcolabs@gmail.com"><i class="fa-solid fa-envelope"></i> info.lockedcolabs@gmail.com</a>
+            <a href="https://www.instagram.com/lockedcolabs/" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram"></i> @lockedcolabs</a>
+          </div>
+        </section>
+
+        <section>
+          <h4><i class="fa-solid fa-database"></i> VERİ ÖZETİ</h4>
+          <ul class="legal-list">
+            <li>Sunucu tarafı Tify Pulse hesabı oluşturulmaz.</li>
+            <li>Profil, playlist ve ayarlar tarayıcıda saklanabilir.</li>
+            <li>OAuth belirteçleri yalnızca açık sekme oturumunda tutulur.</li>
+            <li>Reklam, davranış analitiği veya veri satışı yapılmaz.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h4><i class="fa-solid fa-scale-balanced"></i> HUKUK &amp; KONTROLLER</h4>
+          <nav class="legal-links" aria-label="Yasal bağlantılar">
+            <button id="btnOpenPrivacyPolicyModal"><i class="fa-solid fa-shield-halved"></i> Gizlilik Merkezi</button>
+            <button id="btnFooterExportData"><i class="fa-solid fa-file-export"></i> Verilerimi Dışa Aktar</button>
+            <button id="btnFooterDeleteData"><i class="fa-solid fa-trash-can"></i> Yerel Verilerimi Sil</button>
+            <a href="#studio"><i class="fa-solid fa-headphones"></i> Web Player</a>
+          </nav>
+        </section>
+      </div>
+      <div class="legal-footer-bottom"><span>© 2026 Locked Co Labs. Tüm hakları saklıdır.</span><span>Geliştirici: SOOND</span><span id="privacyRegionBadge">Bölge: Otomatik</span></div>
+    </footer>
+
+    <!-- REGIONAL PRIVACY CENTER -->
+    <div id="privacyPolicyModal" class="modal-overlay hidden">
+      <div class="modal-card privacy-center-card">
+        <div class="privacy-center-header">
+          <div><span class="privacy-kicker">LOCKED CO LABS • SOOND</span><h3><i class="fa-solid fa-shield-halved"></i> Gizlilik ve Veri Kontrol Merkezi</h3><p>Son güncelleme: 15 Ağustos 2026 • Sürüm 1.0</p></div>
+          <button id="btnClosePrivacyPolicyModal" class="pill" aria-label="Gizlilik merkezini kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="privacy-region-tabs" role="tablist">
+          <button class="privacy-tab is-active" data-privacy-tab="overview">Genel Bakış</button>
+          <button class="privacy-tab" data-privacy-tab="tr">Türkiye • KVKK</button>
+          <button class="privacy-tab" data-privacy-tab="eu">AB/AEA • GDPR</button>
+          <button class="privacy-tab" data-privacy-tab="global">Global Haklar</button>
+          <button class="privacy-tab" data-privacy-tab="storage">Veri Envanteri</button>
+        </div>
+        <div class="privacy-center-body">
+          <section class="privacy-panel is-active" data-privacy-panel="overview">
+            <div class="privacy-fact-grid"><article><i class="fa-solid fa-building-shield"></i><strong>Yayıncı</strong><span>Locked Co Labs</span></article><article><i class="fa-solid fa-code"></i><strong>Geliştirici</strong><span>SOOND</span></article><article><i class="fa-solid fa-cookie-bite"></i><strong>Çerezler</strong><span>Reklam/analitik çerezi yok</span></article><article><i class="fa-solid fa-server"></i><strong>Mimari</strong><span>Tarayıcı ağırlıklı istemci</span></article></div>
+            <h5>Ne işlenir?</h5><p>Spotify bağlantısı seçildiğinde profil adı, profil görseli, playlist ve şarkı metaverisi uygulama özelliklerini sunmak için işlenir. Dil, güvenlik yedekleri, tür önbelleği ve uygulama ayarları cihazınızdaki tarayıcı depolamasında kalabilir. Spotify erişim ve yenileme belirteçleri sekme oturumunda tutulur ve sekme kapandığında temizlenir.</p>
+            <h5>Kimlerle iletişim kurulur?</h5><p>Spotify OAuth, Web API ve Web Playback SDK; yalnızca kullanıcı tarafından tür araştırması başlatıldığında MusicBrainz; ayrıca seçtiğiniz barındırma sağlayıcısı. Fontlar ve ikonlar üçüncü taraf CDN yerine uygulama paketinden sunulur.</p>
+            <div class="privacy-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Bu merkez teknik şeffaflık sağlar; belirli bir ülkede hukuk danışmanlığı veya otomatik uyumluluk sertifikası yerine geçmez. Yayına almadan önce tüzel kişi, resmî adres ve doğrulanmış iletişim kanalları yayıncı tarafından tamamlanmalıdır.</span></div>
+          </section>
+          <section class="privacy-panel" data-privacy-panel="tr"><h5>KVKK Aydınlatma Özeti</h5><p><strong>Veri sorumlusu:</strong> Locked Co Labs. <strong>İşleme amaçları:</strong> Spotify bağlantısı kurmak, kütüphaneyi görüntülemek, kullanıcı tarafından istenen analiz/düzenleme işlemlerini gerçekleştirmek, güvenlik geri alma noktalarını ve tercihleri cihazda saklamak. <strong>Toplama yöntemi:</strong> Spotify API'den ve tarayıcı etkileşimlerinden elektronik ortamda.</p><p><strong>Aktarım/alıcı grupları:</strong> Spotify hizmetleri; isteğe bağlı tür araştırmasında MusicBrainz; teknik barındırma sağlayıcısı. <strong>Hukuki sebepler:</strong> hizmetin kurulması/ifası, meşru menfaat kapsamında güvenlik ve işlevsellik, gerekli hâllerde açık rıza. KVKK m.11 kapsamındaki bilgi alma, düzeltme, silme/yok etme ve itiraz haklarınızı resmî Locked Co Labs iletişim kanalından kullanabilirsiniz.</p></section>
+          <section class="privacy-panel" data-privacy-panel="eu"><h5>EU/EEA Privacy Notice</h5><p>Where the GDPR applies, processing is limited to providing the user-requested Spotify connection and library tools, maintaining security and user preferences, and optional metadata enrichment. Depending on context, the legal bases may include performance of a requested service, legitimate interests in secure operation, and consent for optional processing.</p><p>You may have rights of access, rectification, erasure, restriction, portability and objection, and the right to withdraw consent. Spotify and MusicBrainz operate under their own privacy terms and may process data outside your country. No advertising profiling, sale of personal information or cross-context behavioural advertising is implemented by this source build.</p></section>
+          <section class="privacy-panel" data-privacy-panel="global"><h5>Küresel Gizlilik İlkeleri</h5><p>Uygulama veri minimizasyonu, amaçla sınırlılık, şeffaflık, kullanıcı kontrolü ve güvenli varsayılanlar temelinde çalışır. Geçerli olduğu ölçüde erişme, düzeltme, silme ve dışa aktarma talepleri desteklenir. California kullanıcıları için bu kaynak sürüm kişisel bilgiyi satmaz/paylaşmaz ve hak kullanımında ayrımcılık yapmaz. Tarayıcınız Global Privacy Control sinyali gönderiyorsa isteğe bağlı dış katalog zenginleştirmesi kapalı tutulur.</p></section>
+          <section class="privacy-panel" data-privacy-panel="storage"><h5>Tarayıcı Veri Envanteri</h5><div class="storage-consent-card"><div><span>Mevcut tercih</span><strong id="storageConsentStatus">Karar bekleniyor</strong></div><p><b>Gerekli depolama:</b> gizlilik tercihi ve açık Spotify sekme oturumu. <b>İşlevsel depolama:</b> dil, playlist önbelleği, yedekler ve tür etiketleri.</p><div><button id="btnStorageNecessary" class="pill">Sadece Gerekli</button><button id="btnStorageFunctional" class="pill join">İşlevsel Depolamaya İzin Ver</button></div></div><div class="storage-table"><div><strong>Oturum belirteçleri</strong><span>sessionStorage • sekme kapanana kadar</span></div><div><strong>Spotify profil/kütüphane önbelleği</strong><span>localStorage • yalnızca işlevsel izinle</span></div><div><strong>Playlist güvenlik yedekleri</strong><span>localStorage • yalnızca işlevsel izinle, en fazla 10 kayıt</span></div><div><strong>Dil ve BYOC Client ID</strong><span>localStorage • yalnızca işlevsel izinle</span></div><div><strong>Tür etiketleri</strong><span>localStorage • yalnızca işlevsel izinle, 30 güne kadar</span></div></div><div class="privacy-actions"><button id="btnPrivacyExport" class="pill"><i class="fa-solid fa-file-export"></i> Verilerimi Dışa Aktar</button><button id="btnPrivacyDelete" class="pill danger-action"><i class="fa-solid fa-trash-can"></i> Tüm Yerel Verileri Sil</button></div></section>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main JavaScript App -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
