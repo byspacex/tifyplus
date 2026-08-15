@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Tify Pulse marka simgesi</title>
+  <desc id="desc">Elektrik yeşili bir ses dalgasını çevreleyen koyu renkli dairesel Tify Pulse simgesi.</desc>
+  <defs>
+    <radialGradient id="surface" cx="34%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#19372d"/>
+      <stop offset="0.55" stop-color="#0a1519"/>
+      <stop offset="1" stop-color="#060812"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="72" y1="54" x2="442" y2="458" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d6ff65"/>
+      <stop offset="0.48" stop-color="#a8ff26"/>
+      <stop offset="1" stop-color="#3cf5ff"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="204" fill="url(#surface)" stroke="#14252a" stroke-width="12"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#ring)" stroke-opacity="0.38" stroke-width="3"/>
+  <path d="M104 260h72l30-96 58 190 42-144 31 82h71" fill="none" stroke="#06100b" stroke-opacity="0.92" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M104 260h72l30-96 58 190 42-144 31 82h71" fill="none" stroke="url(#ring)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <circle cx="104" cy="260" r="9" fill="#a8ff26"/>
+  <circle cx="408" cy="292" r="9" fill="#3cf5ff"/>
+</svg>
