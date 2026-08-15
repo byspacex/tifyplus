@@ -2886,26 +2886,23 @@ document.addEventListener('DOMContentLoaded', () => {
       defaultPanel.classList.add('hidden');
       customPanel.classList.remove('hidden');
       if (btnDefault) {
-        btnDefault.className = 'pill';
-        btnDefault.style.background = 'transparent';
+        btnDefault.classList.remove('is-active', 'join');
+        btnDefault.setAttribute('aria-selected', 'false');
       }
       if (btnCustom) {
-        btnCustom.className = 'pill join';
-        btnCustom.style.background = 'var(--lime)';
-        btnCustom.style.color = '#000';
+        btnCustom.classList.add('is-active', 'join');
+        btnCustom.setAttribute('aria-selected', 'true');
       }
     } else {
       customPanel.classList.add('hidden');
       defaultPanel.classList.remove('hidden');
       if (btnCustom) {
-        btnCustom.className = 'pill';
-        btnCustom.style.background = 'transparent';
-        btnCustom.style.color = '#fff';
+        btnCustom.classList.remove('is-active', 'join');
+        btnCustom.setAttribute('aria-selected', 'false');
       }
       if (btnDefault) {
-        btnDefault.className = 'pill join';
-        btnDefault.style.background = 'var(--lime)';
-        btnDefault.style.color = '#000';
+        btnDefault.classList.add('is-active', 'join');
+        btnDefault.setAttribute('aria-selected', 'true');
       }
     }
     (allowsFunctionalStorage() ? localStorage : sessionStorage).setItem('spotify_app_mode', mode);
@@ -2922,8 +2919,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSaveCustomAuth.addEventListener('click', () => {
       const input = document.getElementById('clientIdInput') || document.getElementById('customClientIdInput');
       const val = input ? input.value.trim() : '';
-      if (!val) {
-        showToast('Lütfen 32 haneli Spotify Client ID\'nizi girin!', 'warning');
+      if (!/^[a-f0-9]{32}$/i.test(val)) {
+        showToast('Client ID, Spotify Dashboard\'da görünen 32 karakterlik değerdir. Client Secret girmeyin.', 'warning');
+        if (input) input.focus();
         return;
       }
       (allowsFunctionalStorage() ? localStorage : sessionStorage).setItem(CUSTOM_CLIENT_ID_KEY, val);

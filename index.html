@@ -249,65 +249,105 @@
     </div>
 
     <!-- AUTH / SETTINGS MODAL -->
-    <div id="authModal" class="modal-overlay hidden">
-      <div class="modal-card" style="max-width: 560px;">
-        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-          <h3 style="font-family: var(--f-display); font-size: 18px; font-weight: 800; color:#fff;">
-            <i class="fa-solid fa-bolt" style="color:var(--lime);"></i> Spotify Bağlantı Ayarları
-          </h3>
-          <button id="btnCloseAuthModal" class="pill" style="padding:6px 12px; font-size:12px; cursor:pointer;" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <!-- App Mode Toggle Tabs -->
-        <div style="display:flex; gap:8px; margin-bottom:20px;">
-          <button id="btnUseDefault" class="pill join" style="flex:1; cursor:pointer;">
-            <i class="fa-solid fa-bolt"></i> Varsayılan Uygulama
-          </button>
-          <button id="btnUseCustom" class="pill" style="flex:1; cursor:pointer;">
-            <i class="fa-solid fa-plug"></i> Kendi Uygulamam (BYOC)
-          </button>
-        </div>
-
-        <!-- DEFAULT MODE PANEL -->
-        <div id="defaultModePanel">
-          <div style="background:rgba(60,245,255,0.08); padding:14px 16px; border-radius:12px; font-size:12.5px; color:var(--text); margin-bottom:16px; line-height:1.6;">
-            <i class="fa-solid fa-circle-info text-cyan"></i>
-            <span>PKCE ile güvenli bağlantı kurulur. Tam parça çalma Spotify Web Playback SDK üzerinden çalışır ve Spotify Premium hesabı gerektirir.</span>
-          </div>
-          <div class="auth-box" style="margin-bottom:16px;">
-            <label for="accessTokenInput" style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Access Token <span style="color:var(--dim);">(İsteğe Bağlı — manuel yapıştırma)</span></label>
-            <input type="text" id="accessTokenInput" placeholder="Bearer Access Token varsa yapıştırın..." class="pill" style="width:100%; border-radius:12px; text-align:left; background:rgba(0,0,0,0.5); padding:10px 14px; font-size:13px;">
-          </div>
-          <button id="btnStartOAuth" class="cta primary" style="width:100%; cursor:pointer;">
-            <i class="fa-brands fa-spotify"></i> Spotify ile Oturumu Başlat
-          </button>
-        </div>
-
-        <!-- CUSTOM (BYOC) MODE PANEL -->
-        <div id="customModePanel" class="hidden">
-          <div style="background:rgba(168,255,38,0.08); padding:14px 16px; border-radius:12px; font-size:12.5px; color:var(--text); margin-bottom:16px; line-height:1.6;">
-            <i class="fa-solid fa-shield-halved" style="color:var(--lime);"></i>
-            <span>Spotify Developer Dashboard'dan aldığınız <strong>Client ID</strong> ile kendi özel API kotanızı kullanabilirsiniz.</span>
-          </div>
-
-          <div style="background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+    <div id="authModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <div class="modal-card auth-modal-card">
+        <div class="auth-modal-header">
+          <div class="auth-modal-title-wrap">
+            <span class="auth-brand-symbol" aria-hidden="true">
+              <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18"/><path d="M10 23h8l3-10 7 20 4-12 3 6h3"/></svg>
+            </span>
             <div>
-              <span style="color:var(--muted); display:block; font-size:11px;">Redirect URI (Spotify Dashboard'a ekleyin):</span>
-              <code id="byocRedirectUriDisplay" style="color:var(--cyan); font-family:var(--f-mono);">http://127.0.0.1:5173/</code>
+              <span class="auth-eyebrow">TIFY PLUS • PULSE CONNECTION</span>
+              <h3 id="authModalTitle">Spotify hesabınızı bağlayın</h3>
+              <p>İlk kez kullanıyorsanız önerilen seçeneği kullanın. Yaklaşık 10 saniye sürer.</p>
             </div>
-            <button id="btnCopyRedirectUri" class="pill" style="padding:4px 10px; font-size:11px; cursor:pointer;" title="Panoya Kopyala">
-              <i class="fa-solid fa-copy"></i>
-            </button>
           </div>
-
-          <div class="auth-box" style="margin-bottom:16px;">
-            <label for="clientIdInput" style="display:block; font-size:12px; color:var(--muted); margin-bottom:6px;">Spotify Client ID</label>
-            <input type="text" id="clientIdInput" placeholder="32 haneli Client ID..." class="pill" style="width:100%; border-radius:12px; text-align:left; background:rgba(0,0,0,0.5); padding:10px 14px; font-size:13px;">
-          </div>
-
-          <button id="btnSaveCustomAuth" class="cta primary" style="width:100%; cursor:pointer;">
-            <i class="fa-solid fa-key"></i> Kaydet ve Bağlan
+          <button id="btnCloseAuthModal" class="auth-close-button" type="button" title="Kapat" aria-label="Spotify bağlantı penceresini kapat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
           </button>
+        </div>
+
+        <div class="auth-choice-grid" role="tablist" aria-label="Bağlantı yöntemi">
+          <button id="btnUseDefault" class="auth-choice is-active join" type="button" role="tab" aria-selected="true" aria-controls="defaultModePanel">
+            <span class="auth-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/><circle cx="6" cy="12" r="3"/></svg></span>
+            <span><strong>Hızlı bağlantı</strong><small>Çoğu kullanıcı için önerilen</small></span>
+            <em>ÖNERİLEN</em>
+          </button>
+          <button id="btnUseCustom" class="auth-choice" type="button" role="tab" aria-selected="false" aria-controls="customModePanel">
+            <span class="auth-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7V4m6 3V4M7 8h10v4a5 5 0 0 1-10 0V8Zm5 9v3"/></svg></span>
+            <span><strong>Kendi Spotify uygulamam</strong><small>Geliştiriciler ve özel Client ID</small></span>
+          </button>
+        </div>
+
+        <div id="defaultModePanel" class="auth-mode-panel" role="tabpanel" aria-labelledby="btnUseDefault">
+          <div class="auth-simple-intro">
+            <strong>Yapmanız gereken tek şey Spotify'a giriş yapmak.</strong>
+            <p>Tify Plus Pulse sizi Spotify'ın resmî izin ekranına gönderir. Şifreniz bu uygulama tarafından görülmez veya saklanmaz.</p>
+          </div>
+
+          <ol class="auth-steps" aria-label="Hızlı bağlantı adımları">
+            <li><span>1</span><div><strong>Bağlan düğmesine basın</strong><small>Spotify'ın güvenli giriş sayfası açılır.</small></div></li>
+            <li><span>2</span><div><strong>Spotify'da izin verin</strong><small>Profiliniz ve çalma listeleriniz okunur.</small></div></li>
+            <li><span>3</span><div><strong>Stüdyoya geri dönün</strong><small>Kütüphaneniz otomatik olarak hazırlanır.</small></div></li>
+          </ol>
+
+          <div class="auth-premium-note">
+            <span class="auth-note-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 4 5 4 5-2 5-4"/></svg></span>
+            <p><strong>Ücretsiz Spotify hesabı bağlantı kurabilir.</strong> Uygulama içinden tam şarkı oynatma özelliği Spotify Premium gerektirir.</p>
+          </div>
+
+          <button id="btnStartOAuth" class="auth-primary-button" type="button">
+            <span class="spotify-button-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M6.8 9.2c3.7-1 7.8-.7 10.7 1M7.5 12.3c3.1-.8 6.5-.5 9.1.8M8.2 15.1c2.5-.6 5.2-.4 7.4.7"/></svg></span>
+            Spotify ile güvenli şekilde bağlan
+            <svg class="auth-button-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
+          </button>
+          <p class="auth-privacy-line">Bağlantıyı istediğiniz zaman Hesap menüsünden kaldırabilirsiniz.</p>
+
+          <details class="auth-advanced-details">
+            <summary>Geçici erişim anahtarım var</summary>
+            <div class="auth-field">
+              <label for="accessTokenInput">Access Token <small>Yalnızca teknik kullanıcılar için</small></label>
+              <input type="password" id="accessTokenInput" placeholder="Bearer Access Token yapıştırın" autocomplete="off" spellcheck="false">
+            </div>
+          </details>
+        </div>
+
+        <div id="customModePanel" class="auth-mode-panel hidden" role="tabpanel" aria-labelledby="btnUseCustom">
+          <div class="auth-developer-warning">
+            <strong>Bu seçenek ileri düzey kullanıcılar içindir.</strong>
+            <p>Ne olduğunu bilmiyorsanız Hızlı bağlantı sekmesine dönün. Buraya asla Client Secret girmeyin.</p>
+          </div>
+
+          <ol class="auth-setup-list" aria-label="Kendi Spotify uygulamanızı bağlama adımları">
+            <li>
+              <span class="auth-step-number">1</span>
+              <div><strong>Spotify Developer Dashboard'u açın</strong><p>Spotify hesabınızla giriş yapıp yeni bir uygulama oluşturun.</p><a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">Developer Dashboard'u aç <span aria-hidden="true">↗</span></a></div>
+            </li>
+            <li>
+              <span class="auth-step-number">2</span>
+              <div class="auth-setup-content"><strong>Bu yönlendirme adresini uygulamanıza ekleyin</strong><p>Spotify Dashboard → Settings → Redirect URIs alanına aşağıdaki adresi eksiksiz yapıştırın.</p>
+                <div class="auth-copy-row">
+                  <code id="byocRedirectUriDisplay">https://tifyplus.com/</code>
+                  <button id="btnCopyRedirectUri" type="button" title="Yönlendirme adresini kopyala"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5H5v11h3"/></svg><span>Kopyala</span></button>
+                </div>
+              </div>
+            </li>
+            <li>
+              <span class="auth-step-number">3</span>
+              <div class="auth-setup-content"><strong>Client ID değerini yapıştırın</strong><p>Dashboard'daki uygulamanızın yalnızca herkese açık Client ID değerini kullanın.</p>
+                <div class="auth-field">
+                  <label for="clientIdInput">Spotify Client ID <small>Client Secret değil</small></label>
+                  <input type="text" id="clientIdInput" placeholder="Örnek: 1a2b3c4d5e6f..." autocomplete="off" spellcheck="false">
+                </div>
+              </div>
+            </li>
+          </ol>
+
+          <button id="btnSaveCustomAuth" class="auth-primary-button" type="button">
+            Client ID'yi kaydet ve Spotify'a bağlan
+            <svg class="auth-button-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
+          </button>
+          <p class="auth-privacy-line">Client ID, işlevsel depolamaya izin verdiyseniz yalnızca bu tarayıcıda saklanır.</p>
         </div>
       </div>
     </div>
