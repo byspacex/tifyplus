@@ -1,5 +1,5 @@
 /**
- * SpotifyPulse - 100% Real Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
+ * Tify Plus Pulse - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fallback: If /me/playlists returned 0, try /users/{userId}/playlists
     if (allPlaylists.length === 0 && !userId && state.userName && state.userName !== "Spotify Kullanıcısı") {
-      console.log(`[Spotify Pulse] /me/playlists returned 0, trying /users/${state.userName}/playlists...`);
+      console.log(`[Tify Plus Pulse] /me/playlists returned 0, trying /users/${state.userName}/playlists...`);
       return await fetchSpotifyPlaylists(token, state.userName);
     }
 
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save library to localStorage cache
       saveLibraryCache(parsedPlaylists);
 
-      console.log(`[Spotify Pulse Sync] ${parsedPlaylists.length} playlist yüklendi. API: 2 çağrı (profil + liste). Tracklar tıklanınca lazy-load.`);
+      console.log(`[Tify Plus Pulse Sync] ${parsedPlaylists.length} playlist yüklendi. API: 2 çağrı (profil + liste). Tracklar tıklanınca lazy-load.`);
 
       showLoader(true, `Tamamlandı! ${parsedPlaylists.length} Çalma Listesi Yüklendi.`, 100);
 
@@ -1462,40 +1462,59 @@ document.addEventListener('DOMContentLoaded', () => {
     pairs.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
     const top4 = pairs.slice(0, 4);
 
-    recsGrid.innerHTML = top4.map(p => `
-      <div class="dual-deck-card spatial-card" role="button" tabindex="0" data-action="open-match" data-playlist-a="${p.plA.id}" data-playlist-b="${p.plB.id}">
+    recsGrid.innerHTML = top4.map((p, index) => `
+      <article class="dual-deck-card spatial-card ${p.score === null ? 'is-pending' : 'has-signal'}" role="button" tabindex="0" data-action="open-match" data-playlist-a="${p.plA.id}" data-playlist-b="${p.plB.id}" aria-label="${escapeMarkup(p.plA.name)} ve ${escapeMarkup(p.plB.name)} eşleşmesini aç">
+        <span class="fusion-index" aria-hidden="true">0${index + 1}</span>
         <div class="dual-deck-visual-row">
-          <div class="deck-cover-item">
-            <img src="${escapeMarkup(p.plA.cover)}" alt="${escapeMarkup(p.plA.name)}" class="deck-thumb">
-            <div style="min-width:0;">
-              <span class="deck-pl-name">${escapeMarkup(p.plA.name)}</span>
-              <p style="font-size:10px; color:var(--t-dim); font-family:var(--f-mono);">KANAL A</p>
+          <div class="deck-channel deck-channel-a">
+            <div class="deck-cover-stage">
+              <span class="deck-orbit" aria-hidden="true"></span>
+              <img src="${escapeMarkup(p.plA.cover)}" alt="${escapeMarkup(p.plA.name)}" class="deck-thumb">
+              <span class="deck-channel-code" aria-hidden="true">A</span>
             </div>
-          </div>
-          
-          <div class="deck-vs-meter">
-            <span class="deck-score-badge ${p.score === null ? 'is-pending' : ''}">${p.score === null ? '—' : `⚡ %${p.score}`}</span>
-            <span class="deck-confidence">${p.score === null ? 'VERİ YETERSİZ' : `%${p.confidence} VERİ GÜVENİ`}</span>
+            <div class="deck-copy">
+              <small>KANAL A</small>
+              <span class="deck-pl-name">${escapeMarkup(p.plA.name)}</span>
+              <span class="deck-track-count">${p.a.declaredCount || p.a.tracks.length} kayıt</span>
+            </div>
           </div>
 
-          <div class="deck-cover-item" style="justify-content: flex-end; text-align: right;">
-            <div style="min-width:0;">
+          <div class="fusion-core" aria-hidden="true">
+            <svg class="fusion-core-svg" viewBox="0 0 120 72" role="presentation">
+              <defs><linearGradient id="fusionSignal${index}" x1="0" x2="1"><stop stop-color="#3cf5ff"/><stop offset=".52" stop-color="#a8ff26"/><stop offset="1" stop-color="#3cf5ff"/></linearGradient></defs>
+              <path class="fusion-rail" d="M5 36h24l9-18 16 38 13-40 12 25h36"/>
+              <path class="fusion-trace" d="M5 36h24l9-18 16 38 13-40 12 25h36" stroke="url(#fusionSignal${index})"/>
+              <circle class="fusion-node node-a" cx="5" cy="36" r="4"/><circle class="fusion-node node-b" cx="115" cy="41" r="4"/>
+            </svg>
+            <strong>${p.score === null ? '—' : `%${p.score}`}</strong>
+            <span>${p.score === null ? 'SİNYAL BEKLİYOR' : `%${p.confidence} GÜVEN`}</span>
+          </div>
+
+          <div class="deck-channel deck-channel-b">
+            <div class="deck-copy">
+              <small>KANAL B</small>
               <span class="deck-pl-name">${escapeMarkup(p.plB.name)}</span>
-              <p style="font-size:10px; color:var(--t-dim); font-family:var(--f-mono);">KANAL B</p>
+              <span class="deck-track-count">${p.b.declaredCount || p.b.tracks.length} kayıt</span>
             </div>
-            <img src="${escapeMarkup(p.plB.cover)}" alt="${escapeMarkup(p.plB.name)}" class="deck-thumb">
+            <div class="deck-cover-stage">
+              <span class="deck-orbit" aria-hidden="true"></span>
+              <img src="${escapeMarkup(p.plB.cover)}" alt="${escapeMarkup(p.plB.name)}" class="deck-thumb">
+              <span class="deck-channel-code" aria-hidden="true">B</span>
+            </div>
           </div>
         </div>
 
         <div class="dual-deck-footer">
-          <span style="display:inline-flex; align-items:center; gap:4px;">
-            <i class="fa-solid fa-dna text-purple"></i> ${escapeMarkup(p.primaryGenre)}
+          <span class="fusion-meta">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3c5 3 5 15 10 18M17 3C12 6 12 18 7 21M8.5 7h7M8.5 17h7"/></svg>
+            ${escapeMarkup(p.primaryGenre)}
           </span>
-          <span style="color:var(--cyan); font-weight:700;">
-            ${p.score === null ? '<i class="fa-solid fa-microscope"></i> Veriyi hazırla' : (p.commonCount > 0 ? `⚠️ ${p.commonCount} ${t('common')}` : `◎ ${p.dimensions.length} ölçüm`)}
+          <span class="fusion-action">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v4m8 4h-4m-4 8v-4m-8-4h4"/><circle cx="12" cy="12" r="2"/></svg>
+            ${p.score === null ? 'Veriyi hazırla' : (p.commonCount > 0 ? `${p.commonCount} ${t('common')}` : `${p.dimensions.length} ölçüm`)}
           </span>
         </div>
-      </div>
+      </article>
     `).join('');
   }
 
@@ -2716,7 +2735,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute('href', csvContent);
-      downloadAnchor.setAttribute('download', `${plName}_SpotifyPulse.csv`);
+      downloadAnchor.setAttribute('download', `${plName}_TifyPlusPulse.csv`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -3337,7 +3356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (cassetteSubtitle && isLocked) cassetteSubtitle.textContent = 'Orijinal şarkılar için Spotify hesabını bağlayın';
     if (tapeTrackTitle && isLocked) tapeTrackTitle.textContent = 'Spotify ile dinle';
-    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY PULSE / HESAP BAĞLANTISI GEREKLİ';
+    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY PLUS PULSE / HESAP BAĞLANTISI GEREKLİ';
   }
 
   // --- PLAY TRACK (CALLED FROM ANYWHERE IN THE APP) ---
@@ -3488,7 +3507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         spotifyPlayer = new Spotify.Player({
-          name: 'Tify Pulse Web Player',
+          name: 'Tify Plus Pulse Web Player',
           getOAuthToken: callback => {
             getValidSpotifyAccessToken()
               .then(token => callback(token || ''))
@@ -3601,7 +3620,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Update Hero Cassette Deck
     if (tapeTrackTitle) tapeTrackTitle.textContent = track.title;
-    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY PULSE / ${track.artist.toUpperCase()}`;
+    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY PLUS PULSE / ${track.artist.toUpperCase()}`;
     if (cassetteSubtitle) cassetteSubtitle.textContent = `${track.artist} • ${currentPlaylistContextName}`;
     if (tapeCounter) tapeCounter.textContent = "00:00";
     if (cassetteProgressFill) cassetteProgressFill.style.width = "0%";
@@ -3979,7 +3998,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isPrivate: isPrivate,
             url: 'https://open.spotify.com',
             cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
-            description: desc || 'SpotifyPulse üzerinde oluşturulan çalma listesi.',
+            description: desc || 'Tify Plus Pulse üzerinde oluşturulan çalma listesi.',
             trackTotal: 0,
             tracks: [],
             tracksLoaded: true
@@ -4160,7 +4179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const rawValue = localStorage.getItem(key);
       try { result[key] = JSON.parse(rawValue); } catch (_) { result[key] = rawValue; }
     }
-    return { exportedAt: new Date().toISOString(), product: 'Tify Pulse', publisher: 'Locked Co Labs', developer: 'SOOND', data: result };
+    return { exportedAt: new Date().toISOString(), product: 'Tify Plus Pulse', publisher: 'Locked Co Labs', developer: 'SOOND', data: result };
   }
 
   function exportLocalPrivacyData() {
@@ -4169,7 +4188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `tify-pulse-verilerim-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `tify-plus-pulse-verilerim-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -4178,7 +4197,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function deleteAllLocalPrivacyData() {
-    const confirmed = window.confirm('Spotify oturumu, yerel playlist önbelleği, yedekler ve tüm Tify Pulse tercihleri bu tarayıcıdan silinecek. Devam edilsin mi?');
+    const confirmed = window.confirm('Spotify oturumu, yerel playlist önbelleği, yedekler ve tüm Tify Plus Pulse tercihleri bu tarayıcıdan silinecek. Devam edilsin mi?');
     if (!confirmed) return;
     const keysToDelete = [];
     for (let index = 0; index < localStorage.length; index++) {

@@ -20,7 +20,7 @@ function New-RoundedRectanglePath {
   return $path
 }
 
-function Draw-TifyPulseMark {
+function Draw-TifyPlusPulseMark {
   param(
     [System.Drawing.Graphics]$Graphics,
     [float]$X,
@@ -87,14 +87,14 @@ function Save-Mark {
   $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
   $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $graphics.Clear([System.Drawing.Color]::Transparent)
-  Draw-TifyPulseMark -Graphics $graphics -X 0 -Y 0 -Size $Size
+  Draw-TifyPlusPulseMark -Graphics $graphics -X 0 -Y 0 -Size $Size
   $bitmap.Save((Join-Path $brandDirectory $FileName), [System.Drawing.Imaging.ImageFormat]::Png)
   $graphics.Dispose()
   $bitmap.Dispose()
 }
 
-Save-Mark -Size 192 -FileName 'tify-pulse-mark-192.png'
-Save-Mark -Size 512 -FileName 'tify-pulse-mark-512.png'
+Save-Mark -Size 192 -FileName 'tify-plus-mark-192.png'
+Save-Mark -Size 512 -FileName 'tify-plus-mark-512.png'
 
 $social = [System.Drawing.Bitmap]::new(1200, 630)
 $social.SetResolution(96, 96)
@@ -116,7 +116,7 @@ $glowBrush.Color = [System.Drawing.Color]::FromArgb(18, 60, 245, 255)
 $g.FillEllipse($glowBrush, 930, 330, 520, 520)
 $glowBrush.Dispose()
 
-Draw-TifyPulseMark -Graphics $g -X 58 -Y 91 -Size 260
+Draw-TifyPlusPulseMark -Graphics $g -X 58 -Y 91 -Size 260
 
 $lime = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(168, 255, 38))
 $white = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(244, 248, 241))
@@ -129,8 +129,8 @@ $smallFont = [System.Drawing.Font]::new('Segoe UI', 17, [System.Drawing.FontStyl
 
 $g.DrawString('TIFY', $titleFont, $white, 350, 115)
 $tifyWidth = $g.MeasureString('TIFY', $titleFont).Width
-$g.DrawString('PULSE', $titleFont, $lime, 350 + $tifyWidth - 4, 115)
-$g.DrawString('Spotify çalma listeleri için akıllı müzik stüdyosu', $subtitleFont, $white, 355, 225)
+$g.DrawString('PLUS', $titleFont, $lime, 350 + $tifyWidth - 4, 115)
+$g.DrawString('PULSE MUSIC STUDIO', $subtitleFont, $cyan, 355, 225)
 $g.DrawString('Analiz et  •  Eşleştir  •  Düzenle  •  Spotify''dan oynat', $smallFont, $muted, 357, 286)
 
 $chipBackground = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(22, 168, 255, 38))
@@ -148,7 +148,7 @@ $g.DrawString('Bağımsız ürün • Spotify''ın resmi ürünü değildir', $s
 
 $lime.Dispose(); $white.Dispose(); $muted.Dispose(); $cyan.Dispose()
 $titleFont.Dispose(); $subtitleFont.Dispose(); $labelFont.Dispose(); $smallFont.Dispose()
-$social.Save((Join-Path $brandDirectory 'tify-pulse-social-1200x630.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$social.Save((Join-Path $brandDirectory 'tify-plus-social-1200x630.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose()
 $social.Dispose()
 

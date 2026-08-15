@@ -1,6 +1,6 @@
-# Tify Plus
+# Tify Plus Pulse
 
-Tify Plus is a browser-based Spotify library and playlist workspace built as a static Vite application.
+Tify Plus is the main brand at tifyplus.com; Pulse is its browser-based Spotify library, playlist analysis and music studio experience built as a static Vite application.
 
 ## Local development
 
