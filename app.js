@@ -4236,41 +4236,6 @@ document.addEventListener('DOMContentLoaded', () => {
   ['btnPrivacyExport', 'btnFooterExportData'].forEach(id => document.getElementById(id)?.addEventListener('click', exportLocalPrivacyData));
   ['btnPrivacyDelete', 'btnFooterDeleteData'].forEach(id => document.getElementById(id)?.addEventListener('click', deleteAllLocalPrivacyData));
 
-  // --- MOBILE APP DOCK ---
-  const btnMobilePlayer = document.getElementById('btnMobilePlayer');
-  const btnMobilePrivacy = document.getElementById('btnMobilePrivacy');
-  const btnMobileAccount = document.getElementById('btnMobileAccount');
-
-  btnMobilePlayer?.addEventListener('click', () => {
-    const player = document.getElementById('floatingWebPlayer');
-    if (!player || player.classList.contains('hidden')) {
-      document.getElementById('catalogSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showToast('Playerı açmak için bir playlist kapağındaki oynat düğmesine dokunun.', 'warning');
-      return;
-    }
-    document.getElementById('btnPlayerPlayToggle')?.focus();
-  });
-
-  btnMobilePrivacy?.addEventListener('click', () => {
-    privacyNotice?.classList.add('hidden');
-    openPrivacyCenter('overview');
-  });
-
-  btnMobileAccount?.addEventListener('click', () => {
-    if (state.isLoggedIn) {
-      document.getElementById('btnToggleProfileMenu')?.click();
-    } else {
-      document.getElementById('btnConnectSpotify')?.click();
-    }
-  });
-
-  document.querySelectorAll('.mobile-dock-item[href]').forEach(link => {
-    link.addEventListener('click', () => {
-      document.querySelectorAll('.mobile-dock-item').forEach(item => item.classList.remove('is-active'));
-      link.classList.add('is-active');
-    });
-  });
-
   // CSP-safe delegated actions for dynamically rendered cards and controls.
   function runDelegatedAction(actionElement) {
     const { action, playlistId, playlistA, playlistB, trackId, snapshotId, page } = actionElement.dataset;
