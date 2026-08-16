@@ -157,6 +157,8 @@ assert.match(selectedSource, /^spotify-remote\|Spotify Connect • Telefon$/, 'P
 assert.match(source, /name: 'Tify Plus Pulse Web Player'/, 'Yerel Spotify cihazı Tify Plus Pulse adıyla oluşturulmalı');
 assert.match(source, /return playbackBackend === 'spotify-remote'[\s\S]*activeSpotifyDeviceId !== spotifyDeviceId;/, 'Spotify Connect yalnızca kullanıcı uzaktaki cihazı seçtiğinde öncelikli olmalı');
 assert.doesNotMatch(source, /spotifyStarted = await playThroughSpotify\(track, requestId, signal\);\s*if \(!spotifyStarted[\s\S]{0,180}playThroughSpotifyConnect/, 'Yerel player hatası bilgisayardaki Spotify cihazına otomatik aktarılmamalı');
+assert.match(source, /window\.addEventListener\('pagehide', disconnectLocalSpotifyPlayer\)/, 'Sayfa kapanırken eski Spotify web cihazı ayrılmalı');
+assert.match(source, /if \(playbackBackend !== 'spotify-remote'\) setPlayerSource\('spotify', 'Bu cihazda çalıyor'\)/, 'Uzak cihaz yerel player gibi etiketlenmemeli');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');

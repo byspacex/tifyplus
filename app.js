@@ -3321,6 +3321,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeSpotifyDeviceName = '';
   let remoteVolumeTimer = null;
 
+  function disconnectLocalSpotifyPlayer() {
+    clearTimeout(spotifyWarmupTimer);
+    if (spotifyPlayer) {
+      try { spotifyPlayer.disconnect(); } catch (error) { console.warn('[Spotify Disconnect]', error); }
+    }
+    spotifyPlayer = null;
+    spotifyDeviceId = null;
+    spotifyPlayerInitPromise = null;
+  }
+
+  window.addEventListener('pagehide', disconnectLocalSpotifyPlayer);
+
   function formatTapeTime(sec) {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
@@ -3964,7 +3976,7 @@ document.addEventListener('DOMContentLoaded', () => {
     floatingWebPlayer?.classList.remove('is-loading');
     btnPlayerPlayToggle?.removeAttribute('aria-busy');
     if (spotifyStarted) {
-      setPlayerSource('spotify', 'Bu cihazda çalıyor');
+      if (playbackBackend !== 'spotify-remote') setPlayerSource('spotify', 'Bu cihazda çalıyor');
       if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-pause';
       return;
     }
