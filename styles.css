@@ -2587,27 +2587,52 @@ body.modal-open { overflow: hidden; }
 .player-right {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 420px;
+  gap: 4px;
+  min-width: 440px;
   justify-content: flex-end;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, rgba(3,11,15,.16), rgba(255,255,255,.028) 48%, rgba(3,10,14,.42));
+  box-shadow: inset 0 1px rgba(255,255,255,.035), inset 0 -1px rgba(0,0,0,.38);
 }
-.player-signal-module { width: 132px; padding: 8px 11px; border-radius: 16px; background:linear-gradient(135deg,rgba(186,255,43,.055),rgba(45,245,255,.018)); border:1px solid rgba(186,255,43,.09); box-shadow:inset 0 0 22px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.2); }
+.player-signal-module {
+  position: relative; width: 148px; height: 48px; padding: 7px 14px 7px 0; overflow: hidden;
+  background: transparent; border: 0; border-radius: 0;
+}
+.player-signal-module::after {
+  content:""; position:absolute; right:0; top:8px; bottom:8px; width:1px;
+  background:linear-gradient(transparent,rgba(186,255,43,.22),transparent);
+}
 .signal-module-topline { display: flex; justify-content: space-between; align-items: center; gap: 7px; }
-.signal-live-label { display: inline-flex; align-items: center; gap: 4px; color: #81909e; font: 800 7px var(--f-mono); letter-spacing: .08em; }
+.signal-live-label { display: inline-flex; align-items: center; gap: 4px; color: #81909e; font: 800 6.5px var(--f-mono); letter-spacing: .12em; }
 .signal-live-label i { width: 5px; height: 5px; border-radius: 50%; background: #6d7782; }
 .is-playing .signal-live-label { color: #baff2b; }
 .is-playing .signal-live-label i { background: #baff2b; box-shadow: 0 0 7px #baff2b; animation: signalDot var(--signal-cycle) ease-in-out infinite; }
 @keyframes signalDot { 50% { opacity: .35; transform: scale(.65); } }
-.player-signal-module .player-source-badge { padding: 0; border: 0; background: transparent; font-size: 8px; }
-.player-signal-module .audio-visualizer-bars { height: 22px; margin-top: 5px; justify-content: space-between; }
-.player-signal-module .spectrum-bar { width: 3px; background: linear-gradient(#baff2b, hsl(var(--player-hue),100%,55%)); }
+.player-signal-module .player-source-badge { max-width:94px; padding:0; border:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:transparent; color:#d8e6df; font-size:7.5px; }
+.player-signal-module .audio-visualizer-bars { height:21px; margin-top:5px; justify-content:flex-start; gap:5px; }
+.player-signal-module .spectrum-bar { width:2px; border-radius:99px; background:linear-gradient(#caff50, hsl(var(--player-hue),100%,55%)); box-shadow:0 0 6px rgba(186,255,43,.28); }
 .player-device-control { position: relative; }
-.player-utility-btn, .player-icon-btn { height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,.075); background: rgba(255,255,255,.035); color: #b8c2cc; cursor: pointer; transition: border-color .25s, color .25s, background .25s; }
-.player-utility-btn { display: inline-flex; align-items: center; gap: 7px; padding: 0 11px; font: 700 10px var(--f-mono); }
-.player-icon-btn { width: 34px; display: grid; place-items: center; }
-.player-utility-btn:hover, .player-icon-btn:hover, .player-utility-btn[aria-expanded="true"] { color: #fff; border-color: hsla(var(--player-hue),100%,60%,.4); background: hsla(var(--player-hue),100%,55%,.09); }
-.player-volume-control { display: flex; align-items: center; gap: 5px; padding: 0 7px 0 0; border-radius: 10px; background: rgba(255,255,255,.025); }
-.player-volume-slider { width: 72px; height: 3px; accent-color: var(--lime); cursor: pointer; }
+.player-utility-btn, .player-icon-btn {
+  height:38px; border-radius:999px; border:0; background:transparent; color:#8f9ca3; cursor:pointer;
+  transition:color .24s,background .24s,transform .24s,box-shadow .24s;
+}
+.player-utility-btn { display:inline-flex; align-items:center; gap:7px; padding:0 12px; font:700 9px var(--f-mono); }
+.player-icon-btn { width:38px; display:grid; place-items:center; }
+.player-utility-btn:hover, .player-icon-btn:hover, .player-utility-btn[aria-expanded="true"] { color:#f6fff7; background:rgba(255,255,255,.045); transform:translateY(-1px); }
+.player-utility-btn[aria-expanded="true"] { color:#baff2b; box-shadow:inset 0 0 0 1px rgba(186,255,43,.12); }
+.player-volume-control { position:relative; display:flex; align-items:center; gap:3px; padding:0 9px 0 0; border-radius:999px; background:transparent; }
+.player-volume-control::before { content:""; position:absolute; left:0; top:9px; bottom:9px; width:1px; background:linear-gradient(transparent,rgba(255,255,255,.1),transparent); }
+.player-volume-slider { width:76px; height:18px; appearance:none; -webkit-appearance:none; background:transparent; cursor:pointer; }
+.player-volume-slider::-webkit-slider-runnable-track { height:2px; border-radius:99px; background:linear-gradient(90deg,#baff2b 0 85%,rgba(255,255,255,.1) 85%); }
+.player-volume-slider::-webkit-slider-thumb { appearance:none; -webkit-appearance:none; width:10px; height:10px; margin-top:-4px; border:0; border-radius:50%; background:#dfff9a; box-shadow:0 0 0 3px rgba(186,255,43,.08),0 0 10px rgba(186,255,43,.35); }
+.player-volume-slider::-moz-range-track { height:2px; border:0; border-radius:99px; background:rgba(255,255,255,.1); }
+.player-volume-slider::-moz-range-progress { height:2px; background:#baff2b; }
+.player-volume-slider::-moz-range-thumb { width:10px; height:10px; border:0; border-radius:50%; background:#dfff9a; box-shadow:0 0 10px rgba(186,255,43,.35); }
+#playerOpenSpotifyBtn { width:38px; min-width:38px; height:38px; padding:0; margin-left:2px; display:grid; place-items:center; border:0; border-radius:50%; background:rgba(29,185,84,.075); color:#7dffab; box-shadow:none; }
+#playerOpenSpotifyBtn:hover { background:rgba(29,185,84,.16); color:#b5ffc8; transform:translateY(-1px) scale(1.04); }
+#btnCloseWebPlayer { width:38px; min-width:38px; height:38px; margin-left:1px; border-radius:50%; color:#63727a; background:transparent; }
+#btnCloseWebPlayer:hover { color:#fff; background:rgba(255,255,255,.05); transform:rotate(90deg); }
 
 .spotify-embed-panel {
   position: absolute;

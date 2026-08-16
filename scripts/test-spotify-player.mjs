@@ -187,6 +187,8 @@ assert.match(html, /class="player-ambient"/, 'Premium oynatıcı yüzeyinde bağ
 assert.match(html, /class="player-now-label"/, 'Çalan parça alanında canlı yayın durum etiketi bulunmalı');
 assert.match(styles, /\.energy-head\s*\{[\s\S]*width:\s*14px;[\s\S]*height:\s*14px;[\s\S]*radial-gradient/, 'İlerleme başı dik çizgi yerine plazma çekirdeği olmalı');
 assert.doesNotMatch(styles, /\.energy-head\s*\{[\s\S]{0,180}width:\s*4px;[\s\S]{0,80}height:\s*22px;/, 'Eski beyaz dik ilerleme çizgisi geri gelmemeli');
+assert.match(styles, /\.player-right\s*\{[\s\S]*border-radius:\s*999px;[\s\S]*linear-gradient/, 'Sağ oynatıcı kontrolleri ayrı kartlar yerine bütünleşik kontrol rayı kullanmalı');
+assert.match(styles, /#playerOpenSpotifyBtn[\s\S]*border-radius:\s*50%/, 'Spotify aksiyonu kontrol rayında özel dairesel düğme olmalı');
 assert.match(styles, /realisticBoltBurst/, 'Gerçekçi yıldırım düzensiz çoklu çakma animasyonu kullanmalı');
 assert.match(styles, /energy-bolt-branch/, 'Yıldırım efektinde bağımsız yan dallar bulunmalı');
 assert.match(html, /animate attributeName="d"/, 'Zikzak yıldırım hattının geometrisi hareket halinde değişmeli');
