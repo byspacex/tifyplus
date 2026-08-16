@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const headers = fs.readFileSync(new URL('../public/_headers', import.meta.url), 'utf8');
 
 function extractFunction(name) {
   const asyncStart = source.indexOf(`async function ${name}(`);
@@ -131,6 +133,7 @@ const connectContext = {
   getValidSpotifyAccessToken: async () => 'test-token',
   isCurrentPlaybackRequest: () => true,
   setUnifiedPlaybackState: playing => assert.equal(playing, true),
+  hideSpotifyEmbed: () => {},
   setPlayerSource: (mode, label) => { selectedSource = `${mode}|${label}`; },
   fetch: async url => {
     if (String(url).endsWith('/devices')) {
@@ -158,7 +161,14 @@ assert.match(source, /name: 'Tify Plus Pulse Web Player'/, 'Yerel Spotify cihaz�
 assert.match(source, /return playbackBackend === 'spotify-remote'[\s\S]*activeSpotifyDeviceId !== spotifyDeviceId;/, 'Spotify Connect yalnızca kullanıcı uzaktaki cihazı seçtiğinde öncelikli olmalı');
 assert.doesNotMatch(source, /spotifyStarted = await playThroughSpotify\(track, requestId, signal\);\s*if \(!spotifyStarted[\s\S]{0,180}playThroughSpotifyConnect/, 'Yerel player hatası bilgisayardaki Spotify cihazına otomatik aktarılmamalı');
 assert.match(source, /window\.addEventListener\('pagehide', disconnectLocalSpotifyPlayer\)/, 'Sayfa kapanırken eski Spotify web cihazı ayrılmalı');
-assert.match(source, /if \(playbackBackend !== 'spotify-remote'\) setPlayerSource\('spotify', 'Bu cihazda çalıyor'\)/, 'Uzak cihaz yerel player gibi etiketlenmemeli');
+assert.match(source, /if \(playbackBackend === 'spotify'\) setPlayerSource\('spotify', 'Bu cihazda çalıyor'\)/, 'Uzak veya gömülü oynatıcı yerel SDK cihazı gibi etiketlenmemeli');
+assert.match(source, /spotifyStarted = await playThroughSpotifyEmbed\(track, requestId, signal\)/, 'Yerel SDK hazır değilse tarayıcı içi Spotify oynatıcısı kullanılmalı');
+assert.match(source, /playbackBackend === 'spotify-embed'[\s\S]*spotifyEmbedController\.togglePlay\(\)/, 'Özel oynat düğmesi gömülü Spotify oynatıcısını kontrol etmeli');
+assert.match(source, /playbackBackend === 'spotify-embed'[\s\S]*spotifyEmbedController\.seek\(/, 'İleri sarma gömülü Spotify oynatıcısına iletilmeli');
+assert.match(html, /open\.spotify\.com\/embed\/iframe-api\/v1/, 'Resmi Spotify iFrame API sayfaya yüklenmeli');
+assert.match(html, /id="spotifyEmbedPanel"/, 'Gömülü oynatıcı paneli bulunmalı');
+assert.match(headers, /script-src[^;]*https:\/\/open\.spotify\.com/, 'Cloudflare CSP Spotify iFrame API betiğine izin vermeli');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');
+console.log('SPOTIFY_BROWSER_EMBED_FALLBACK_TEST=PASS');

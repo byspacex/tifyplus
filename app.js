@@ -3271,6 +3271,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let spotifyPlayerFailureReason = null;
   let spotifyPlayerFailureMessage = '';
   let spotifySdkUnavailableUntil = 0;
+  let spotifyEmbedController = null;
+  let spotifyEmbedControllerPromise = null;
+  let spotifyEmbedCurrentUri = '';
+  let spotifyEmbedReady = false;
   let spotifyWarmupTimer = null;
   let playbackRequestSerial = 0;
   let playbackAbortController = null;
@@ -3316,6 +3320,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerDevicesList = document.getElementById('playerDevicesList');
   const playerVolumeSlider = document.getElementById('playerVolumeSlider');
   const btnPlayerMute = document.getElementById('btnPlayerMute');
+  const spotifyEmbedPanel = document.getElementById('spotifyEmbedPanel');
+  const spotifyEmbedMount = document.getElementById('spotifyEmbedMount');
   let lastPlayerVolume = 0.85;
   let activeSpotifyDeviceId = null;
   let activeSpotifyDeviceName = '';
@@ -3329,6 +3335,16 @@ document.addEventListener('DOMContentLoaded', () => {
     spotifyPlayer = null;
     spotifyDeviceId = null;
     spotifyPlayerInitPromise = null;
+  }
+
+  function pauseSpotifyEmbed() {
+    try { spotifyEmbedController?.pause(); } catch (error) { console.warn('[Spotify Embed Pause]', error); }
+  }
+
+  function hideSpotifyEmbed(pause = true) {
+    if (pause) pauseSpotifyEmbed();
+    spotifyEmbedPanel?.classList.add('hidden');
+    floatingWebPlayer?.classList.remove('embed-controller-active');
   }
 
   window.addEventListener('pagehide', disconnectLocalSpotifyPlayer);
@@ -3421,6 +3437,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cassetteAudioPlayer.removeAttribute('src');
     }
     if (spotifyPlayer) spotifyPlayer.pause().catch(() => {});
+    pauseSpotifyEmbed();
     setUnifiedPlaybackState(false);
     setPlayerSource('none', 'Spotify girişi gerekli');
     if (floatingWebPlayer) floatingWebPlayer.classList.add('hidden');
@@ -3598,7 +3615,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.__tifySpotifySdkReadyPromise) {
       spotifySdkPromise = Promise.race([
         window.__tifySpotifySdkReadyPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 20000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 6000))
       ]).catch(error => {
         spotifySdkPromise = null;
         throw error;
@@ -3621,12 +3638,106 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(script);
       }
       script.addEventListener('error', () => reject(new Error('Spotify Web Playback SDK yüklenemedi.')), { once: true });
-      setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 20000);
+      setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 6000);
     }).catch(error => {
       spotifySdkPromise = null;
       throw error;
     });
     return spotifySdkPromise;
+  }
+
+  function loadSpotifyIframeApi() {
+    if (window.__tifySpotifyIframeApi) return Promise.resolve(window.__tifySpotifyIframeApi);
+    if (!window.__tifySpotifyIframeApiPromise) {
+      return Promise.reject(new Error('Spotify tarayıcı oynatıcısı yüklenemedi.'));
+    }
+    return Promise.race([
+      window.__tifySpotifyIframeApiPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Spotify tarayıcı oynatıcısı zaman aşımına uğradı.')), 8000))
+    ]);
+  }
+
+  function updateSpotifyEmbedPlayback(event) {
+    const embedState = event?.data || {};
+    const durationMs = Number(embedState.duration || 0);
+    const positionMs = Number(embedState.position || 0);
+    if (durationMs > 0) {
+      cassetteDurationSec = Math.max(1, Math.floor(durationMs / 1000));
+      cassetteCurrentSec = Math.max(0, Math.floor(positionMs / 1000));
+      if (playerDuration) playerDuration.textContent = formatTapeTime(cassetteDurationSec);
+      if (playerCurrentTime) playerCurrentTime.textContent = formatTapeTime(cassetteCurrentSec);
+      if (tapeCounter) tapeCounter.textContent = formatTapeTime(cassetteCurrentSec);
+      const progress = Math.min(100, (positionMs / durationMs) * 100);
+      setPlayerProgress(progress);
+      if (cassetteProgressFill) cassetteProgressFill.style.width = `${progress}%`;
+    }
+    const playing = !embedState.isPaused && !embedState.isBuffering;
+    if (playbackBackend === 'spotify-embed') setUnifiedPlaybackState(playing);
+  }
+
+  async function initializeSpotifyEmbedController(track) {
+    const uri = getSpotifyTrackUri(track);
+    if (!uri || !spotifyEmbedMount) return false;
+    if (spotifyEmbedController) return true;
+    if (spotifyEmbedControllerPromise) return spotifyEmbedControllerPromise;
+
+    spotifyEmbedControllerPromise = (async () => {
+      const IFrameAPI = await loadSpotifyIframeApi();
+      return await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Spotify tarayıcı oynatıcısı hazırlanamadı.')), 8000);
+        IFrameAPI.createController(spotifyEmbedMount, {
+          uri,
+          width: '100%',
+          height: 80
+        }, controller => {
+          clearTimeout(timer);
+          spotifyEmbedController = controller;
+          spotifyEmbedCurrentUri = uri;
+          controller.addListener('ready', () => { spotifyEmbedReady = true; });
+          controller.addListener('playback_started', () => {
+            if (playbackBackend !== 'spotify-embed') return;
+            spotifyPlayerFailureReason = null;
+            spotifyPlayerFailureMessage = '';
+            setPlayerSource('spotify-embed', 'Tify Plus tarayıcı oynatıcısı');
+            setUnifiedPlaybackState(true);
+          });
+          controller.addListener('playback_update', updateSpotifyEmbedPlayback);
+          resolve(true);
+        });
+      });
+    })().catch(error => {
+      spotifyEmbedController = null;
+      spotifyEmbedControllerPromise = null;
+      spotifyEmbedReady = false;
+      throw error;
+    });
+    return spotifyEmbedControllerPromise;
+  }
+
+  async function playThroughSpotifyEmbed(track, requestId, signal) {
+    const uri = getSpotifyTrackUri(track);
+    if (!uri || !isCurrentPlaybackRequest(requestId, signal)) return false;
+    try {
+      await initializeSpotifyEmbedController(track);
+      if (!spotifyEmbedController || !isCurrentPlaybackRequest(requestId, signal)) return false;
+      if (spotifyEmbedCurrentUri !== uri) {
+        spotifyEmbedController.loadEntity(uri);
+        spotifyEmbedCurrentUri = uri;
+      }
+      spotifyEmbedPanel?.classList.remove('hidden');
+      floatingWebPlayer?.classList.add('embed-controller-active');
+      playbackBackend = 'spotify-embed';
+      activeSpotifyDeviceId = null;
+      activeSpotifyDeviceName = '';
+      setPlayerSource('spotify-embed', 'Tify Plus tarayıcı oynatıcısı');
+      spotifyEmbedController.play();
+      return true;
+    } catch (error) {
+      console.warn('[Spotify Embed Playback]', error);
+      spotifyPlayerFailureReason = 'embed';
+      spotifyPlayerFailureMessage = String(error?.message || error || '');
+      return false;
+    }
   }
 
   function startSpotifyPlayerConnection(activateFromUserGesture = false) {
@@ -3670,7 +3781,7 @@ document.addEventListener('DOMContentLoaded', () => {
           spotifyDeviceId = device_id;
           spotifyPlayerFailureReason = null;
           spotifyPlayerFailureMessage = '';
-          if (playbackBackend !== 'spotify-remote') {
+          if (!['spotify-remote', 'spotify-embed'].includes(playbackBackend)) {
             activeSpotifyDeviceId = device_id;
             activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
             setPlayerSource('spotify', 'Spotify Premium');
@@ -3703,7 +3814,7 @@ document.addEventListener('DOMContentLoaded', () => {
           spotifyPlayerFailureReason = reason;
           spotifyPlayerFailureMessage = String(message || '');
           if (['initialization', 'connection', 'timeout', 'sdk'].includes(reason)) {
-            spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
+            spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
           }
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
           finish(false);
@@ -3737,9 +3848,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           spotifyPlayerFailureReason ||= 'timeout';
           spotifyPlayerFailureMessage ||= 'Spotify oynatıcı bağlantısı zaman aşımına uğradı.';
-          spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
+          spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
           finish(false);
-        }, 20000);
+        }, 6000);
     });
 
     spotifyPlayerInitPromise = connectionPromise.finally(() => {
@@ -3769,7 +3880,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('[Spotify SDK]', error);
       spotifyPlayerFailureReason = 'sdk';
       spotifyPlayerFailureMessage = String(error?.message || error || '');
-      spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
+      spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
       return false;
     }
   }
@@ -3783,7 +3894,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return false;
     }
     prepareSpotifyPlayerFromUserGesture();
-    const ready = await initializeSpotifyPlayer(true, true);
+    const ready = await initializeSpotifyPlayer(false, true);
     if (!ready || !spotifyDeviceId || !isCurrentPlaybackRequest(requestId, signal)) return false;
 
     try {
@@ -3810,6 +3921,7 @@ document.addEventListener('DOMContentLoaded', () => {
       spotifyPlayerFailureReason = null;
       activeSpotifyDeviceId = spotifyDeviceId;
       activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
+      hideSpotifyEmbed();
       setPlayerSource('spotify', 'Spotify Premium');
       return true;
     } catch (error) {
@@ -3891,6 +4003,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeSpotifyDeviceName = target.name || 'Spotify cihazı';
       spotifyPlayerFailureReason = null;
       spotifyPlayerFailureMessage = '';
+      hideSpotifyEmbed();
       setPlayerSource('spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
       setUnifiedPlaybackState(true);
       return true;
@@ -3956,27 +4069,36 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPlayerPlayToggle?.setAttribute('aria-busy', 'true');
     if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-spinner fa-spin';
 
-    // 3. Prefer Spotify's official full-track Web Playback SDK.
+    // 3. Keep playback in this browser. A remote Spotify Connect device is
+    // only used after the user explicitly selects it from the device menu.
     if (cassetteAudioPlayer) {
       cassetteAudioPlayer.pause();
       cassetteAudioPlayer.removeAttribute('src');
     }
     setPlayerSource('none', 'Parça hazırlanıyor');
     let spotifyStarted = false;
-    if (prefersSpotifyConnectFirst()) {
+    if (playbackBackend === 'spotify-embed' && spotifyEmbedController) {
+      spotifyStarted = await playThroughSpotifyEmbed(track, requestId, signal);
+    } else if (prefersSpotifyConnectFirst()) {
       spotifyStarted = await playThroughSpotifyConnect(track, requestId, signal);
       if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
         spotifyStarted = await playThroughSpotify(track, requestId, signal);
       }
+      if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
+        spotifyStarted = await playThroughSpotifyEmbed(track, requestId, signal);
+      }
     } else {
       spotifyStarted = await playThroughSpotify(track, requestId, signal);
+      if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
+        spotifyStarted = await playThroughSpotifyEmbed(track, requestId, signal);
+      }
     }
     if (!isCurrentPlaybackRequest(requestId, signal)) return;
     isPlaybackStarting = false;
     floatingWebPlayer?.classList.remove('is-loading');
     btnPlayerPlayToggle?.removeAttribute('aria-busy');
     if (spotifyStarted) {
-      if (playbackBackend !== 'spotify-remote') setPlayerSource('spotify', 'Bu cihazda çalıyor');
+      if (playbackBackend === 'spotify') setPlayerSource('spotify', 'Bu cihazda çalıyor');
       if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-pause';
       return;
     }
@@ -4101,6 +4223,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
+    if (playbackBackend === 'spotify-embed' && spotifyEmbedController) {
+      try {
+        spotifyEmbedController.togglePlay();
+      } catch (error) {
+        console.warn('[Spotify Embed Toggle]', error);
+        showToast('Tarayıcı oynatıcısı komutu uygulayamadı.', 'warning');
+      }
+      return;
+    }
     if (playbackBackend === 'spotify-remote' && activeSpotifyDeviceId) {
       try {
         const token = await getValidSpotifyAccessToken();
@@ -4150,6 +4281,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (playbackBackend === 'spotify' && spotifyPlayer) {
         await spotifyPlayer.seek(positionMs);
+        return;
+      }
+      if (playbackBackend === 'spotify-embed' && spotifyEmbedController) {
+        spotifyEmbedController.seek(Math.max(0, Math.floor(positionMs / 1000)));
         return;
       }
       if (playbackBackend === 'spotify-remote' && activeSpotifyDeviceId) {
@@ -4231,6 +4366,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCloseWebPlayer) {
     btnCloseWebPlayer.addEventListener('click', () => {
       if (isCassettePlaying) toggleUnifiedPlayPause();
+      hideSpotifyEmbed();
       if (floatingWebPlayer) floatingWebPlayer.classList.add('hidden');
     });
   }
@@ -4303,6 +4439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error(`Spotify transfer HTTP ${response.status}`);
         activeSpotifyDeviceId = deviceButton.dataset.deviceId;
         activeSpotifyDeviceName = deviceButton.querySelector('strong')?.textContent || 'Spotify cihazı';
+        hideSpotifyEmbed();
         setPlayerSource(activeSpotifyDeviceId === spotifyDeviceId ? 'spotify' : 'spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
         playerDevicesPopover.classList.add('hidden');
         btnPlayerDevices.setAttribute('aria-expanded', 'false');

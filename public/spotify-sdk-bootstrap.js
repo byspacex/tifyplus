@@ -8,3 +8,10 @@ window.__tifySpotifySdkReadyPromise = new Promise((resolve) => {
     resolve();
   };
 });
+
+window.__tifySpotifyIframeApiPromise = new Promise((resolve) => {
+  window.onSpotifyIframeApiReady = (IFrameAPI) => {
+    window.__tifySpotifyIframeApi = IFrameAPI;
+    resolve(IFrameAPI);
+  };
+});

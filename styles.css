@@ -2524,6 +2524,19 @@ body.modal-open { overflow: hidden; }
 .player-volume-control { display: flex; align-items: center; gap: 5px; padding: 0 7px 0 0; border-radius: 10px; background: rgba(255,255,255,.025); }
 .player-volume-slider { width: 72px; height: 3px; accent-color: var(--lime); cursor: pointer; }
 
+.spotify-embed-panel {
+  position: absolute;
+  right: max(18px, 2.2vw);
+  bottom: calc(100% + 10px);
+  width: min(420px, calc(100vw - 24px));
+  height: 80px;
+  overflow: hidden;
+  border-radius: 13px;
+  background: #121212;
+  box-shadow: 0 18px 55px rgba(0,0,0,.72), 0 0 24px hsla(var(--player-hue),100%,55%,.12);
+}
+.spotify-embed-panel iframe { display: block; width: 100% !important; height: 80px !important; border: 0; }
+
 .player-devices-popover { position: absolute; right: 0; bottom: calc(100% + 18px); width: 290px; padding: 14px; border-radius: 16px; background: rgba(7,12,21,.98); border: 1px solid rgba(255,255,255,.09); box-shadow: 0 22px 70px rgba(0,0,0,.8), 0 0 28px hsla(var(--player-hue),100%,55%,.09); backdrop-filter: blur(28px); }
 .devices-popover-head { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 3px 11px; border-bottom: 1px solid rgba(255,255,255,.07); }
 .devices-popover-head strong { color: #fff; font-size: 12px; }
@@ -2918,6 +2931,7 @@ body.modal-open { overflow: hidden; }
   .modal-card button[id*="Close"] { width: 44px; min-width: 44px; height: 44px; }
 
   body:has(.floating-web-player:not(.hidden)) { padding-bottom: calc(198px + env(safe-area-inset-bottom)); }
+  body:has(.floating-web-player.embed-controller-active:not(.hidden)) { padding-bottom: calc(290px + env(safe-area-inset-bottom)); }
   .floating-web-player {
     display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center;
     left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
@@ -2936,6 +2950,7 @@ body.modal-open { overflow: hidden; }
   .player-ctrl-btn { min-width: 44px; min-height: 44px; }
   .player-play-btn { width: 46px; height: 46px; }
   .player-right { grid-column: 2; grid-row: 1; min-width: auto; gap: 4px; }
+  .spotify-embed-panel { left: 0; right: 0; bottom: calc(100% + 8px); width: 100%; }
   .player-right .player-signal-module, .player-volume-control { display: none; }
   .player-device-control { display: block; }
   .player-right .btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; }
