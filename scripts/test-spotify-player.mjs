@@ -5,7 +5,8 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 
 function extractFunction(name) {
-  const start = source.indexOf(`function ${name}(`);
+  const asyncStart = source.indexOf(`async function ${name}(`);
+  const start = asyncStart >= 0 ? asyncStart : source.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, `${name} app.js içinde bulunamadı`);
   const bodyStart = source.indexOf('{', start);
   let depth = 0;
@@ -114,4 +115,45 @@ assert.equal(context.getFailure(), null, 'Eski zaman aşımı başarılı bağla
 assert.ok(!actions.includes('disconnect'), 'Hazır oynatıcı bağlantısı kesilmemeli');
 
 assert.match(source, /play-playlist' \|\| action === 'play-track'\) prepareSpotifyPlayerFromUserGesture\(\)/, 'Kart oynatma eylemi dokunuş hazırlığını çağırmalı');
+
+let requestedDeviceId = '';
+let selectedSource = '';
+const connectContext = {
+  console,
+  encodeURIComponent,
+  state: { accessToken: 'test-token' },
+  activeSpotifyDeviceId: null,
+  activeSpotifyDeviceName: '',
+  spotifyDeviceId: null,
+  spotifyPlayerFailureReason: null,
+  spotifyPlayerFailureMessage: '',
+  getSpotifyTrackUri: () => 'spotify:track:1234567890123456789012',
+  getValidSpotifyAccessToken: async () => 'test-token',
+  isCurrentPlaybackRequest: () => true,
+  setUnifiedPlaybackState: playing => assert.equal(playing, true),
+  setPlayerSource: (mode, label) => { selectedSource = `${mode}|${label}`; },
+  fetch: async url => {
+    if (String(url).endsWith('/devices')) {
+      return {
+        ok: true,
+        json: async () => ({
+          devices: [
+            { id: 'desktop-device', name: 'Masaüstü', type: 'Computer', is_active: true, is_restricted: false },
+            { id: 'phone-device', name: 'Telefon', type: 'Smartphone', is_active: false, is_restricted: false }
+          ]
+        })
+      };
+    }
+    requestedDeviceId = new URL(String(url)).searchParams.get('device_id') || '';
+    return { ok: true, json: async () => ({}) };
+  }
+};
+
+vm.createContext(connectContext);
+vm.runInContext(`${extractFunction('playThroughSpotifyConnect')}\nglobalThis.runConnect = playThroughSpotifyConnect;`, connectContext);
+assert.equal(await connectContext.runConnect({ id: 'track-id' }, 1, {}), true, 'Spotify Connect yedek yolu parçayı başlatmalı');
+assert.equal(requestedDeviceId, 'phone-device', 'Mobil cihaz masaüstünden önce seçilmeli');
+assert.match(selectedSource, /^spotify-remote\|Spotify Connect • Telefon$/, 'Player seçilen Spotify Connect cihazını göstermeli');
+
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
+console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');

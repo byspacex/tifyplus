@@ -3434,6 +3434,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
+  function prefersSpotifyConnectFirst() {
+    return Boolean(activeSpotifyDeviceId)
+      || Date.now() < spotifySdkUnavailableUntil
+      || window.matchMedia('(max-width: 720px), (pointer: coarse)').matches;
+  }
+
   function isCurrentPlaybackRequest(requestId, signal) {
     return requestId === playbackRequestSerial && !signal?.aborted;
   }
@@ -3713,6 +3719,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         connectionTimer = setTimeout(() => {
           if (settled || spotifyPlayer !== player) return;
+          if (playbackBackend === 'spotify-remote') {
+            finish(false);
+            return;
+          }
           spotifyPlayerFailureReason ||= 'timeout';
           spotifyPlayerFailureMessage ||= 'Spotify oynatıcı bağlantısı zaman aşımına uğradı.';
           spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
@@ -3797,6 +3807,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function playThroughSpotifyConnect(track, requestId, signal, retryingStoredDevice = false) {
+    const uri = getSpotifyTrackUri(track);
+    if (!state.accessToken || !uri) return false;
+
+    try {
+      const token = await getValidSpotifyAccessToken();
+      if (!isCurrentPlaybackRequest(requestId, signal)) return false;
+      let target = !retryingStoredDevice && activeSpotifyDeviceId && activeSpotifyDeviceId !== spotifyDeviceId
+        ? { id: activeSpotifyDeviceId, name: activeSpotifyDeviceName || 'Spotify cihazı', isStored: true }
+        : null;
+
+      if (!target) {
+        const devicesResponse = await fetch('https://api.spotify.com/v1/me/player/devices', {
+          signal,
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!devicesResponse.ok) {
+          spotifyPlayerFailureReason = devicesResponse.status === 401
+            ? 'authentication'
+            : devicesResponse.status === 403
+              ? 'premium'
+              : 'devices';
+          spotifyPlayerFailureMessage = `Spotify devices HTTP ${devicesResponse.status}`;
+          return false;
+        }
+
+        const data = await devicesResponse.json();
+        const devices = (Array.isArray(data.devices) ? data.devices : [])
+          .filter(device => device?.id && !device.is_restricted && device.id !== spotifyDeviceId && device.name !== 'Tify Plus Pulse Web Player');
+        target = devices.find(device => String(device.type).toLowerCase() === 'smartphone')
+          || devices.find(device => device.is_active)
+          || devices[0];
+      }
+
+      if (!target) {
+        spotifyPlayerFailureReason = 'no_device';
+        spotifyPlayerFailureMessage = 'Spotify Connect cihazı bulunamadı.';
+        return false;
+      }
+      if (!isCurrentPlaybackRequest(requestId, signal)) return false;
+
+      const playResponse = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(target.id)}`, {
+        method: 'PUT',
+        signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ uris: [uri] })
+      });
+      if (!playResponse.ok) {
+        const details = await playResponse.json().catch(() => ({}));
+        spotifyPlayerFailureReason = playResponse.status === 401
+          ? 'authentication'
+          : playResponse.status === 403
+            ? 'premium'
+            : playResponse.status === 404
+              ? 'no_device'
+              : 'playback';
+        spotifyPlayerFailureMessage = details?.error?.message || `Spotify Connect HTTP ${playResponse.status}`;
+        if (playResponse.status === 404 && target.isStored && !retryingStoredDevice) {
+          activeSpotifyDeviceId = null;
+          activeSpotifyDeviceName = '';
+          return playThroughSpotifyConnect(track, requestId, signal, true);
+        }
+        return false;
+      }
+
+      activeSpotifyDeviceId = target.id;
+      activeSpotifyDeviceName = target.name || 'Spotify cihazı';
+      spotifyPlayerFailureReason = null;
+      spotifyPlayerFailureMessage = '';
+      setPlayerSource('spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
+      setUnifiedPlaybackState(true);
+      return true;
+    } catch (error) {
+      if (error?.name === 'AbortError') return false;
+      console.warn('[Spotify Connect Playback]', error);
+      spotifyPlayerFailureReason ||= 'connection';
+      spotifyPlayerFailureMessage = String(error?.message || error || '');
+      return false;
+    }
+  }
+
   async function loadAndPlayUnifiedTrack(track, playlistName) {
     if (!state.accessToken) {
       showSpotifyLoginRequired();
@@ -3856,7 +3950,18 @@ document.addEventListener('DOMContentLoaded', () => {
       cassetteAudioPlayer.removeAttribute('src');
     }
     setPlayerSource('none', 'Parça hazırlanıyor');
-    const spotifyStarted = await playThroughSpotify(track, requestId, signal);
+    let spotifyStarted = false;
+    if (prefersSpotifyConnectFirst()) {
+      spotifyStarted = await playThroughSpotifyConnect(track, requestId, signal);
+      if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
+        spotifyStarted = await playThroughSpotify(track, requestId, signal);
+      }
+    } else {
+      spotifyStarted = await playThroughSpotify(track, requestId, signal);
+      if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
+        spotifyStarted = await playThroughSpotifyConnect(track, requestId, signal);
+      }
+    }
     if (!isCurrentPlaybackRequest(requestId, signal)) return;
     isPlaybackStarting = false;
     floatingWebPlayer?.classList.remove('is-loading');
@@ -3879,6 +3984,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setPlayerSource('none', 'Tarayıcı korumalı sesi desteklemiyor');
     } else if (spotifyPlayerFailureReason === 'timeout') {
       setPlayerSource('none', 'Spotify bağlantısı zaman aşımına uğradı');
+    } else if (spotifyPlayerFailureReason === 'no_device') {
+      setPlayerSource('none', 'Spotify cihazı bulunamadı');
     } else {
       setPlayerSource('none', 'Yeniden denemek için oynatın');
       console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
