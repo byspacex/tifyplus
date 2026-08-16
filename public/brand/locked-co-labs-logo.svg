@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Locked Co Labs</title>
+  <desc id="desc">El çizimi L simgesi ve Locked Co Labs yazısından oluşan marka logosu.</desc>
+  <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M478 205 C456 208 447 229 439 249 L345 568 C337 595 333 619 344 633 C354 646 377 638 400 629 L615 532" stroke-width="17"/>
+  </g>
+  <text x="500" y="745" fill="#000" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="59" font-weight="400" letter-spacing="15">LOCKED CO LABS</text>
+</svg>

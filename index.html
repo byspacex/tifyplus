@@ -1093,36 +1093,59 @@
 
     <!-- GLOBAL PRIVACY & PUBLISHER FOOTER -->
     <footer class="app-footer legal-footer" id="footer">
-      <div class="legal-footer-grid">
-        <section class="publisher-block">
-          <div class="publisher-brand"><span class="publisher-lcl">LCL</span><div><strong>LOCKED CO LABS</strong><small>TIFY PLUS • PULSE MUSIC STUDIO</small></div></div>
-          <p>Tify Plus Pulse, <strong>Locked Co Labs</strong> markasına ait bağımsız bir müzik kütüphanesi ürünüdür. Ürün geliştirme ve deneyim tasarımı: <strong>SOOND</strong>.</p>
-          <p class="trademark-note">Spotify®, Spotify AB'nin tescilli markasıdır. Tify Plus Pulse; Spotify tarafından desteklenmez, sponsor edilmez veya Spotify'ın resmi ürünü değildir.</p>
-          <div class="publisher-links">
-            <a href="https://lockedcolab.com/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-globe"></i> lockedcolab.com</a>
-            <a href="mailto:info.lockedcolabs@gmail.com"><i class="fa-solid fa-envelope"></i> info.lockedcolabs@gmail.com</a>
-            <a href="https://www.instagram.com/lockedcolabs/" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram"></i> @lockedcolabs</a>
+      <div class="footer-glow" aria-hidden="true"></div>
+      <section class="footer-lead" aria-labelledby="footerBrandTitle">
+        <div class="footer-brand-story">
+          <a class="footer-logo-lockup" href="https://lockedcolab.com/" target="_blank" rel="noopener noreferrer" aria-label="Locked Co Labs web sitesini aç">
+            <img src="/brand/locked-co-labs-logo.svg" alt="Locked Co Labs" width="180" height="180">
+          </a>
+          <div class="footer-brand-copy">
+            <span class="footer-kicker">LOCKED CO LABS / TIFY PLUS PULSE</span>
+            <h2 id="footerBrandTitle">Müzik arşiviniz.<br><em>Kontrolünüzde.</em></h2>
+            <p>Tify Plus Pulse, <strong>Locked Co Labs</strong> markasına ait bağımsız bir müzik kütüphanesi ürünüdür. Ürün geliştirme ve deneyim tasarımı: <strong>SOOND</strong>.</p>
           </div>
-        </section>
+        </div>
 
-        <section>
-          <h4><i class="fa-solid fa-database"></i> VERİ ÖZETİ</h4>
+        <aside class="footer-contact" aria-labelledby="footerContactTitle">
+          <span class="footer-kicker">İLETİŞİM KANALI</span>
+          <h3 id="footerContactTitle">Geri bildirim, iş birliği<br>ya da sadece merhaba.</h3>
+          <a class="footer-mail-cta" href="mailto:info.lockedcolabs@gmail.com">
+            <span><small>Bize yazın</small>info.lockedcolabs@gmail.com</span>
+            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </a>
+          <div class="publisher-links">
+            <a href="https://lockedcolab.com/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-globe"></i> Web</a>
+            <a href="https://www.instagram.com/lockedcolabs/" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram"></i> Instagram</a>
+          </div>
+        </aside>
+      </section>
+
+      <div class="legal-footer-grid">
+        <section class="footer-data-block">
+          <h4><i class="fa-solid fa-fingerprint"></i> VERİ YAKLAŞIMI</h4>
           <ul class="legal-list">
-            <li>Sunucu tarafı Tify Plus Pulse hesabı oluşturulmaz.</li>
-            <li>Profil, playlist ve ayarlar tarayıcıda saklanabilir.</li>
-            <li>OAuth belirteçleri yalnızca açık sekme oturumunda tutulur.</li>
-            <li>Reklam, davranış analitiği veya veri satışı yapılmaz.</li>
+            <li><strong>Hesapsız</strong><span>Sunucu tarafı Tify Plus Pulse hesabı oluşturulmaz.</span></li>
+            <li><strong>Yerel</strong><span>Profil, playlist ve ayarlar tarayıcıda saklanabilir.</span></li>
+            <li><strong>Geçici</strong><span>OAuth belirteçleri yalnızca açık sekme oturumunda tutulur.</span></li>
+            <li><strong>Reklamsız</strong><span>Davranış analitiği veya veri satışı yapılmaz.</span></li>
           </ul>
         </section>
 
-        <section>
-          <h4><i class="fa-solid fa-scale-balanced"></i> HUKUK &amp; KONTROLLER</h4>
-          <nav class="legal-links" aria-label="Yasal bağlantılar">
-            <button id="btnOpenPrivacyPolicyModal"><i class="fa-solid fa-shield-halved"></i> Gizlilik Merkezi</button>
-            <button id="btnFooterExportData"><i class="fa-solid fa-file-export"></i> Verilerimi Dışa Aktar</button>
-            <button id="btnFooterDeleteData"><i class="fa-solid fa-trash-can"></i> Yerel Verilerimi Sil</button>
-            <a href="#studio"><i class="fa-solid fa-headphones"></i> Web Player</a>
+        <section class="footer-control-block">
+          <h4><i class="fa-solid fa-sliders"></i> KONTROL SİZDE</h4>
+          <nav class="legal-links" aria-label="Yasal bağlantılar ve veri kontrolleri">
+            <button id="btnOpenPrivacyPolicyModal"><i class="fa-solid fa-shield-halved"></i><span>Gizlilik Merkezi<small>Politika ve bölgesel haklar</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="btnFooterExportData"><i class="fa-solid fa-file-export"></i><span>Verilerimi Dışa Aktar<small>Yerel arşivinizi indirin</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="btnFooterDeleteData"><i class="fa-solid fa-trash-can"></i><span>Yerel Verilerimi Sil<small>Bu cihazdaki kayıtları temizleyin</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <a href="#studio"><i class="fa-solid fa-headphones"></i><span>Web Player<small>Stüdyoya geri dönün</small></span><i class="fa-solid fa-chevron-up"></i></a>
           </nav>
+        </section>
+
+        <section class="footer-disclaimer-block">
+          <span class="footer-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+          <h4>BAĞIMSIZ ÜRÜN</h4>
+          <p class="trademark-note">Spotify®, Spotify AB'nin tescilli markasıdır. Tify Plus Pulse; Spotify tarafından desteklenmez, sponsor edilmez veya Spotify'ın resmi ürünü değildir.</p>
+          <span class="footer-build-note">Designed with intention.<br>Built for your library.</span>
         </section>
       </div>
       <div class="legal-footer-bottom"><span>© 2026 Locked Co Labs. Tüm hakları saklıdır.</span><span>Geliştirici: SOOND</span><span id="privacyRegionBadge">Bölge: Otomatik</span></div>
