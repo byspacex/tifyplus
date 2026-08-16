@@ -3435,9 +3435,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function prefersSpotifyConnectFirst() {
-    return Boolean(activeSpotifyDeviceId)
-      || Date.now() < spotifySdkUnavailableUntil
-      || window.matchMedia('(max-width: 720px), (pointer: coarse)').matches;
+    return playbackBackend === 'spotify-remote'
+      && Boolean(activeSpotifyDeviceId)
+      && activeSpotifyDeviceId !== spotifyDeviceId;
   }
 
   function isCurrentPlaybackRequest(requestId, signal) {
@@ -3958,9 +3958,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       spotifyStarted = await playThroughSpotify(track, requestId, signal);
-      if (!spotifyStarted && isCurrentPlaybackRequest(requestId, signal)) {
-        spotifyStarted = await playThroughSpotifyConnect(track, requestId, signal);
-      }
     }
     if (!isCurrentPlaybackRequest(requestId, signal)) return;
     isPlaybackStarting = false;

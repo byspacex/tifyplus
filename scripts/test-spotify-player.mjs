@@ -154,6 +154,9 @@ vm.runInContext(`${extractFunction('playThroughSpotifyConnect')}\nglobalThis.run
 assert.equal(await connectContext.runConnect({ id: 'track-id' }, 1, {}), true, 'Spotify Connect yedek yolu parçayı başlatmalı');
 assert.equal(requestedDeviceId, 'phone-device', 'Mobil cihaz masaüstünden önce seçilmeli');
 assert.match(selectedSource, /^spotify-remote\|Spotify Connect • Telefon$/, 'Player seçilen Spotify Connect cihazını göstermeli');
+assert.match(source, /name: 'Tify Plus Pulse Web Player'/, 'Yerel Spotify cihazı Tify Plus Pulse adıyla oluşturulmalı');
+assert.match(source, /return playbackBackend === 'spotify-remote'[\s\S]*activeSpotifyDeviceId !== spotifyDeviceId;/, 'Spotify Connect yalnızca kullanıcı uzaktaki cihazı seçtiğinde öncelikli olmalı');
+assert.doesNotMatch(source, /spotifyStarted = await playThroughSpotify\(track, requestId, signal\);\s*if \(!spotifyStarted[\s\S]{0,180}playThroughSpotifyConnect/, 'Yerel player hatası bilgisayardaki Spotify cihazına otomatik aktarılmamalı');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');
