@@ -205,6 +205,12 @@ assert.match(styles, /\.brand-title \.brand-plus::before[\s\S]*polarStarTwinkle/
 assert.match(styles, /--f-display:\s*'Inter'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');
 assert.match(html, /id="externalPlaylistModal"/, 'Dış Spotify bağlantıları için ayrı inceleme penceresi bulunmalı');
 assert.match(source, /openExternalPlaylistEmbed\(extractedId/, 'Dış bağlantı API hatasında gerçek Spotify embed görünümüne düşmeli');
+assert.match(source, /fetchSpotifyPlaylistOEmbed/, 'Dış Spotify bağlantısı resmî oEmbed metaverisiyle doğrulanmalı');
+assert.match(source, /Promise\.allSettled\(\[/, 'Playlist metaverisi ve erişim kontrollü parça isteği birbirinden bağımsız ele alınmalı');
+assert.match(source, /Spotify'ın güncel API kuralı/, 'Başkasına ait playlistlerde Spotify erişim sınırı kullanıcıya dürüstçe açıklanmalı');
+assert.match(styles, /\.external-playlist-embed\s*\{[^}]*height:352px/, 'Resmî playlist embed önerilen sabit yükseklikte kırpılmadan gösterilmeli');
+assert.match(source, /modalCard\.scrollTop = 0/, 'Dış playlist penceresi her açılışta başlık hizasından başlamalı');
+assert.match(styles, /#externalPlaylistModal \.external-playlist-card[^}]*overflow:hidden/, 'Genel modal kaydırması dış playlist başlığını kırpmamalı');
 assert.doesNotMatch(source, /Demo modunda örnek playlist analizi açıldı/, 'Dış playlist hatası kullanıcının karşısına demo playlist çıkarmamalı');
 assert.doesNotMatch(source, /state\.playlists\.unshift\(newPl\)/, 'Dış playlist kullanıcının kişisel kütüphanesine karıştırılmamalı');
 assert.match(source, /const activePlaylists = state\.isLoggedIn \? state\.playlists : MOCK_PLAYLISTS/, 'Demo eşleşmeleri yalnızca giriş yapılmamış ana sayfada çalışmalı');

@@ -363,6 +363,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return res.json();
   }
 
+  async function fetchSpotifyPlaylistOEmbed(rawPlaylistId) {
+    const playlistId = extractCleanPlaylistId(rawPlaylistId);
+    const spotifyUrl = `https://open.spotify.com/playlist/${encodeURIComponent(playlistId)}`;
+    const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyUrl)}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`Spotify oEmbed bilgisi alınamadı (${res.status})`);
+    return res.json();
+  }
+
   /**
    * Dual Endpoint Fetcher: Tries /v1/me/playlists first, then /v1/users/{userId}/playlists
    * On 429: NO retry. Throws a special RateLimitError so caller can handle it.
@@ -3213,16 +3223,51 @@ document.addEventListener('DOMContentLoaded', () => {
   handleSpotifyPKCECallback();
 
   // --- URL SEARCH PARSER ---
-  function openExternalPlaylistEmbed(playlistId, notice) {
-    state.externalPlaylist = null;
-    if (externalPlaylistTitle) externalPlaylistTitle.textContent = 'Spotify çalma listesi';
-    if (externalPlaylistSummary) externalPlaylistSummary.textContent = 'Herkese açık bağlantı • Kişisel kütüphanenizden ayrı';
+  function showExternalPlaylistModal() {
+    externalPlaylistModal?.classList.remove('hidden');
+    const modalCard = externalPlaylistModal?.querySelector('.external-playlist-card');
+    if (modalCard) modalCard.scrollTop = 0;
+    externalPlaylistContent?.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  async function openExternalPlaylistEmbed(playlistId, notice, apiDetails = null) {
+    const spotifyUrl = apiDetails?.external_urls?.spotify || `https://open.spotify.com/playlist/${encodeURIComponent(playlistId)}`;
+    const oEmbed = await fetchSpotifyPlaylistOEmbed(playlistId).catch(() => null);
+    const playlistName = apiDetails?.name || oEmbed?.title || 'Spotify çalma listesi';
+    const playlistCover = apiDetails?.images?.[0]?.url || oEmbed?.thumbnail_url || '/brand/tify-plus-mark-512.png';
+    const playlistOwner = apiDetails?.owner?.display_name || apiDetails?.owner?.id || 'Spotify';
+    const playlistTotal = Number(apiDetails?.items?.total || apiDetails?.tracks?.total || 0);
+    const rawEmbedUrl = oEmbed?.iframe_url || `https://open.spotify.com/embed/playlist/${encodeURIComponent(playlistId)}`;
+    const embedUrl = `${rawEmbedUrl}${rawEmbedUrl.includes('?') ? '&' : '?'}utm_source=tifyplus&session=${Date.now()}`;
+
+    state.externalPlaylist = {
+      id: playlistId,
+      name: playlistName,
+      owner: playlistOwner,
+      cover: playlistCover,
+      trackTotal: playlistTotal,
+      tracks: [],
+      url: spotifyUrl,
+      embedOnly: true
+    };
+    if (externalPlaylistTitle) externalPlaylistTitle.textContent = playlistName;
+    if (externalPlaylistSummary) {
+      externalPlaylistSummary.textContent = `${playlistOwner}${playlistTotal ? ` • ${playlistTotal} parça` : ''} • Kişisel kütüphanenizden ayrı`;
+    }
     if (externalPlaylistContent) {
       externalPlaylistContent.innerHTML = `
+        <div class="external-playlist-overview external-playlist-overview--embed">
+          <img class="external-playlist-cover" src="${escapeMarkup(playlistCover)}" alt="${escapeMarkup(playlistName)} kapak görseli">
+          <div class="external-playlist-meta"><strong>${escapeMarkup(playlistName)}</strong><span>Oluşturan: ${escapeMarkup(playlistOwner)}</span>${playlistTotal ? `<span>${playlistTotal} parça</span>` : ''}</div>
+          <div class="external-playlist-actions"><a class="btn btn-spotify btn-sm" href="${escapeMarkup(spotifyUrl)}" target="_blank" rel="noopener"><i class="fa-brands fa-spotify"></i> Spotify'da aç</a></div>
+        </div>
         <p class="external-playlist-notice"><i class="fa-solid fa-circle-info"></i> ${escapeMarkup(notice)}</p>
-        <iframe class="external-playlist-embed" src="https://open.spotify.com/embed/playlist/${encodeURIComponent(playlistId)}?utm_source=generator&theme=0" title="Spotify çalma listesi" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+        <div class="external-playlist-player-shell">
+          <iframe class="external-playlist-embed" src="${escapeMarkup(embedUrl)}" title="Spotify Embed: ${escapeMarkup(playlistName)}" height="352" loading="eager" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <p class="external-playlist-policy"><i class="fa-solid fa-lock"></i> Spotify'ın güncel API kuralı nedeniyle Tify+ parça analizi yalnızca sahibi veya ortak çalışanı olduğunuz listelerde kullanılabilir. Bu herkese açık liste hesabınıza, önerilerinize ya da karşılaştırmalarınıza eklenmedi.</p>`;
     }
-    externalPlaylistModal?.classList.remove('hidden');
+    showExternalPlaylistModal();
   }
 
   function renderExternalPlaylist(playlist) {
@@ -3245,7 +3290,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <p class="external-playlist-notice"><i class="fa-solid fa-shield-halved"></i> Bu liste yalnızca bu ayrı pencerede incelenir; hesabınızdaki listelere, önerilere veya karşılaştırmalara eklenmez.</p>
       <div class="external-track-list">${rows || '<p class="external-playlist-notice">Bu listede görüntülenebilir parça bulunamadı.</p>'}</div>`;
-    externalPlaylistModal?.classList.remove('hidden');
+    showExternalPlaylistModal();
   }
 
   btnCloseExternalPlaylist?.addEventListener('click', () => externalPlaylistModal?.classList.add('hidden'));
@@ -3276,10 +3321,12 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast("Spotify çalma listesi açılıyor...", "info");
           try {
             const token = await getValidSpotifyAccessToken();
-            const [details, tracks] = await Promise.all([
+            const [detailsResult, tracksResult] = await Promise.allSettled([
               fetchSpotifyPlaylistDetails(token, extractedId),
               fetchSpotifyPlaylistTracks(token, extractedId)
             ]);
+            const details = detailsResult.status === 'fulfilled' ? detailsResult.value : null;
+            const tracks = tracksResult.status === 'fulfilled' ? tracksResult.value : [];
             if (tracks && tracks.length > 0) {
               const externalPlaylist = {
                 id: extractedId,
@@ -3298,9 +3345,17 @@ document.addEventListener('DOMContentLoaded', () => {
               showToast(`"${externalPlaylist.name}" ayrı pencerede açıldı.`, "success");
               return;
             }
+
+            await openExternalPlaylistEmbed(
+              extractedId,
+              'Liste doğrulandı. Spotify, başkasına ait herkese açık listelerin parça verisini artık üçüncü taraf uygulamalara vermediği için şarkılar resmî Spotify oynatıcısında gösteriliyor.',
+              details
+            );
+            showToast('Liste doğrulandı ve resmî oynatıcıda açıldı.', 'info');
+            return;
           } catch(e) {
             console.warn("Direct URL fetch failed:", e);
-            openExternalPlaylistEmbed(extractedId, 'Spotify API ayrıntıları alınamadı. Gerçek liste aşağıdaki resmî Spotify oynatıcısında açıldı; demo veri gösterilmedi.');
+            await openExternalPlaylistEmbed(extractedId, 'Gerçek liste doğrulandı ve resmî Spotify oynatıcısında açıldı; demo veya başka kullanıcı verisi gösterilmedi.');
             showToast('Liste resmî Spotify görünümünde açıldı.', 'info');
             return;
           } finally {
@@ -3309,7 +3364,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        openExternalPlaylistEmbed(extractedId, 'Ayrıntılı parça incelemesi için Spotify hesabınızı bağlayabilirsiniz. Liste yine de resmî Spotify oynatıcısında kullanılabilir.');
+        await openExternalPlaylistEmbed(extractedId, 'Liste doğrulandı. Spotify hesabınızı bağladığınızda sahibi veya ortak çalışanı olduğunuz listeler Tify+ içinde ayrıntılı incelenebilir.');
       } else {
         showToast("Geçerli bir Spotify çalma listesi bağlantısı bulunamadı.", "warning");
       }
