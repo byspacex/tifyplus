@@ -424,9 +424,19 @@
           <span class="landing-kicker">TIFY PLUS / KİŞİSEL MÜZİK KÜTÜPHANESİ</span>
           <h1 id="landingTitle">Dağınık listelerden<br><em>kontrollü bir arşive.</em></h1>
           <p>Spotify kütüphanenizi yalnızca görüntülemeyin. Kendi çalma listelerinizi inceleyin, tekrarları bulun, listeleriniz arasındaki ilişkileri görün ve izin verdiğiniz değişiklikleri tek çalışma alanından yönetin.</p>
+          <div class="landing-provider-label"><span>BAĞLANTI KANALI SEÇİN</span><i></i></div>
+          <div class="landing-provider-rail" aria-label="Müzik servisi bağlantıları">
+            <button id="btnLandingLogin" class="provider-connect provider-spotify" type="button">
+              <span class="provider-index">01</span><i class="fa-brands fa-spotify"></i>
+              <span><strong>Spotify</strong><small>Şimdi bağlan</small></span><i class="fa-solid fa-arrow-right-long provider-arrow"></i>
+            </button>
+            <button id="btnLandingYouTube" class="provider-connect provider-youtube" type="button" disabled aria-disabled="true" title="YouTube Music bağlantısı ileride kullanıma açılacak">
+              <span class="provider-index">02</span><i class="fa-brands fa-youtube"></i>
+              <span><strong>YouTube Music</strong><small>Yakında</small></span><span class="provider-coming">SIRADA</span>
+            </button>
+          </div>
           <div class="landing-actions">
-            <button id="btnLandingLogin" class="cta primary"><i class="fa-brands fa-spotify"></i> Spotify ile çalışma alanını aç</button>
-            <a class="landing-text-link" href="#howItWorks">Nasıl çalışır? <i class="fa-solid fa-arrow-down"></i></a>
+            <a class="landing-text-link" href="#howItWorks">Sistemi keşfet <i class="fa-solid fa-arrow-down-long"></i></a>
           </div>
           <div class="landing-trust-line" aria-label="Tify Plus temel ilkeleri">
             <span><i class="fa-solid fa-user-lock"></i> Oturumunuza özel</span>
@@ -436,6 +446,7 @@
         </div>
 
         <div class="landing-console" aria-label="Tify Plus çalışma alanı önizlemesi">
+          <span class="console-corner console-corner-a" aria-hidden="true">A-01</span><span class="console-corner console-corner-b" aria-hidden="true">SYS</span>
           <div class="console-topline"><span>TIFY PLUS / LIBRARY CONTROL</span><b>HAZIR</b></div>
           <div class="console-orbit" aria-hidden="true">
             <span class="orbit-ring orbit-ring-a"></span><span class="orbit-ring orbit-ring-b"></span>
@@ -447,6 +458,7 @@
             <div><span>VERİ KONUMU</span><strong>Bu sekme</strong></div>
           </div>
           <div class="console-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="console-techline" aria-hidden="true"><span>LOCAL SESSION</span><span>ENCRYPTED OAUTH</span><span>NO TRACKING</span></div>
         </div>
       </section>
 

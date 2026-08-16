@@ -205,6 +205,8 @@ assert.match(styles, /\.brand-title \.brand-plus::before[\s\S]*polarStarTwinkle/
 assert.match(styles, /--f-display:\s*'Noto Sans Variable'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');
 assert.match(styles, /html\[lang="ar"\][\s\S]*Noto Sans Arabic/, 'Arapça için uyumlu yerel yazı ailesi bulunmalı');
 assert.match(html, /id="landingView"[\s\S]*id="dashboardView"/, 'Tanıtım sayfası ile kişisel dashboard ayrı görünüm olmalı');
+assert.match(html, /id="btnLandingYouTube"[\s\S]*disabled[\s\S]*YouTube Music/, 'YouTube Music gelecek bağlantısı yanıltıcı olmayan devre dışı durumda gösterilmeli');
+assert.match(styles, /\.provider-connect[\s\S]*clip-path:\s*polygon/, 'Müzik sağlayıcı seçimleri köşeli teknik çerçeve kullanmalı');
 assert.match(source, /document\.body\.dataset\.session = isLoggedIn \? 'dashboard' : 'landing'/, 'Oturum durumu tanıtım ve dashboard görünümünü ayırmalı');
 assert.match(html, /id="externalPlaylistModal"/, 'Dış Spotify bağlantıları için ayrı inceleme penceresi bulunmalı');
 assert.match(source, /openExternalPlaylistEmbed\(extractedId/, 'Dış bağlantı API hatasında gerçek Spotify embed görünümüne düşmeli');
