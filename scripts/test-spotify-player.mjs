@@ -169,6 +169,7 @@ assert.match(html, /open\.spotify\.com\/embed\/iframe-api\/v1/, 'Resmi Spotify i
 assert.match(html, /id="spotifyEmbedPanel"/, 'Gömülü oynatıcı paneli bulunmalı');
 assert.match(headers, /script-src[^;]*https:\/\/open\.spotify\.com/, 'Cloudflare CSP Spotify iFrame API betiğine izin vermeli');
 assert.match(headers, /script-src[^;]*https:\/\/embed-cdn\.spotifycdn\.com/, 'Cloudflare CSP Spotify resmi embed CDN betiğine izin vermeli');
+assert.match(headers, /script-src[^;]*'unsafe-eval'/, 'Spotify resmi embed çalışma zamanı için gereken değerlendirme izni bulunmalı');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');

@@ -3649,7 +3649,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadSpotifyIframeApi() {
     if (window.__tifySpotifyIframeApi) return Promise.resolve(window.__tifySpotifyIframeApi);
     if (!window.__tifySpotifyIframeApiPromise) {
-      return Promise.reject(new Error('Spotify tarayıcı oynatıcısı yüklenemedi.'));
+      window.__tifySpotifyIframeApiPromise = new Promise(resolve => {
+        window.onSpotifyIframeApiReady = IFrameAPI => {
+          window.__tifySpotifyIframeApi = IFrameAPI;
+          resolve(IFrameAPI);
+        };
+      });
     }
     return Promise.race([
       window.__tifySpotifyIframeApiPromise,
