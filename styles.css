@@ -2874,8 +2874,16 @@ body.modal-open { overflow: hidden; }
   .pro-track-table td:nth-child(6) { grid-column: 2; }
   .pro-track-table td:nth-child(7) { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: initial !important; white-space: normal !important; }
   .pro-track-table td:nth-child(7) .btn { min-height: 42px; margin: 0 !important; }
-  .t-thumb-wrapper { width: 54px; height: 54px; }
-  .t-thumb-play-overlay { opacity: 1; background: rgba(0,0,0,.38); }
+  .t-thumb-wrapper { width: 58px; height: 58px; overflow: visible; box-shadow: 0 10px 24px rgba(0,0,0,.38); }
+  .t-thumb-wrapper .t-thumb { border-radius: 10px; }
+  .t-thumb-play-overlay {
+    inset: auto -5px -5px auto; width: 27px; height: 27px;
+    border-radius: 50%; opacity: 1; color: #0c1306;
+    background: #a8ff26; backdrop-filter: none;
+    box-shadow: 0 5px 16px rgba(0,0,0,.48), 0 0 16px rgba(168,255,38,.24);
+    font-size: 10px;
+  }
+  .t-thumb-wrapper:hover .t-thumb { transform: none; }
   .t-info { min-width: 0; }
   .t-info h5 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .genre-badge, .dup-status-badge { font-size: 9px; }
