@@ -183,6 +183,10 @@ assert.match(styles, /\.floating-web-player \.player-center[\s\S]*left:\s*50%[\s
 assert.match(styles, /\.energy-head i\s*\{\s*display:\s*none/, 'İlerleme göstergesinde yıldırım logosu görünmemeli');
 assert.match(styles, /energyRingFlash/, 'İlerleme göstergesi ikon yerine enerji parlamasıyla hareket etmeli');
 assert.match(html, /class="energy-bolt-fx"/, 'İlerleme göstergesinde çatallanan SVG yıldırım efekti bulunmalı');
+assert.match(html, /class="player-ambient"/, 'Premium oynatıcı yüzeyinde bağımsız ortam ışığı katmanı bulunmalı');
+assert.match(html, /class="player-now-label"/, 'Çalan parça alanında canlı yayın durum etiketi bulunmalı');
+assert.match(styles, /\.energy-head\s*\{[\s\S]*width:\s*14px;[\s\S]*height:\s*14px;[\s\S]*radial-gradient/, 'İlerleme başı dik çizgi yerine plazma çekirdeği olmalı');
+assert.doesNotMatch(styles, /\.energy-head\s*\{[\s\S]{0,180}width:\s*4px;[\s\S]{0,80}height:\s*22px;/, 'Eski beyaz dik ilerleme çizgisi geri gelmemeli');
 assert.match(styles, /realisticBoltBurst/, 'Gerçekçi yıldırım düzensiz çoklu çakma animasyonu kullanmalı');
 assert.match(styles, /energy-bolt-branch/, 'Yıldırım efektinde bağımsız yan dallar bulunmalı');
 assert.match(html, /animate attributeName="d"/, 'Zikzak yıldırım hattının geometrisi hareket halinde değişmeli');
