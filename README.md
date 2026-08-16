@@ -69,7 +69,8 @@ Uygulama Authorization Code + PKCE akışını kullanır.
 ## Gizlilik yaklaşımı
 
 - Spotify erişim belirteçleri aktif sekmenin oturum depolamasında tutulur.
-- Dil, tema ve kütüphane önbelleği gibi işlevsel veriler yalnızca izin verildiğinde tarayıcıda saklanır.
+- Kişisel Spotify kütüphanesi ve parça önbelleği yalnızca aktif sekmenin oturumunda tutulur; başka hesapların çalışma alanına karışmaz.
+- Dil ve tema gibi arayüz tercihleri yalnızca izin verildiğinde tarayıcıda kalıcı olarak saklanır.
 - Reklam veya davranış analitiği kullanılmaz.
 - Sunucu tarafında Tify⁺ Pulse kullanıcı profili oluşturulmaz.
 - Spotify parolanız uygulama tarafından görülmez veya saklanmaz.

@@ -62,16 +62,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const state = {
     accessToken: sessionStorage.getItem('spotify_access_token') || null,
     isLoggedIn: false,
-    userName: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_name')) || "S O O N D",
-    userEmail: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_email')) || "",
-    userAvatar: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_avatar')) || "",
+    userId: sessionStorage.getItem('spotify_user_id') || "",
+    userName: sessionStorage.getItem('spotify_user_name') || "Spotify Kullanıcısı",
+    userEmail: sessionStorage.getItem('spotify_user_email') || "",
+    userAvatar: sessionStorage.getItem('spotify_user_avatar') || "",
     userProduct: "",
     playlists: [],
     currentPlaylist: null,
+    externalPlaylist: null,
     selectedTrackIds: new Set(),
     versionedHistory: [],
     presenceMap: {}
   };
+
+  // Personal Spotify data used to be stored under unscoped localStorage keys.
+  // Remove those legacy records once so one Spotify account can never inherit
+  // another account's library on a shared browser profile.
+  (() => {
+    const legacyKeys = [];
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (key && (['spotify_library_cache', 'spotify_pulse_snapshots', 'spotify_last_sync', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar'].includes(key) || key.startsWith('spotify_tracks_'))) {
+        legacyKeys.push(key);
+      }
+    }
+    legacyKeys.forEach(key => localStorage.removeItem(key));
+  })();
 
   // App-native localization. Locale is selected from the browser's country-aware
   // language tag (for example pt-BR or de-DE) without requesting precise location.
@@ -302,6 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const playlistUrlInput = document.getElementById('playlistUrlInput');
   const btnAnalyze = document.getElementById('btnAnalyze');
+  const externalPlaylistModal = document.getElementById('externalPlaylistModal');
+  const externalPlaylistTitle = document.getElementById('externalPlaylistTitle');
+  const externalPlaylistSummary = document.getElementById('externalPlaylistSummary');
+  const externalPlaylistContent = document.getElementById('externalPlaylistContent');
+  const btnCloseExternalPlaylist = document.getElementById('btnCloseExternalPlaylist');
 
   const checkAllTracks = document.getElementById('checkAllTracks');
   const selectedTracksCountText = document.getElementById('selectedTracksCountText');
@@ -323,6 +344,23 @@ document.addEventListener('DOMContentLoaded', () => {
       throw new Error(`Profil Okuma Hatası (${res.status})`);
     }
     return await res.json();
+  }
+
+  async function fetchSpotifyPlaylistDetails(token, rawPlaylistId) {
+    const playlistId = extractCleanPlaylistId(rawPlaylistId);
+    const res = await fetch(`https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.status === 401) {
+      const error = new Error('Spotify oturumu sona ermiş. Yeniden giriş yapın.');
+      error.isTokenExpired = true;
+      throw error;
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body?.error?.message || `Spotify playlist bilgisi alınamadı (${res.status})`);
+    }
+    return res.json();
   }
 
   /**
@@ -380,13 +418,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!rawId) return '';
     const str = String(rawId).trim();
     if (str.startsWith('spotify:playlist:')) {
-      return str.replace('spotify:playlist:', '').trim();
+      const id = str.replace('spotify:playlist:', '').trim();
+      return /^[A-Za-z0-9]{22}$/.test(id) ? id : '';
     }
-    if (str.includes('/playlist/')) {
-      const seg = str.split('/playlist/')[1].split('?')[0].split('/');
-      return seg[0].trim();
+    if (/^https?:\/\//i.test(str)) {
+      try {
+        const parsed = new URL(str);
+        if (!/(^|\.)spotify\.com$/i.test(parsed.hostname)) return '';
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        const playlistIndex = parts.indexOf('playlist');
+        const id = playlistIndex >= 0 ? parts[playlistIndex + 1] : '';
+        return /^[A-Za-z0-9]{22}$/.test(id || '') ? id : '';
+      } catch (_) {
+        return '';
+      }
     }
-    return str;
+    return /^[A-Za-z0-9]{22}$/.test(str) ? str : '';
   }
 
   async function fetchSpotifyPlaylistTracks(token, rawPlaylistId) {
@@ -528,8 +575,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const CACHE_TTL_MS = 30 * 60 * 1000;       // 30 minutes
   const SYNC_COOLDOWN_MS = 5 * 60 * 1000;    // 5 minutes
 
+  function clearPersonalSpotifySessionData() {
+    const exactKeys = [LIBRARY_CACHE_KEY, SNAPSHOT_STORAGE_KEY, 'spotify_last_sync', 'spotify_user_id', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar'];
+    exactKeys.forEach(key => sessionStorage.removeItem(key));
+    for (let index = sessionStorage.length - 1; index >= 0; index--) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith(TRACK_CACHE_PREFIX)) sessionStorage.removeItem(key);
+    }
+    state.userId = '';
+    state.userName = 'Spotify Kullanıcısı';
+    state.userEmail = '';
+    state.userAvatar = '';
+    state.playlists = [];
+    state.currentPlaylist = null;
+    state.externalPlaylist = null;
+    state.versionedHistory = [];
+    state.presenceMap = {};
+  }
+
   function saveLibraryCache(playlists) {
-    if (!allowsFunctionalStorage()) return;
     const payload = {
       data: playlists.map(pl => ({
         id: pl.id, name: pl.name, owner: pl.owner, followers: pl.followers,
@@ -539,15 +603,13 @@ document.addEventListener('DOMContentLoaded', () => {
       })),
       fetchedAt: Date.now()
     };
-    try { localStorage.setItem(LIBRARY_CACHE_KEY, JSON.stringify(payload)); } catch(e) {}
-    localStorage.setItem('spotify_last_sync', String(Date.now()));
-    if (state.userName) localStorage.setItem('spotify_user_name', state.userName);
+    try { sessionStorage.setItem(LIBRARY_CACHE_KEY, JSON.stringify(payload)); } catch(e) {}
+    sessionStorage.setItem('spotify_last_sync', String(Date.now()));
   }
 
   function loadLibraryCache() {
-    if (!allowsFunctionalStorage()) return null;
     try {
-      const raw = localStorage.getItem(LIBRARY_CACHE_KEY);
+      const raw = sessionStorage.getItem(LIBRARY_CACHE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed.fetchedAt || (Date.now() - parsed.fetchedAt) > CACHE_TTL_MS) return null;
@@ -556,23 +618,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveTrackCache(playlistId, tracks) {
-    if (!allowsFunctionalStorage()) return;
     if (!tracks || !Array.isArray(tracks) || tracks.length === 0) return; // Never save empty track array
     try {
-      localStorage.setItem(TRACK_CACHE_PREFIX + playlistId, JSON.stringify({
+      sessionStorage.setItem(TRACK_CACHE_PREFIX + playlistId, JSON.stringify({
         tracks, savedAt: Date.now()
       }));
     } catch(e) {}
   }
 
   function loadTrackCache(playlistId) {
-    if (!allowsFunctionalStorage()) return null;
     try {
-      const raw = localStorage.getItem(TRACK_CACHE_PREFIX + playlistId);
+      const raw = sessionStorage.getItem(TRACK_CACHE_PREFIX + playlistId);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (!parsed || !Array.isArray(parsed.tracks) || parsed.tracks.length === 0) {
-        localStorage.removeItem(TRACK_CACHE_PREFIX + playlistId);
+        sessionStorage.removeItem(TRACK_CACHE_PREFIX + playlistId);
         return null;
       }
       return parsed; // { tracks: [...], savedAt: number }
@@ -583,10 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function cleanCorruptEmptyTrackCaches() {
     try {
       const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
         if (key && key.startsWith(TRACK_CACHE_PREFIX)) {
-          const raw = localStorage.getItem(key);
+          const raw = sessionStorage.getItem(key);
           if (raw) {
             try {
               const parsed = JSON.parse(raw);
@@ -600,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       keysToRemove.forEach(k => {
-        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
         console.log(`[Cache Migration] Bozuk/boş önbellek kaydı silindi: ${k}`);
       });
     } catch(e) {}
@@ -608,8 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cooldown helpers
   function getLastSyncTime() {
-    if (!allowsFunctionalStorage()) return 0;
-    return parseInt(localStorage.getItem('spotify_last_sync') || '0', 10);
+    return parseInt(sessionStorage.getItem('spotify_last_sync') || '0', 10);
   }
 
   function getSyncCooldownRemaining() {
@@ -623,19 +682,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const SNAPSHOT_STORAGE_KEY = 'spotify_pulse_snapshots';
 
   function saveSafetySnapshotsToStorage() {
-    if (!allowsFunctionalStorage()) return;
     try {
-      localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(state.versionedHistory));
+      sessionStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(state.versionedHistory));
     } catch(e) {}
   }
 
   function loadSafetySnapshotsFromStorage() {
-    if (!allowsFunctionalStorage()) {
-      state.versionedHistory = [];
-      return;
-    }
     try {
-      const raw = localStorage.getItem(SNAPSHOT_STORAGE_KEY);
+      const raw = sessionStorage.getItem(SNAPSHOT_STORAGE_KEY);
       if (raw) {
         state.versionedHistory = JSON.parse(raw);
       }
@@ -773,16 +827,26 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // 1. Fetch Profile (1 API call)
       const meData = await fetchSpotifyProfile(token);
+      const previousUserId = state.userId;
+      state.userId = meData.id || '';
       state.userName = meData.display_name || meData.id || "Spotify Kullanıcısı";
       state.userEmail = meData.email || "";
       state.userAvatar = (meData.images && meData.images.length > 0) ? meData.images[0].url : "";
       state.userProduct = String(meData.product || '').toLowerCase();
-      if (allowsFunctionalStorage()) {
-        localStorage.setItem('spotify_user_name', state.userName);
-        localStorage.setItem('spotify_user_email', state.userEmail);
-        if (state.userAvatar) localStorage.setItem('spotify_user_avatar', state.userAvatar);
-        else localStorage.removeItem('spotify_user_avatar');
+      if (previousUserId && state.userId && previousUserId !== state.userId) {
+        sessionStorage.removeItem(LIBRARY_CACHE_KEY);
+        sessionStorage.removeItem(SNAPSHOT_STORAGE_KEY);
+        sessionStorage.removeItem('spotify_last_sync');
+        for (let index = sessionStorage.length - 1; index >= 0; index--) {
+          const key = sessionStorage.key(index);
+          if (key?.startsWith(TRACK_CACHE_PREFIX)) sessionStorage.removeItem(key);
+        }
       }
+      sessionStorage.setItem('spotify_user_id', state.userId);
+      sessionStorage.setItem('spotify_user_name', state.userName);
+      sessionStorage.setItem('spotify_user_email', state.userEmail);
+      if (state.userAvatar) sessionStorage.setItem('spotify_user_avatar', state.userAvatar);
+      else sessionStorage.removeItem('spotify_user_avatar');
       updateHeaderUserInfo();
 
       // 2. Fetch Playlist list only — NO track calls (1 API call, paginated)
@@ -1096,6 +1160,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const cockpitLoggedInActions = document.getElementById('cockpitLoggedInActions');
 
     if (isLoggedIn) {
+      // Demo catalog belongs only to the public landing page. Never carry it
+      // into an authenticated user's private workspace.
+      if (state.playlists === MOCK_PLAYLISTS || state.playlists.some(playlist => String(playlist?.id || '').startsWith('soond_pl_'))) {
+        state.playlists = [];
+        state.currentPlaylist = null;
+        state.presenceMap = {};
+        renderPlaylistsCatalog();
+        renderFastRecommendations();
+      }
       if (appModeBadge) {
         appModeBadge.textContent = "Spotify Hesabı (Aktif)";
         appModeBadge.style.background = "rgba(29, 185, 84, 0.15)";
@@ -1128,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
               tracksLoaded: !!cachedTracks
             };
           });
-          const cachedName = localStorage.getItem('spotify_user_name');
+          const cachedName = sessionStorage.getItem('spotify_user_name');
           if (cachedName) {
             state.userName = cachedName;
             updateHeaderUserInfo();
@@ -1142,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (remaining > 0) {
             const remainMin = Math.ceil(remaining / 60000);
             console.log(`[Session Init] Kütüphane cache'i boş ancak cooldown aktif (${remainMin} dk). Otomatik API isteği ENGELLENDİ.`);
-            const cachedName = localStorage.getItem('spotify_user_name');
+            const cachedName = sessionStorage.getItem('spotify_user_name');
             if (cachedName) {
               state.userName = cachedName;
               updateHeaderUserInfo();
@@ -1500,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const recsGrid = document.getElementById('recommendationsGrid');
     if (!recsGrid) return;
 
-    const activePlaylists = state.playlists.length > 0 ? state.playlists : MOCK_PLAYLISTS;
+    const activePlaylists = state.isLoggedIn ? state.playlists : MOCK_PLAYLISTS;
     if (activePlaylists.length < 2) {
       recsGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; color: var(--t-muted); padding: 20px; font-size: 12px;">
@@ -1580,7 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.openSmartMatchModal = function(plAId, plBId) {
-    const playlists = state.playlists.length ? state.playlists : MOCK_PLAYLISTS;
+    const playlists = state.isLoggedIn ? state.playlists : MOCK_PLAYLISTS;
     const plA = playlists.find(pl => String(pl.id) === String(plAId));
     const plB = playlists.find(pl => String(pl.id) === String(plBId));
     const modal = document.getElementById('smartMatchModal');
@@ -1804,7 +1877,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- WINDOW HELPER: CLICK PLAYLIST (Lazy Track Loader with localStorage Cache) ---
   window.selectAndAnalyzePlaylist = async function(plId) {
     let target = state.playlists.find(p => p.id === plId);
-    if (!target) {
+    if (!target && !state.isLoggedIn) {
       target = MOCK_PLAYLISTS.find(p => p.id === plId);
     }
     if (!target) return;
@@ -2859,9 +2932,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionStorage.removeItem('spotify_access_token');
       sessionStorage.removeItem('spotify_refresh_token');
       sessionStorage.removeItem('spotify_token_expires_at');
-      localStorage.removeItem('spotify_user_name');
-      localStorage.removeItem('spotify_user_email');
-      localStorage.removeItem('spotify_user_avatar');
+      clearPersonalSpotifySessionData();
       if (spotifyPlayer) spotifyPlayer.disconnect();
       spotifyPlayer = null;
       spotifyDeviceId = null;
@@ -2892,6 +2963,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tokenEl = document.getElementById('accessTokenInput');
       const token = tokenEl ? (tokenEl.value || '').trim() : '';
       if (token) {
+        clearPersonalSpotifySessionData();
         state.accessToken = token;
         sessionStorage.setItem('spotify_access_token', token);
         if (authModal) authModal.classList.add('hidden');
@@ -3121,6 +3193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
 
         if (data.access_token) {
+          clearPersonalSpotifySessionData();
           state.accessToken = data.access_token;
           sessionStorage.setItem('spotify_access_token', data.access_token);
           sessionStorage.setItem('spotify_token_expires_at', String(Date.now() + ((data.expires_in || 3600) * 1000)));
@@ -3140,6 +3213,43 @@ document.addEventListener('DOMContentLoaded', () => {
   handleSpotifyPKCECallback();
 
   // --- URL SEARCH PARSER ---
+  function openExternalPlaylistEmbed(playlistId, notice) {
+    state.externalPlaylist = null;
+    if (externalPlaylistTitle) externalPlaylistTitle.textContent = 'Spotify çalma listesi';
+    if (externalPlaylistSummary) externalPlaylistSummary.textContent = 'Herkese açık bağlantı • Kişisel kütüphanenizden ayrı';
+    if (externalPlaylistContent) {
+      externalPlaylistContent.innerHTML = `
+        <p class="external-playlist-notice"><i class="fa-solid fa-circle-info"></i> ${escapeMarkup(notice)}</p>
+        <iframe class="external-playlist-embed" src="https://open.spotify.com/embed/playlist/${encodeURIComponent(playlistId)}?utm_source=generator&theme=0" title="Spotify çalma listesi" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+    }
+    externalPlaylistModal?.classList.remove('hidden');
+  }
+
+  function renderExternalPlaylist(playlist) {
+    state.externalPlaylist = playlist;
+    if (externalPlaylistTitle) externalPlaylistTitle.textContent = playlist.name;
+    if (externalPlaylistSummary) externalPlaylistSummary.textContent = `${playlist.owner} • ${playlist.trackTotal} parça • Kişisel kütüphanenizden ayrı`;
+    if (!externalPlaylistContent) return;
+    const rows = playlist.tracks.map((track, index) => `
+      <div class="external-track-row">
+        <span>${index + 1}</span>
+        <img src="${escapeMarkup(track.cover || playlist.cover)}" alt="" loading="lazy" decoding="async">
+        <div class="external-track-copy"><strong>${escapeMarkup(track.title)}</strong><small>${escapeMarkup(track.artist)}${track.album ? ` • ${escapeMarkup(track.album)}` : ''}</small></div>
+        <button class="external-track-play" type="button" data-action="play-track" data-track-id="${escapeMarkup(track.id)}" aria-label="${escapeMarkup(track.title)} parçasını çal"><i class="fa-solid fa-play"></i></button>
+      </div>`).join('');
+    externalPlaylistContent.innerHTML = `
+      <div class="external-playlist-overview">
+        <img class="external-playlist-cover" src="${escapeMarkup(playlist.cover)}" alt="${escapeMarkup(playlist.name)} kapak görseli">
+        <div class="external-playlist-meta"><strong>${escapeMarkup(playlist.name)}</strong><span>Oluşturan: ${escapeMarkup(playlist.owner)}</span><span>${playlist.trackTotal} parça${playlist.followers ? ` • ${playlist.followers.toLocaleString('tr-TR')} takipçi` : ''}</span></div>
+        <div class="external-playlist-actions"><a class="btn btn-spotify btn-sm" href="${escapeMarkup(playlist.url)}" target="_blank" rel="noopener"><i class="fa-brands fa-spotify"></i> Spotify'da aç</a></div>
+      </div>
+      <p class="external-playlist-notice"><i class="fa-solid fa-shield-halved"></i> Bu liste yalnızca bu ayrı pencerede incelenir; hesabınızdaki listelere, önerilere veya karşılaştırmalara eklenmez.</p>
+      <div class="external-track-list">${rows || '<p class="external-playlist-notice">Bu listede görüntülenebilir parça bulunamadı.</p>'}</div>`;
+    externalPlaylistModal?.classList.remove('hidden');
+  }
+
+  btnCloseExternalPlaylist?.addEventListener('click', () => externalPlaylistModal?.classList.add('hidden'));
+
   if (btnAnalyze) {
     btnAnalyze.addEventListener('click', async () => {
       const val = playlistUrlInput.value.trim();
@@ -3150,53 +3260,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const extractedId = extractCleanPlaylistId(val);
       if (extractedId) {
-        // If we have an existing matching playlist in state or mock
-        let found = state.playlists.find(p => p.id === extractedId) || MOCK_PLAYLISTS.find(p => p.id === extractedId);
+        // A user's own playlist keeps using the private workspace inspector.
+        const found = state.playlists.find(p => p.id === extractedId);
         if (found) {
           selectAndAnalyzePlaylist(found.id);
           showToast(`"${found.name}" çalma listesi açıldı!`, "success");
           return;
         }
 
-        // If user is authenticated, attempt to fetch directly from Spotify
+        // Public links are rendered in a dedicated inspector and never merged
+        // into the signed-in user's library or comparison engine.
         if (state.accessToken) {
-          showToast("Spotify bağlantısı taranıyor...", "info");
+          btnAnalyze.disabled = true;
+          btnAnalyze.classList.add('is-loading');
+          showToast("Spotify çalma listesi açılıyor...", "info");
           try {
-            const tracks = await fetchSpotifyPlaylistTracks(state.accessToken, extractedId);
+            const token = await getValidSpotifyAccessToken();
+            const [details, tracks] = await Promise.all([
+              fetchSpotifyPlaylistDetails(token, extractedId),
+              fetchSpotifyPlaylistTracks(token, extractedId)
+            ]);
             if (tracks && tracks.length > 0) {
-              const newPl = {
+              const externalPlaylist = {
                 id: extractedId,
-                name: `Bağlantı Listesi (${extractedId.substring(0, 8)})`,
-                owner: state.userName || 'Spotify',
-                followers: 0,
-                isPrivate: false,
-                url: `https://open.spotify.com/playlist/${extractedId}`,
-                cover: tracks[0].cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&q=80',
-                description: 'URL üzerinden taranan çalma listesi.',
-                trackTotal: tracks.length,
-                tracks: tracks,
+                name: details.name || 'Spotify çalma listesi',
+                owner: details.owner?.display_name || details.owner?.id || 'Spotify kullanıcısı',
+                followers: Number(details.followers?.total || 0),
+                isPrivate: details.public === false,
+                url: details.external_urls?.spotify || `https://open.spotify.com/playlist/${extractedId}`,
+                cover: details.images?.[0]?.url || tracks[0].cover || '/brand/tify-plus-mark-512.png',
+                description: details.description || 'Bağlantı üzerinden incelenen Spotify çalma listesi.',
+                trackTotal: Number(details.tracks?.total || details.items?.total || tracks.length),
+                tracks,
                 tracksLoaded: true
               };
-              state.playlists.unshift(newPl);
-              buildGlobalPresenceMap();
-              renderPlaylistsCatalog();
-              selectAndAnalyzePlaylist(newPl.id);
-              showToast(`Çalma listesi başarıyla aktarıldı (${tracks.length} parça)!`, "success");
+              renderExternalPlaylist(externalPlaylist);
+              showToast(`"${externalPlaylist.name}" ayrı pencerede açıldı.`, "success");
               return;
             }
           } catch(e) {
             console.warn("Direct URL fetch failed:", e);
+            openExternalPlaylistEmbed(extractedId, 'Spotify API ayrıntıları alınamadı. Gerçek liste aşağıdaki resmî Spotify oynatıcısında açıldı; demo veri gösterilmedi.');
+            showToast('Liste resmî Spotify görünümünde açıldı.', 'info');
+            return;
+          } finally {
+            btnAnalyze.disabled = false;
+            btnAnalyze.classList.remove('is-loading');
           }
         }
 
-        // Fallback: pick first demo playlist and focus
-        const demoPl = state.playlists[0] || MOCK_PLAYLISTS[0];
-        if (demoPl) {
-          selectAndAnalyzePlaylist(demoPl.id);
-          showToast("Demo modunda örnek playlist analizi açıldı!", "success");
-        }
+        openExternalPlaylistEmbed(extractedId, 'Ayrıntılı parça incelemesi için Spotify hesabınızı bağlayabilirsiniz. Liste yine de resmî Spotify oynatıcısında kullanılabilir.');
       } else {
-        showToast("Geçerli bir Spotify bağlantısı bulunamadı.", "warning");
+        showToast("Geçerli bir Spotify çalma listesi bağlantısı bulunamadı.", "warning");
       }
     });
   }
@@ -3591,7 +3706,11 @@ document.addEventListener('DOMContentLoaded', () => {
       track = state.currentPlaylist.tracks.find(t => t.id === trackId);
       plName = state.currentPlaylist.name;
     }
-    if (!track) {
+    if (!track && state.externalPlaylist?.tracks) {
+      track = state.externalPlaylist.tracks.find(t => t.id === trackId);
+      if (track) plName = state.externalPlaylist.name;
+    }
+    if (!track && !state.isLoggedIn) {
       for (const pl of SOOND_PUBLIC_PLAYLISTS) {
         if (pl.tracks) {
           const found = pl.tracks.find(t => t.id === trackId);
@@ -4421,7 +4540,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? localPlaybackQueue
       : (state.currentPlaylist && state.currentPlaylist.tracks && state.currentPlaylist.tracks.length > 0)
         ? state.currentPlaylist.tracks
-      : (SOOND_PUBLIC_PLAYLISTS[0].tracks || []);
+      : (!state.isLoggedIn ? (SOOND_PUBLIC_PLAYLISTS[0].tracks || []) : []);
     if (!activeList.length) return;
 
     let idx = activeList === localPlaybackQueue && localPlaybackQueueIndex >= 0
@@ -4435,7 +4554,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })()
       : (idx + 1) % activeList.length;
     if (activeList === localPlaybackQueue) localPlaybackQueueIndex = nextIdx;
-    const plName = state.currentPlaylist ? state.currentPlaylist.name : SOOND_PUBLIC_PLAYLISTS[0].name;
+    const plName = state.currentPlaylist ? state.currentPlaylist.name : (state.externalPlaylist?.name || 'Spotify');
     loadAndPlayUnifiedTrack(activeList[nextIdx], plName);
   }
 
@@ -4444,7 +4563,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? localPlaybackQueue
       : (state.currentPlaylist && state.currentPlaylist.tracks && state.currentPlaylist.tracks.length > 0)
         ? state.currentPlaylist.tracks
-      : (SOOND_PUBLIC_PLAYLISTS[0].tracks || []);
+      : (!state.isLoggedIn ? (SOOND_PUBLIC_PLAYLISTS[0].tracks || []) : []);
     if (!activeList.length) return;
 
     let idx = activeList === localPlaybackQueue && localPlaybackQueueIndex >= 0
@@ -4452,7 +4571,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : currentCassetteTrack ? activeList.findIndex(t => t.id === currentCassetteTrack.id) : 0;
     const prevIdx = (idx - 1 + activeList.length) % activeList.length;
     if (activeList === localPlaybackQueue) localPlaybackQueueIndex = prevIdx;
-    const plName = state.currentPlaylist ? state.currentPlaylist.name : SOOND_PUBLIC_PLAYLISTS[0].name;
+    const plName = state.currentPlaylist ? state.currentPlaylist.name : (state.externalPlaylist?.name || 'Spotify');
     loadAndPlayUnifiedTrack(activeList[prevIdx], plName);
   }
 
@@ -4806,6 +4925,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (key && (FUNCTIONAL_STORAGE_KEYS.has(key) || key.startsWith(TRACK_CACHE_PREFIX))) keysToDelete.push(key);
     }
     keysToDelete.forEach(key => localStorage.removeItem(key));
+    clearPersonalSpotifySessionData();
     state.versionedHistory = [];
   }
 

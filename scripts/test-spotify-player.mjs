@@ -203,6 +203,17 @@ assert.match(themeInit, /\? savedTheme : 'light'/, 'İlk ziyaret düşük parlam
 assert.match(styles, /@keyframes polarStarSpin/, 'Üst artı simgesi kutup yıldızı gibi dönmeli');
 assert.match(styles, /\.brand-title \.brand-plus::before[\s\S]*polarStarTwinkle/, 'Üst artı simgesinde yıldız ışını ve parıltı animasyonu bulunmalı');
 assert.match(styles, /--f-display:\s*'Inter'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');
+assert.match(html, /id="externalPlaylistModal"/, 'Dış Spotify bağlantıları için ayrı inceleme penceresi bulunmalı');
+assert.match(source, /openExternalPlaylistEmbed\(extractedId/, 'Dış bağlantı API hatasında gerçek Spotify embed görünümüne düşmeli');
+assert.doesNotMatch(source, /Demo modunda örnek playlist analizi açıldı/, 'Dış playlist hatası kullanıcının karşısına demo playlist çıkarmamalı');
+assert.doesNotMatch(source, /state\.playlists\.unshift\(newPl\)/, 'Dış playlist kullanıcının kişisel kütüphanesine karıştırılmamalı');
+assert.match(source, /const activePlaylists = state\.isLoggedIn \? state\.playlists : MOCK_PLAYLISTS/, 'Demo eşleşmeleri yalnızca giriş yapılmamış ana sayfada çalışmalı');
+assert.match(source, /sessionStorage\.setItem\(LIBRARY_CACHE_KEY/, 'Kişisel Spotify kütüphanesi sekme oturumuna özel saklanmalı');
+const linkContext = { URL };
+vm.createContext(linkContext);
+vm.runInContext(`${extractFunction('extractCleanPlaylistId')}\nglobalThis.parsePlaylist = extractCleanPlaylistId;`, linkContext);
+assert.equal(linkContext.parsePlaylist('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=test'), '37i9dQZF1DXcBWIGoYBM5M', 'Spotify playlist bağlantısı sorgu parametrelerinden temizlenmeli');
+assert.equal(linkContext.parsePlaylist('https://open.spotify.com/user/example'), '', 'Profil bağlantısı yanlışlıkla playlist olarak açılmamalı');
 assert.match(styles, /realisticBoltBurst/, 'Gerçekçi yıldırım düzensiz çoklu çakma animasyonu kullanmalı');
 assert.match(styles, /energy-bolt-branch/, 'Yıldırım efektinde bağımsız yan dallar bulunmalı');
 assert.match(html, /animate attributeName="d"/, 'Zikzak yıldırım hattının geometrisi hareket halinde değişmeli');

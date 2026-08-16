@@ -391,6 +391,21 @@
       </div>
     </div>
 
+    <!-- EXTERNAL SPOTIFY PLAYLIST INSPECTOR -->
+    <div id="externalPlaylistModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="externalPlaylistTitle">
+      <div class="modal-card external-playlist-card">
+        <div class="external-playlist-head">
+          <div>
+            <span class="external-playlist-kicker"><i class="fa-brands fa-spotify"></i> DIŞ BAĞLANTI • AYRI İNCELEME</span>
+            <h3 id="externalPlaylistTitle">Spotify çalma listesi</h3>
+            <p id="externalPlaylistSummary">Bağlantı doğrulanıyor…</p>
+          </div>
+          <button id="btnCloseExternalPlaylist" class="close-btn" type="button" aria-label="Dış playlist penceresini kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="externalPlaylistContent" class="external-playlist-content" aria-live="polite"></div>
+      </div>
+    </div>
+
     <!-- TOAST NOTIFICATION -->
     <div id="toastNotification" class="toast-notification hidden" style="position:fixed; bottom:25px; right:25px; z-index:9999; background:rgba(8,14,24,0.95); backdrop-filter:blur(25px); padding:14px 22px; border-radius:999px; box-shadow:var(--shadow-lg); color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; gap:10px;">
       <i class="fa-solid fa-circle-info" style="color:var(--lime);"></i>
@@ -431,7 +446,7 @@
         <div class="hero-url-slot">
           <div class="url-slot-inner">
             <i class="fa-solid fa-link" style="color:var(--muted); font-size:13px;"></i>
-            <input type="text" id="playlistUrlInput" placeholder="Spotify Playlist / Profil bağlantısı yapıştırın...">
+            <input type="url" id="playlistUrlInput" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Spotify çalma listesi bağlantısını yapıştırın...">
             <button id="btnAnalyze" class="pill join" style="padding:6px 16px; font-size:12px;">
               <span>İncele</span>
             </button>
