@@ -933,7 +933,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initial = (state.userName || 'S').trim().charAt(0).toUpperCase();
 
-    if (state.userAvatar) {
+    const useRemoteHeaderAvatar = Boolean(state.userAvatar) && !window.matchMedia('(max-width: 720px)').matches;
+
+    if (useRemoteHeaderAvatar) {
       if (headerAvatarImg) {
         headerAvatarImg.src = state.userAvatar;
         headerAvatarImg.onerror = () => {
@@ -3254,6 +3256,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let spotifyPlayerInitPromise = null;
   let spotifySdkPromise = null;
   let spotifyPlayerFailureReason = null;
+  let spotifyPlayerFailureMessage = '';
   let spotifyWarmupTimer = null;
 
   // DOM Elements - Hero Cassette Deck
@@ -3295,6 +3298,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlayerMute = document.getElementById('btnPlayerMute');
   let lastPlayerVolume = 0.85;
   let activeSpotifyDeviceId = null;
+  let activeSpotifyDeviceName = '';
   let remoteVolumeTimer = null;
 
   function formatTapeTime(sec) {
@@ -3508,7 +3512,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setPlayerSource(mode, label) {
     playbackBackend = mode;
     if (!playerSourceBadge) return;
-    playerSourceBadge.className = `player-source-badge ${mode === 'preview' ? 'preview' : mode === 'spotify' ? '' : 'offline'}`;
+    const isSpotifySource = String(mode).startsWith('spotify');
+    playerSourceBadge.className = `player-source-badge ${mode === 'preview' ? 'preview' : isSpotifySource ? '' : 'offline'}`;
     playerSourceBadge.innerHTML = `<i class="fa-brands fa-spotify"></i> ${label}`;
   }
 
@@ -3552,6 +3557,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     spotifyPlayerInitPromise = (async () => {
       spotifyPlayerFailureReason = null;
+      spotifyPlayerFailureMessage = '';
       await loadSpotifySdk();
       return new Promise((resolve) => {
         let settled = false;
@@ -3604,6 +3610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fail = (message, reason = 'unknown', needsReconnect = false) => {
           console.warn('[Spotify Player]', message);
           spotifyPlayerFailureReason = reason;
+          spotifyPlayerFailureMessage = String(message || '');
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
           finish(false);
         };
@@ -3632,6 +3639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })().catch(error => {
       console.warn('[Spotify SDK]', error);
       spotifyPlayerFailureReason = 'sdk';
+      spotifyPlayerFailureMessage = String(error?.message || error || '');
       return false;
     }).finally(() => {
       if (!spotifyDeviceId) {
@@ -3680,6 +3688,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function playThroughSpotifyConnect(track) {
+    const uri = getSpotifyTrackUri(track);
+    if (!state.accessToken || !uri) return false;
+
+    try {
+      const token = await getValidSpotifyAccessToken();
+      const devicesResponse = await fetch('https://api.spotify.com/v1/me/player/devices', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!devicesResponse.ok) {
+        spotifyPlayerFailureReason = devicesResponse.status === 401 ? 'authentication' : devicesResponse.status === 403 ? 'premium' : 'devices';
+        spotifyPlayerFailureMessage = `Spotify devices HTTP ${devicesResponse.status}`;
+        return false;
+      }
+
+      const data = await devicesResponse.json();
+      const devices = (Array.isArray(data.devices) ? data.devices : [])
+        .filter(device => device?.id && !device.is_restricted && device.name !== 'Tify Plus Pulse Web Player');
+      const target = devices.find(device => device.is_active)
+        || devices.find(device => String(device.type).toLowerCase() === 'smartphone')
+        || devices[0];
+
+      if (!target) {
+        spotifyPlayerFailureReason = 'no_device';
+        spotifyPlayerFailureMessage = 'Spotify Connect cihazı bulunamadı.';
+        return false;
+      }
+
+      const playResponse = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(target.id)}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ uris: [uri] })
+      });
+      if (!playResponse.ok) {
+        const details = await playResponse.json().catch(() => ({}));
+        spotifyPlayerFailureReason = playResponse.status === 401
+          ? 'authentication'
+          : playResponse.status === 403
+            ? 'premium'
+            : playResponse.status === 404
+              ? 'no_device'
+              : 'playback';
+        spotifyPlayerFailureMessage = details?.error?.message || `Spotify Connect HTTP ${playResponse.status}`;
+        return false;
+      }
+
+      activeSpotifyDeviceId = target.id;
+      activeSpotifyDeviceName = target.name || 'Spotify cihazı';
+      spotifyPlayerFailureReason = null;
+      spotifyPlayerFailureMessage = '';
+      setPlayerSource('spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
+      setUnifiedPlaybackState(true);
+      showToast(`Oynatma “${activeSpotifyDeviceName}” cihazında başlatıldı.`, 'success');
+      return true;
+    } catch (error) {
+      console.warn('[Spotify Connect Playback]', error);
+      spotifyPlayerFailureReason ||= 'connection';
+      spotifyPlayerFailureMessage = String(error?.message || error || '');
+      return false;
+    }
+  }
+
   async function loadAndPlayUnifiedTrack(track, playlistName) {
     if (!state.accessToken) {
       showSpotifyLoginRequired();
@@ -3721,6 +3794,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const spotifyStarted = await playThroughSpotify(track);
     if (spotifyStarted) return;
 
+    // Some mobile browsers cannot initialize encrypted Web Playback media.
+    // Keep playback official by targeting an available Spotify Connect device.
+    const connectStarted = await playThroughSpotifyConnect(track);
+    if (connectStarted) return;
+
     setUnifiedPlaybackState(false);
     if (spotifyPlayerFailureReason === 'autoplay') {
       setPlayerSource('none', 'Dokunarak başlatın');
@@ -3731,9 +3809,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (spotifyPlayerFailureReason === 'premium') {
       setPlayerSource('none', 'Spotify Premium gerekli');
       showToast('Tarayıcı içinde tam şarkı oynatma Spotify Premium hesabı gerektirir.', 'warning');
+    } else if (spotifyPlayerFailureReason === 'no_device') {
+      setPlayerSource('none', 'Spotify cihazı bekleniyor');
+      showToast('Spotify uygulamasını açın, bir şarkıyı kısa süre oynatın ve buradaki oynat düğmesine tekrar dokunun.', 'warning');
     } else {
       setPlayerSource('none', 'Player hazırlanamadı');
-      showToast('Spotify Web Player başlatılamadı. Player’daki Spotify düğmesiyle parçayı uygulamada açabilirsiniz.', 'warning');
+      console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
+      showToast('Mobil player hazırlanamadı. Spotify uygulamasını açık tutup tekrar deneyin veya Spotify düğmesiyle parçayı açın.', 'warning');
     }
   }
 
@@ -3829,15 +3911,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
+    if (playbackBackend === 'spotify-remote' && activeSpotifyDeviceId) {
+      try {
+        const token = await getValidSpotifyAccessToken();
+        const endpoint = isCassettePlaying ? 'pause' : 'play';
+        const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}?device_id=${encodeURIComponent(activeSpotifyDeviceId)}`, {
+          method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error(`Spotify remote ${endpoint} HTTP ${response.status}`);
+        setUnifiedPlaybackState(!isCassettePlaying);
+      } catch (error) {
+        console.warn('[Spotify Remote Toggle]', error);
+        showToast('Spotify cihazına oynatma komutu gönderilemedi. Spotify uygulamasını açık tutun.', 'warning');
+      }
+      return;
+    }
     if (isCassettePlaying) {
       if (cassetteAudioPlayer && cassetteAudioPlayer.src) cassetteAudioPlayer.pause();
       setUnifiedPlaybackState(false);
     } else {
       if (!currentCassetteTrack) {
-        // Load default first track from SOOND collection
-        const firstPl = state.playlists[0] || SOOND_PUBLIC_PLAYLISTS[0];
-        if (firstPl && firstPl.tracks && firstPl.tracks[0]) {
-          loadAndPlayUnifiedTrack(firstPl.tracks[0], firstPl.name);
+        const loadedPlaylist = [state.currentPlaylist, ...state.playlists]
+          .find(playlist => Array.isArray(playlist?.tracks) && playlist.tracks.some(getSpotifyTrackUri));
+        const loadedTrack = loadedPlaylist?.tracks?.find(getSpotifyTrackUri);
+        if (loadedTrack) {
+          loadAndPlayUnifiedTrack(loadedTrack, loadedPlaylist.name);
+          return;
+        }
+        const firstSpotifyPlaylist = state.playlists.find(playlist => playlist?.id);
+        if (firstSpotifyPlaylist) {
+          window.playPlaylistFromCover(firstSpotifyPlaylist.id);
           return;
         }
       }
@@ -3848,6 +3951,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setUnifiedPlaybackState(false);
         showToast('Spotify hesabınızdaki bir şarkıyı seçerek oynatmayı başlatın.', 'warning');
       }
+    }
+  }
+
+  async function seekSpotifyPlayback(positionMs) {
+    try {
+      if (playbackBackend === 'spotify' && spotifyPlayer) {
+        await spotifyPlayer.seek(positionMs);
+        return;
+      }
+      if (playbackBackend === 'spotify-remote' && activeSpotifyDeviceId) {
+        const token = await getValidSpotifyAccessToken();
+        const response = await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.max(0, positionMs)}&device_id=${encodeURIComponent(activeSpotifyDeviceId)}`, {
+          method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error(`Spotify remote seek HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.warn('[Spotify Seek]', error);
+      showToast('Spotify cihazında ileri sarma yapılamadı.', 'warning');
     }
   }
 
@@ -3912,9 +4034,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cassetteAudioPlayer && cassetteAudioPlayer.duration) {
         cassetteAudioPlayer.currentTime = clickPos * cassetteAudioPlayer.duration;
       }
-      if (playbackBackend === 'spotify' && spotifyPlayer) {
-        try { await spotifyPlayer.seek(Math.floor(clickPos * cassetteDurationSec * 1000)); } catch (error) { console.warn('[Spotify Seek]', error); }
-      }
+      await seekSpotifyPlayback(Math.floor(clickPos * cassetteDurationSec * 1000));
     });
   }
 
@@ -3929,9 +4049,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cassetteAudioPlayer && cassetteAudioPlayer.duration) {
         cassetteAudioPlayer.currentTime = clickPos * cassetteAudioPlayer.duration;
       }
-      if (playbackBackend === 'spotify' && spotifyPlayer) {
-        try { await spotifyPlayer.seek(Math.floor(clickPos * cassetteDurationSec * 1000)); } catch (error) { console.warn('[Spotify Seek]', error); }
-      }
+      await seekSpotifyPlayback(Math.floor(clickPos * cassetteDurationSec * 1000));
     });
   }
 
@@ -3963,6 +4081,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (!response.ok) throw new Error(`Spotify transfer HTTP ${response.status}`);
         activeSpotifyDeviceId = deviceButton.dataset.deviceId;
+        activeSpotifyDeviceName = deviceButton.querySelector('strong')?.textContent || 'Spotify cihazı';
+        setPlayerSource('spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
         playerDevicesPopover.classList.add('hidden');
         btnPlayerDevices.setAttribute('aria-expanded', 'false');
         showToast('Spotify oynatması seçilen cihaza aktarıldı.', 'success');
@@ -4436,7 +4556,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function showToast(msg, type = "success") {
     toastMessage.textContent = msg;
     toastNotification.classList.remove('hidden');
-    setTimeout(() => {
+    clearTimeout(showToast.hideTimer);
+    showToast.hideTimer = setTimeout(() => {
       toastNotification.classList.add('hidden');
     }, 3500);
   }
