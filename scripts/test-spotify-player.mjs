@@ -71,6 +71,7 @@ const context = {
   spotifyPlayerFailureReason: null,
   spotifyPlayerFailureMessage: '',
   spotifySdkUnavailableUntil: 0,
+  localSpotifyDeviceLabel: 'Tify Plus Web • TEST',
   playbackBackend: 'none',
   activeSpotifyDeviceId: null,
   activeSpotifyDeviceName: '',
@@ -86,6 +87,7 @@ const context = {
   formatTapeTime: () => '00:00',
   setPlayerProgress: () => {},
   setUnifiedPlaybackState: () => {},
+  setLocalVirtualDeviceState: () => {},
   requestSpotifyMediaActivation() {
     if (!context.spotifyPlayer) return false;
     context.spotifyPlayer.activateElement();
@@ -127,6 +129,7 @@ const connectContext = {
   activeSpotifyDeviceId: null,
   activeSpotifyDeviceName: '',
   spotifyDeviceId: null,
+  localSpotifyDeviceLabel: 'Tify Plus Web • TEST',
   spotifyPlayerFailureReason: null,
   spotifyPlayerFailureMessage: '',
   getSpotifyTrackUri: () => 'spotify:track:1234567890123456789012',
@@ -157,7 +160,10 @@ vm.runInContext(`${extractFunction('playThroughSpotifyConnect')}\nglobalThis.run
 assert.equal(await connectContext.runConnect({ id: 'track-id' }, 1, {}), true, 'Spotify Connect yedek yolu parçayı başlatmalı');
 assert.equal(requestedDeviceId, 'phone-device', 'Mobil cihaz masaüstünden önce seçilmeli');
 assert.match(selectedSource, /^spotify-remote\|Spotify Connect • Telefon$/, 'Player seçilen Spotify Connect cihazını göstermeli');
-assert.match(source, /name: 'Tify Plus Pulse Web Player'/, 'Yerel Spotify cihazı Tify Plus Pulse adıyla oluşturulmalı');
+assert.match(source, /name: localSpotifyDeviceLabel/, 'Yerel Spotify cihazı sekmeye özel anonim adla oluşturulmalı');
+assert.ok(source.includes('globalThis.crypto.getRandomValues(anonymousDeviceBytes)'), 'Anonim cihaz eki kişisel veriden değil güvenli rastgele kaynaktan üretilmeli');
+assert.doesNotMatch(source, /localSpotifyDeviceLabel\s*=.*state\.(user|profile)|localSpotifyDeviceLabel\s*=.*email/i, 'Cihaz adı kullanıcı kimliği veya e-postadan üretilmemeli');
+assert.match(html, /id="localVirtualDevice"/, 'Sitede yerel sanal cihaz durum kartı bulunmalı');
 assert.match(source, /return playbackBackend === 'spotify-remote'[\s\S]*activeSpotifyDeviceId !== spotifyDeviceId;/, 'Spotify Connect yalnızca kullanıcı uzaktaki cihazı seçtiğinde öncelikli olmalı');
 assert.doesNotMatch(source, /spotifyStarted = await playThroughSpotify\(track, requestId, signal\);\s*if \(!spotifyStarted[\s\S]{0,180}playThroughSpotifyConnect/, 'Yerel player hatası bilgisayardaki Spotify cihazına otomatik aktarılmamalı');
 assert.match(source, /window\.addEventListener\('pagehide', disconnectLocalSpotifyPlayer\)/, 'Sayfa kapanırken eski Spotify web cihazı ayrılmalı');

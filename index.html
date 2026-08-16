@@ -1060,6 +1060,15 @@
           <button id="btnPlayerDevices" class="player-utility-btn" title="Spotify cihazları" aria-expanded="false"><i class="fa-solid fa-desktop"></i><span>Cihaz</span></button>
           <div id="playerDevicesPopover" class="player-devices-popover hidden">
             <div class="devices-popover-head"><strong>Spotify Connect</strong><small>Oynatma cihazları</small></div>
+            <div id="localVirtualDevice" class="local-virtual-device is-offline" aria-live="polite">
+              <span class="virtual-device-orb" aria-hidden="true"><i class="fa-solid fa-wave-square"></i></span>
+              <span class="virtual-device-copy">
+                <strong id="localVirtualDeviceName">Tify Plus Web</strong>
+                <small id="localVirtualDeviceStatus">Spotify hesabınızı bağlayın</small>
+              </span>
+              <em id="localVirtualDeviceBadge">BU SEKME</em>
+            </div>
+            <p class="virtual-device-privacy"><i class="fa-solid fa-shield-halved"></i> Geçici ve anonimdir. Başka kullanıcılarla paylaşılmaz.</p>
             <div id="playerDevicesList" class="player-devices-list"><span class="device-empty">Cihazlar henüz yüklenmedi.</span></div>
           </div>
         </div>

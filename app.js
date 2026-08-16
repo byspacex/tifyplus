@@ -3322,10 +3322,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlayerMute = document.getElementById('btnPlayerMute');
   const spotifyEmbedPanel = document.getElementById('spotifyEmbedPanel');
   const spotifyEmbedMount = document.getElementById('spotifyEmbedMount');
+  const localVirtualDevice = document.getElementById('localVirtualDevice');
+  const localVirtualDeviceName = document.getElementById('localVirtualDeviceName');
+  const localVirtualDeviceStatus = document.getElementById('localVirtualDeviceStatus');
+  const localVirtualDeviceBadge = document.getElementById('localVirtualDeviceBadge');
+  const anonymousDeviceAlphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const anonymousDeviceBytes = new Uint8Array(4);
+  if (globalThis.crypto?.getRandomValues) globalThis.crypto.getRandomValues(anonymousDeviceBytes);
+  else anonymousDeviceBytes.forEach((_, index) => { anonymousDeviceBytes[index] = Math.floor(Math.random() * 256); });
+  const anonymousDeviceSuffix = Array.from(anonymousDeviceBytes, value => anonymousDeviceAlphabet[value % anonymousDeviceAlphabet.length]).join('');
+  const localSpotifyDeviceLabel = `Tify Plus Web • ${anonymousDeviceSuffix}`;
   let lastPlayerVolume = 0.85;
   let activeSpotifyDeviceId = null;
   let activeSpotifyDeviceName = '';
   let remoteVolumeTimer = null;
+
+  function setLocalVirtualDeviceState(mode, status, badge = 'BU SEKME') {
+    if (localVirtualDeviceName) localVirtualDeviceName.textContent = localSpotifyDeviceLabel;
+    if (localVirtualDeviceStatus) localVirtualDeviceStatus.textContent = status;
+    if (localVirtualDeviceBadge) localVirtualDeviceBadge.textContent = badge;
+    if (!localVirtualDevice) return;
+    localVirtualDevice.classList.remove('is-offline', 'is-connecting', 'is-connected', 'is-preview');
+    localVirtualDevice.classList.add(`is-${mode}`);
+  }
+
+  setLocalVirtualDeviceState(state.accessToken ? 'connecting' : 'offline', state.accessToken ? 'Yerel Spotify cihazı hazırlanıyor' : 'Spotify hesabınızı bağlayın');
 
   function disconnectLocalSpotifyPlayer() {
     clearTimeout(spotifyWarmupTimer);
@@ -3335,6 +3356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     spotifyPlayer = null;
     spotifyDeviceId = null;
     spotifyPlayerInitPromise = null;
+    setLocalVirtualDeviceState('offline', 'Bu sekmedeki cihaz bağlantısı kapandı');
   }
 
   function pauseSpotifyEmbed() {
@@ -3412,7 +3434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (spotifyDeviceId && !devices.some(device => device.id === spotifyDeviceId)) {
         devices.unshift({
           id: spotifyDeviceId,
-          name: 'Tify Plus Pulse Web Player',
+          name: localSpotifyDeviceLabel,
           type: 'Computer',
           volume_percent: Math.round(Number(playerVolumeSlider?.value || 85)),
           is_active: activeSpotifyDeviceId === spotifyDeviceId,
@@ -3439,6 +3461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spotifyPlayer) spotifyPlayer.pause().catch(() => {});
     pauseSpotifyEmbed();
     setUnifiedPlaybackState(false);
+    setLocalVirtualDeviceState('offline', 'Spotify hesabınızı bağlayın');
     setPlayerSource('none', 'Spotify girişi gerekli');
     if (floatingWebPlayer) floatingWebPlayer.classList.add('hidden');
     showToast('Orijinal şarkıları dinlemek için Spotify hesabınızı bağlayın.', 'warning');
@@ -3735,6 +3758,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeSpotifyDeviceId = null;
       activeSpotifyDeviceName = '';
       setPlayerSource('spotify-embed', 'Tify Plus tarayıcı oynatıcısı');
+      setLocalVirtualDeviceState('preview', 'Tarayıcıda yerel önizleme oynatılıyor', 'ÖNİZLEME');
       spotifyEmbedController.play();
       return true;
     } catch (error) {
@@ -3756,8 +3780,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     spotifyPlayerFailureReason = null;
     spotifyPlayerFailureMessage = '';
+    setLocalVirtualDeviceState('connecting', 'Spotify Connect cihazı oluşturuluyor');
     const player = new Spotify.Player({
-          name: 'Tify Plus Pulse Web Player',
+          name: localSpotifyDeviceLabel,
           getOAuthToken: callback => {
             getValidSpotifyAccessToken()
               .then(token => callback(token || ''))
@@ -3788,14 +3813,16 @@ document.addEventListener('DOMContentLoaded', () => {
           spotifyPlayerFailureMessage = '';
           if (!['spotify-remote', 'spotify-embed'].includes(playbackBackend)) {
             activeSpotifyDeviceId = device_id;
-            activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
+            activeSpotifyDeviceName = localSpotifyDeviceLabel;
             setPlayerSource('spotify', 'Spotify Premium');
           }
+          setLocalVirtualDeviceState('connected', 'Spotify Connect üzerinden bu tarayıcıya bağlı', 'BAĞLI');
           finish(true);
         });
         player.addListener('not_ready', () => {
           if (spotifyPlayer !== player) return;
           spotifyDeviceId = null;
+          setLocalVirtualDeviceState('offline', 'Spotify cihaz bağlantısı kesildi');
           setPlayerSource('none', 'Bağlantı kesildi');
         });
         player.addListener('player_state_changed', (sdkState) => {
@@ -3822,6 +3849,7 @@ document.addEventListener('DOMContentLoaded', () => {
             spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
           }
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
+          if (reason !== 'autoplay') setLocalVirtualDeviceState('offline', 'Spotify Connect cihazı hazır değil');
           finish(false);
         };
         player.addListener('initialization_error', ({ message }) => fail(message, 'initialization'));
@@ -3854,6 +3882,7 @@ document.addEventListener('DOMContentLoaded', () => {
           spotifyPlayerFailureReason ||= 'timeout';
           spotifyPlayerFailureMessage ||= 'Spotify oynatıcı bağlantısı zaman aşımına uğradı.';
           spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
+          setLocalVirtualDeviceState('offline', 'Spotify Connect cihazı zaman aşımına uğradı');
           finish(false);
         }, 6000);
     });
@@ -3886,6 +3915,7 @@ document.addEventListener('DOMContentLoaded', () => {
       spotifyPlayerFailureReason = 'sdk';
       spotifyPlayerFailureMessage = String(error?.message || error || '');
       spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
+      setLocalVirtualDeviceState('offline', 'Spotify Connect çalışma zamanı yüklenemedi');
       return false;
     }
   }
@@ -3925,7 +3955,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       spotifyPlayerFailureReason = null;
       activeSpotifyDeviceId = spotifyDeviceId;
-      activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
+      activeSpotifyDeviceName = localSpotifyDeviceLabel;
       hideSpotifyEmbed();
       setPlayerSource('spotify', 'Spotify Premium');
       return true;
@@ -3964,7 +3994,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await devicesResponse.json();
         const devices = (Array.isArray(data.devices) ? data.devices : [])
-          .filter(device => device?.id && !device.is_restricted && device.id !== spotifyDeviceId && device.name !== 'Tify Plus Pulse Web Player');
+          .filter(device => device?.id && !device.is_restricted && device.id !== spotifyDeviceId && device.name !== localSpotifyDeviceLabel);
         target = devices.find(device => String(device.type).toLowerCase() === 'smartphone')
           || devices.find(device => device.is_active)
           || devices[0];
