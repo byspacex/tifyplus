@@ -182,6 +182,12 @@ assert.match(headers, /encrypted-media=\(self "https:\/\/sdk\.scdn\.co"\)/, 'Spo
 assert.match(styles, /\.floating-web-player \.player-center[\s\S]*left:\s*50%[\s\S]*translateX\(-50%\)/, 'Masaüstü player kontrolleri parça metninden bağımsız ekran merkezinde kalmalı');
 assert.match(styles, /\.energy-head i\s*\{\s*display:\s*none/, 'İlerleme göstergesinde yıldırım logosu görünmemeli');
 assert.match(styles, /energyRingFlash/, 'İlerleme göstergesi ikon yerine enerji parlamasıyla hareket etmeli');
+assert.match(html, /class="energy-bolt-fx"/, 'İlerleme göstergesinde çatallanan SVG yıldırım efekti bulunmalı');
+assert.match(styles, /realisticBoltBurst/, 'Gerçekçi yıldırım düzensiz çoklu çakma animasyonu kullanmalı');
+assert.match(styles, /energy-bolt-branch/, 'Yıldırım efektinde bağımsız yan dallar bulunmalı');
+assert.match(html, /animate attributeName="d"/, 'Zikzak yıldırım hattının geometrisi hareket halinde değişmeli');
+assert.match(html, /energy-bolt-node node-start/, 'Zikzak sinyalin camgöbeği başlangıç düğümü bulunmalı');
+assert.match(html, /energy-bolt-node node-end/, 'Zikzak sinyalin yeşil bitiş düğümü bulunmalı');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');
