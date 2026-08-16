@@ -3364,7 +3364,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!response.ok) throw new Error(`Spotify devices HTTP ${response.status}`);
       const data = await response.json();
       const devices = Array.isArray(data.devices) ? data.devices : [];
-      activeSpotifyDeviceId = devices.find(device => device.is_active)?.id || spotifyDeviceId || null;
       playerDevicesList.innerHTML = devices.length ? devices.map(device => `
         <button class="player-device-item ${device.is_active ? 'is-active' : ''}" data-device-id="${escapeMarkup(device.id)}" ${device.is_restricted || !device.id ? 'disabled title="Bu cihaz uzaktan kontrolü desteklemiyor"' : ''}>
           <i class="fa-solid ${device.type === 'Smartphone' ? 'fa-mobile-screen' : device.type === 'Speaker' ? 'fa-volume-high' : 'fa-desktop'}"></i>
@@ -3393,12 +3392,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!spotifyPlayer || typeof spotifyPlayer.activateElement !== 'function') return false;
     spotifyPlayer.activateElement().catch(error => console.warn('[Spotify Media Activation]', error));
     return true;
-  }
-
-  function prefersSpotifyConnectFirst() {
-    return Boolean(activeSpotifyDeviceId)
-      || Date.now() < spotifySdkUnavailableUntil
-      || window.matchMedia('(max-width: 720px), (pointer: coarse)').matches;
   }
 
   function isCurrentPlaybackRequest(requestId, signal) {
@@ -3599,7 +3592,11 @@ document.addEventListener('DOMContentLoaded', () => {
         spotifyPlayer.addListener('ready', ({ device_id }) => {
           spotifyDeviceId = device_id;
           spotifyPlayerFailureReason = null;
-          if (playbackBackend !== 'spotify-remote') setPlayerSource('spotify', 'Spotify Premium');
+          if (playbackBackend !== 'spotify-remote') {
+            activeSpotifyDeviceId = device_id;
+            activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
+            setPlayerSource('spotify', 'Spotify Premium');
+          }
           finish(true);
         });
         spotifyPlayer.addListener('not_ready', () => {
@@ -3701,94 +3698,13 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(details?.error?.message || `Spotify playback HTTP ${response.status}`);
       }
       spotifyPlayerFailureReason = null;
+      activeSpotifyDeviceId = spotifyDeviceId;
+      activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
       setPlayerSource('spotify', 'Spotify Premium');
       return true;
     } catch (error) {
       if (error?.name === 'AbortError') return false;
       console.warn('[Spotify Direct Playback]', error);
-      return false;
-    }
-  }
-
-  async function playThroughSpotifyConnect(track, requestId, signal) {
-    const uri = getSpotifyTrackUri(track);
-    if (!state.accessToken || !uri) return false;
-
-    try {
-      const token = await getValidSpotifyAccessToken();
-      if (!isCurrentPlaybackRequest(requestId, signal)) return false;
-      let target = activeSpotifyDeviceId
-        ? { id: activeSpotifyDeviceId, name: activeSpotifyDeviceName || 'Spotify cihazı', isStored: true }
-        : null;
-
-      if (!target) {
-        const devicesResponse = await fetch('https://api.spotify.com/v1/me/player/devices', {
-          signal,
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!devicesResponse.ok) {
-          spotifyPlayerFailureReason = devicesResponse.status === 401 ? 'authentication' : devicesResponse.status === 403 ? 'premium' : 'devices';
-          spotifyPlayerFailureMessage = `Spotify devices HTTP ${devicesResponse.status}`;
-          return false;
-        }
-
-        const data = await devicesResponse.json();
-        const devices = (Array.isArray(data.devices) ? data.devices : [])
-          .filter(device => device?.id && !device.is_restricted && device.name !== 'Tify Plus Pulse Web Player');
-        target = devices.find(device => device.is_active)
-          || devices.find(device => String(device.type).toLowerCase() === 'smartphone')
-          || devices[0];
-      }
-
-      if (!target) {
-        spotifyPlayerFailureReason = 'no_device';
-        spotifyPlayerFailureMessage = 'Spotify Connect cihazı bulunamadı.';
-        return false;
-      }
-
-      if (!isCurrentPlaybackRequest(requestId, signal)) return false;
-
-      const playResponse = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(target.id)}`, {
-        method: 'PUT',
-        signal,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ uris: [uri] })
-      });
-      if (!playResponse.ok) {
-        const details = await playResponse.json().catch(() => ({}));
-        spotifyPlayerFailureReason = playResponse.status === 401
-          ? 'authentication'
-          : playResponse.status === 403
-            ? 'premium'
-            : playResponse.status === 404
-              ? 'no_device'
-              : 'playback';
-        spotifyPlayerFailureMessage = details?.error?.message || `Spotify Connect HTTP ${playResponse.status}`;
-        if (playResponse.status === 404 && target.isStored) {
-          activeSpotifyDeviceId = null;
-          activeSpotifyDeviceName = '';
-          return playThroughSpotifyConnect(track, requestId, signal);
-        }
-        return false;
-      }
-
-      const deviceChanged = activeSpotifyDeviceId !== target.id;
-      activeSpotifyDeviceId = target.id;
-      activeSpotifyDeviceName = target.name || 'Spotify cihazı';
-      spotifyPlayerFailureReason = null;
-      spotifyPlayerFailureMessage = '';
-      setPlayerSource('spotify-remote', `Spotify Connect • ${activeSpotifyDeviceName}`);
-      setUnifiedPlaybackState(true);
-      if (deviceChanged) showToast(`Oynatma “${activeSpotifyDeviceName}” cihazına bağlandı.`, 'success');
-      return true;
-    } catch (error) {
-      if (error?.name === 'AbortError') return false;
-      console.warn('[Spotify Connect Playback]', error);
-      spotifyPlayerFailureReason ||= 'connection';
-      spotifyPlayerFailureMessage = String(error?.message || error || '');
       return false;
     }
   }
@@ -3837,17 +3753,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cassetteAudioPlayer.removeAttribute('src');
     }
     setPlayerSource('none', 'Parça hazırlanıyor');
-    if (prefersSpotifyConnectFirst()) {
-      const connectStarted = await playThroughSpotifyConnect(track, requestId, signal);
-      if (!isCurrentPlaybackRequest(requestId, signal) || connectStarted) return;
-      const spotifyStarted = await playThroughSpotify(track, requestId, signal);
-      if (!isCurrentPlaybackRequest(requestId, signal) || spotifyStarted) return;
-    } else {
-      const spotifyStarted = await playThroughSpotify(track, requestId, signal);
-      if (!isCurrentPlaybackRequest(requestId, signal) || spotifyStarted) return;
-      const connectStarted = await playThroughSpotifyConnect(track, requestId, signal);
-      if (!isCurrentPlaybackRequest(requestId, signal) || connectStarted) return;
-    }
+    const spotifyStarted = await playThroughSpotify(track, requestId, signal);
+    if (!isCurrentPlaybackRequest(requestId, signal) || spotifyStarted) return;
 
     setUnifiedPlaybackState(false);
     if (spotifyPlayerFailureReason === 'autoplay') {
@@ -3859,13 +3766,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (spotifyPlayerFailureReason === 'premium') {
       setPlayerSource('none', 'Spotify Premium gerekli');
       showToast('Tarayıcı içinde tam şarkı oynatma Spotify Premium hesabı gerektirir.', 'warning');
-    } else if (spotifyPlayerFailureReason === 'no_device') {
-      setPlayerSource('none', 'Spotify cihazı bekleniyor');
-      showToast('Spotify uygulamasını açın, bir şarkıyı kısa süre oynatın ve buradaki oynat düğmesine tekrar dokunun.', 'warning');
     } else {
       setPlayerSource('none', 'Player hazırlanamadı');
       console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
-      showToast('Mobil player hazırlanamadı. Spotify uygulamasını açık tutup tekrar deneyin veya Spotify düğmesiyle parçayı açın.', 'warning');
+      showToast('Spotify Web Player bu tarayıcıda başlatılamadı. Sayfayı yenileyip korumalı içerik iznini kontrol edin.', 'warning');
     }
   }
 
