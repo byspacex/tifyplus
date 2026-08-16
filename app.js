@@ -32,6 +32,32 @@ document.addEventListener('DOMContentLoaded', () => {
   localStorage.removeItem('tify_storage_consent');
   const allowsFunctionalStorage = () => storageConsent === 'functional';
 
+  const THEME_STORAGE_KEY = 'tify_ui_theme';
+  const themeToggle = document.getElementById('btnThemeToggle');
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+  function applyTheme(theme, persist = true) {
+    const nextTheme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    if (themeMeta) themeMeta.content = nextTheme === 'light' ? '#e8e6df' : '#060812';
+    if (themeToggle) {
+      const isLight = nextTheme === 'light';
+      themeToggle.setAttribute('aria-pressed', String(isLight));
+      themeToggle.setAttribute('aria-label', isLight ? 'Koyu temaya geç' : 'Açık temaya geç');
+      themeToggle.querySelector('.theme-toggle-icon').innerHTML = `<i class="fa-solid ${isLight ? 'fa-sun' : 'fa-moon'}"></i>`;
+      themeToggle.querySelector('.theme-toggle-label').textContent = isLight ? 'Açık' : 'Koyu';
+    }
+    if (!persist) return;
+    sessionStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    if (allowsFunctionalStorage()) localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+  }
+
+  applyTheme(document.documentElement.dataset.theme || 'dark', false);
+  themeToggle?.addEventListener('click', () => {
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  });
+
   // App State Store
   const state = {
     accessToken: sessionStorage.getItem('spotify_access_token') || null,
@@ -3303,6 +3329,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerTrackTitle = document.getElementById('playerTrackTitle');
   const playerTrackArtist = document.getElementById('playerTrackArtist');
   const playerPlaybackStatus = document.getElementById('playerPlaybackStatus');
+  const btnPlayerShuffle = document.getElementById('btnPlayerShuffle');
   const btnPlayerPrev = document.getElementById('btnPlayerPrev');
   const btnPlayerPlayToggle = document.getElementById('btnPlayerPlayToggle');
   const playerPlayIcon = document.getElementById('playerPlayIcon');
@@ -3319,6 +3346,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerDevicesPopover = document.getElementById('playerDevicesPopover');
   const playerDevicesList = document.getElementById('playerDevicesList');
   const playerVolumeSlider = document.getElementById('playerVolumeSlider');
+  const playerVolumeValue = document.getElementById('playerVolumeValue');
   const btnPlayerMute = document.getElementById('btnPlayerMute');
   const spotifyEmbedPanel = document.getElementById('spotifyEmbedPanel');
   const spotifyEmbedMount = document.getElementById('spotifyEmbedMount');
@@ -3336,6 +3364,37 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeSpotifyDeviceId = null;
   let activeSpotifyDeviceName = '';
   let remoteVolumeTimer = null;
+  let spotifyShuffleState = false;
+
+  function syncShuffleUi(enabled) {
+    spotifyShuffleState = Boolean(enabled);
+    if (!btnPlayerShuffle) return;
+    btnPlayerShuffle.setAttribute('aria-pressed', String(spotifyShuffleState));
+    btnPlayerShuffle.setAttribute('aria-label', spotifyShuffleState ? 'Karışık çalmayı kapat' : 'Karışık çalmayı aç');
+    btnPlayerShuffle.title = spotifyShuffleState ? 'Karışık çalma açık' : 'Karışık çalma kapalı';
+  }
+
+  async function setSpotifyShuffle(enabled) {
+    if (!state.accessToken) {
+      showSpotifyLoginRequired();
+      return false;
+    }
+    const token = await getValidSpotifyAccessToken();
+    const targetDeviceId = playbackBackend === 'spotify' && spotifyDeviceId
+      ? spotifyDeviceId
+      : activeSpotifyDeviceId;
+    const query = new URLSearchParams({ state: String(Boolean(enabled)) });
+    if (targetDeviceId) query.set('device_id', targetDeviceId);
+    const response = await fetch(`https://api.spotify.com/v1/me/player/shuffle?${query}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error(`Spotify shuffle HTTP ${response.status}`);
+    syncShuffleUi(enabled);
+    return true;
+  }
+
+  syncShuffleUi(false);
 
   function setLocalVirtualDeviceState(mode, status, badge = 'BU SEKME') {
     if (localVirtualDeviceName) localVirtualDeviceName.textContent = localSpotifyDeviceLabel;
@@ -3403,6 +3462,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (safeVolume > 0) lastPlayerVolume = safeVolume;
     if (cassetteVolume) cassetteVolume.value = safeVolume;
     if (playerVolumeSlider) playerVolumeSlider.value = Math.round(safeVolume * 100);
+    if (playerVolumeSlider) playerVolumeSlider.style.setProperty('--volume-level', `${Math.round(safeVolume * 100)}%`);
+    if (playerVolumeValue) playerVolumeValue.value = String(Math.round(safeVolume * 100));
     if (btnPlayerMute) btnPlayerMute.innerHTML = `<i class="fa-solid ${safeVolume === 0 ? 'fa-volume-xmark' : safeVolume < .5 ? 'fa-volume-low' : 'fa-volume-high'}"></i>`;
     if (spotifyPlayer && (!activeSpotifyDeviceId || activeSpotifyDeviceId === spotifyDeviceId)) {
       try { await spotifyPlayer.setVolume(safeVolume); } catch (error) { console.warn('[Spotify Volume]', error); }
@@ -3513,7 +3574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (cassetteSubtitle && isLocked) cassetteSubtitle.textContent = 'Orijinal şarkılar için Spotify hesabını bağlayın';
     if (tapeTrackTitle && isLocked) tapeTrackTitle.textContent = 'Spotify ile dinle';
-    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY PLUS PULSE / HESAP BAĞLANTISI GEREKLİ';
+    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY⁺ PULSE / HESAP BAĞLANTISI GEREKLİ';
   }
 
   // --- PLAY TRACK (CALLED FROM ANYWHERE IN THE APP) ---
@@ -3839,6 +3900,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setPlayerProgress(pct);
           if (cassetteProgressFill) cassetteProgressFill.style.width = `${pct}%`;
           setUnifiedPlaybackState(!sdkState.paused);
+          if (typeof sdkState.shuffle === 'boolean') syncShuffleUi(sdkState.shuffle);
         });
 
         const fail = (message, reason = 'unknown', needsReconnect = false) => {
@@ -4082,7 +4144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Update Hero Cassette Deck
     if (tapeTrackTitle) tapeTrackTitle.textContent = track.title;
-    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY PLUS PULSE / ${track.artist.toUpperCase()}`;
+    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY⁺ PULSE / ${track.artist.toUpperCase()}`;
     if (cassetteSubtitle) cassetteSubtitle.textContent = `${track.artist} • ${currentPlaylistContextName}`;
     if (tapeCounter) tapeCounter.textContent = "00:00";
     if (cassetteProgressFill) cassetteProgressFill.style.width = "0%";
@@ -4365,7 +4427,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let idx = activeList === localPlaybackQueue && localPlaybackQueueIndex >= 0
       ? localPlaybackQueueIndex
       : currentCassetteTrack ? activeList.findIndex(t => t.id === currentCassetteTrack.id) : -1;
-    const nextIdx = (idx + 1) % activeList.length;
+    const nextIdx = spotifyShuffleState && activeList.length > 1
+      ? (() => {
+          let randomIndex = idx;
+          while (randomIndex === idx) randomIndex = Math.floor(Math.random() * activeList.length);
+          return randomIndex;
+        })()
+      : (idx + 1) % activeList.length;
     if (activeList === localPlaybackQueue) localPlaybackQueueIndex = nextIdx;
     const plName = state.currentPlaylist ? state.currentPlaylist.name : SOOND_PUBLIC_PLAYLISTS[0].name;
     loadAndPlayUnifiedTrack(activeList[nextIdx], plName);
@@ -4397,6 +4465,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnCassettePrev) btnCassettePrev.addEventListener('click', skipToPrevTrack);
   if (btnPlayerPrev) btnPlayerPrev.addEventListener('click', skipToPrevTrack);
+
+  if (btnPlayerShuffle) {
+    btnPlayerShuffle.addEventListener('click', async () => {
+      if (btnPlayerShuffle.disabled) return;
+      btnPlayerShuffle.disabled = true;
+      btnPlayerShuffle.classList.add('is-pending');
+      try {
+        const enabled = !spotifyShuffleState;
+        if (await setSpotifyShuffle(enabled)) {
+          showToast(enabled ? 'Karışık çalma açıldı.' : 'Karışık çalma kapatıldı.', 'success');
+        }
+      } catch (error) {
+        console.warn('[Spotify Shuffle]', error);
+        showToast('Karışık çalma ayarı Spotify’a gönderilemedi.', 'warning');
+      } finally {
+        btnPlayerShuffle.disabled = false;
+        btnPlayerShuffle.classList.remove('is-pending');
+      }
+    });
+  }
 
   if (btnCloseWebPlayer) {
     btnCloseWebPlayer.addEventListener('click', () => {
@@ -4705,6 +4793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'spotify_app_mode',
     'custom_spotify_client_id',
     'tify_ui_language',
+    'tify_ui_theme',
     'tify_artist_genres_v2',
     'tify_musicbrainz_genres_v1',
     'tify_privacy_notice_v1'
@@ -4739,6 +4828,7 @@ document.addEventListener('DOMContentLoaded', () => {
       purgeFunctionalStorage();
     } else {
       localStorage.setItem('tify_ui_language', currentLanguage);
+      localStorage.setItem(THEME_STORAGE_KEY, document.documentElement.dataset.theme || 'dark');
       const sessionMode = sessionStorage.getItem('spotify_app_mode');
       const sessionClientId = sessionStorage.getItem('custom_spotify_client_id');
       if (sessionMode) localStorage.setItem('spotify_app_mode', sessionMode);

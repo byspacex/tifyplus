@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#060812">
   <meta name="description" content="Tify Plus Pulse ile Spotify çalma listelerinizi analiz edin, akıllı eşleşmeler bulun, toplu düzenleyin ve Spotify üzerinden oynatın. Ücretsiz müzik stüdyosu.">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -105,6 +105,7 @@
   }
   </script>
   
+  <script src="/theme-init.js"></script>
   <!-- Font ve ikonlar yayın gizliliği için uygulama paketinden yerel olarak sunulur. -->
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -125,12 +126,16 @@
           <img src="/brand/tify-plus-mark.svg" class="pulse-svg" width="36" height="36" alt="" aria-hidden="true">
         </div>
         <div class="brand-text-container">
-          <h1 class="brand-title">Tify <span>Plus</span><small>Pulse</small></h1>
+          <h1 class="brand-title" aria-label="Tify Plus Pulse">Tify<sup class="brand-plus" aria-hidden="true">+</sup><small>Pulse</small></h1>
           <span class="app-mode-badge" id="appModeBadge">ÜCRETSİZ // GİRİŞ GEREKMEZ</span>
         </div>
       </a>
       
       <div class="header-actions-group">
+        <button id="btnThemeToggle" class="theme-toggle" type="button" aria-label="Açık temaya geç" aria-pressed="false" title="Görünüm temasını değiştir">
+          <span class="theme-toggle-icon" aria-hidden="true"><i class="fa-solid fa-moon"></i></span>
+          <span class="theme-toggle-label">Koyu</span>
+        </button>
         <label class="language-picker" title="Language / Dil">
           <i class="fa-solid fa-globe"></i>
           <select id="languageSelector" aria-label="Language"></select>
@@ -261,7 +266,7 @@
               <svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18"/><path d="M10 23h8l3-10 7 20 4-12 3 6h3"/></svg>
             </span>
             <div>
-              <span class="auth-eyebrow">TIFY PLUS • PULSE CONNECTION</span>
+              <span class="auth-eyebrow">TIFY⁺ PULSE CONNECTION</span>
               <h3 id="authModalTitle">Spotify hesabınızı bağlayın</h3>
               <p>İlk kez kullanıyorsanız önerilen seçeneği kullanın. Yaklaşık 10 saniye sürer.</p>
             </div>
@@ -441,7 +446,7 @@
           <div class="cassette-shell">
             <div class="cassette-label">
               <div class="label-top">
-                <span>TIFY PLUS • PULSE C-90</span>
+                <span>TIFY⁺ PULSE C-90</span>
                 <span>TYPE II CHROME</span>
                 <span>120μs EQ</span>
               </div>
@@ -451,7 +456,7 @@
                 <div class="reel" id="tapeReelRight"></div>
               </div>
 
-              <div class="label-bottom" id="tapeTrackArtist">A / TIFY PLUS PULSE / SOOND</div>
+              <div class="label-bottom" id="tapeTrackArtist">A / TIFY⁺ PULSE / SOOND</div>
             </div>
 
             <div class="panel">
@@ -1025,6 +1030,7 @@
 
       <div class="player-center">
         <div class="player-controls">
+          <button class="player-ctrl-btn player-mode-btn" id="btnPlayerShuffle" type="button" title="Karışık çalma" aria-label="Karışık çalmayı aç" aria-pressed="false"><i class="fa-solid fa-shuffle"></i></button>
           <button class="player-ctrl-btn" id="btnPlayerPrev" title="Önceki Şarkı"><i class="fa-solid fa-backward-step"></i></button>
           <button class="player-play-btn" id="btnPlayerPlayToggle" title="Oynat / Duraklat">
             <i class="fa-solid fa-play" id="playerPlayIcon"></i>
@@ -1093,7 +1099,11 @@
         </div>
         <div class="player-volume-control">
           <button id="btnPlayerMute" class="player-icon-btn" title="Sesi kapat"><i class="fa-solid fa-volume-high"></i></button>
-          <input id="playerVolumeSlider" class="player-volume-slider" type="range" min="0" max="100" value="85" aria-label="Ses seviyesi">
+          <div class="player-volume-rail">
+            <input id="playerVolumeSlider" class="player-volume-slider" type="range" min="0" max="100" value="85" aria-label="Ses seviyesi">
+            <span class="player-volume-ticks" aria-hidden="true"></span>
+          </div>
+          <output id="playerVolumeValue" class="player-volume-value" for="playerVolumeSlider" aria-live="polite">85</output>
         </div>
         <a id="playerOpenSpotifyBtn" href="https://open.spotify.com" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" title="Spotify'da Aç">
           <i class="fa-brands fa-spotify text-green"></i>
@@ -1137,7 +1147,7 @@
             <img src="/brand/locked-co-labs-logo.svg" alt="Locked Co Labs" width="180" height="180">
           </a>
           <div class="footer-brand-copy">
-            <span class="footer-kicker">LOCKED CO LABS / TIFY PLUS PULSE</span>
+            <span class="footer-kicker">LOCKED CO LABS / TIFY⁺ PULSE</span>
             <h2 id="footerBrandTitle">Müzik arşiviniz.<br><em>Kontrolünüzde.</em></h2>
             <p>Tify Plus Pulse, <strong>Locked Co Labs</strong> markasına ait bağımsız bir müzik kütüphanesi ürünüdür. Ürün geliştirme ve deneyim tasarımı: <strong>SOOND</strong>.</p>
           </div>

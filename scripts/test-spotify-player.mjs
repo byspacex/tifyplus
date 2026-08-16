@@ -6,6 +6,7 @@ const source = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const headers = fs.readFileSync(new URL('../public/_headers', import.meta.url), 'utf8');
 const styles = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+const themeInit = fs.readFileSync(new URL('../public/theme-init.js', import.meta.url), 'utf8');
 
 function extractFunction(name) {
   const asyncStart = source.indexOf(`async function ${name}(`);
@@ -172,6 +173,8 @@ assert.match(source, /if \(playbackBackend === 'spotify'\) setPlayerSource\('spo
 assert.match(source, /spotifyStarted = await playThroughSpotifyEmbed\(track, requestId, signal\)/, 'Yerel SDK hazır değilse tarayıcı içi Spotify oynatıcısı kullanılmalı');
 assert.match(source, /playbackBackend === 'spotify-embed'[\s\S]*spotifyEmbedController\.togglePlay\(\)/, 'Özel oynat düğmesi gömülü Spotify oynatıcısını kontrol etmeli');
 assert.match(source, /playbackBackend === 'spotify-embed'[\s\S]*spotifyEmbedController\.seek\(/, 'İleri sarma gömülü Spotify oynatıcısına iletilmeli');
+assert.match(source, /\/v1\/me\/player\/shuffle\?\$\{query\}/, 'Karışık çalma Spotify Web API durumuna gönderilmeli');
+assert.match(html, /id="btnPlayerShuffle"[\s\S]*aria-pressed="false"/, 'Player barında erişilebilir karışık çalma denetimi bulunmalı');
 assert.match(html, /open\.spotify\.com\/embed\/iframe-api\/v1/, 'Resmi Spotify iFrame API sayfaya yüklenmeli');
 assert.match(html, /id="spotifyEmbedPanel"/, 'Gömülü oynatıcı paneli bulunmalı');
 assert.match(headers, /script-src[^;]*https:\/\/open\.spotify\.com/, 'Cloudflare CSP Spotify iFrame API betiğine izin vermeli');
@@ -187,8 +190,14 @@ assert.match(html, /class="player-ambient"/, 'Premium oynatıcı yüzeyinde bağ
 assert.match(html, /class="player-now-label"/, 'Çalan parça alanında canlı yayın durum etiketi bulunmalı');
 assert.match(styles, /\.energy-head\s*\{[\s\S]*width:\s*14px;[\s\S]*height:\s*14px;[\s\S]*radial-gradient/, 'İlerleme başı dik çizgi yerine plazma çekirdeği olmalı');
 assert.doesNotMatch(styles, /\.energy-head\s*\{[\s\S]{0,180}width:\s*4px;[\s\S]{0,80}height:\s*22px;/, 'Eski beyaz dik ilerleme çizgisi geri gelmemeli');
-assert.match(styles, /\.player-right\s*\{[\s\S]*border-radius:\s*999px;[\s\S]*linear-gradient/, 'Sağ oynatıcı kontrolleri ayrı kartlar yerine bütünleşik kontrol rayı kullanmalı');
+assert.match(styles, /\.player-right\s*\{[\s\S]*clip-path:\s*polygon/, 'Sağ oynatıcı kontrolleri köşeli bütünleşik kontrol rayı kullanmalı');
 assert.match(styles, /#playerOpenSpotifyBtn[\s\S]*border-radius:\s*50%/, 'Spotify aksiyonu kontrol rayında özel dairesel düğme olmalı');
+assert.match(html, /id="btnThemeToggle"/, 'Site başlığında erişilebilir tema anahtarı bulunmalı');
+assert.match(html, /Tify<sup class="brand-plus"[^>]*>\+<\/sup><small>Pulse<\/small>/, 'Görsel marka Tify üstü artı ve Pulse olarak yazılmalı');
+assert.match(html, /id="playerVolumeValue"/, 'Ses kontrolünde canlı yüzde göstergesi bulunmalı');
+assert.match(styles, /html\[data-theme="light"\][\s\S]*--bg:\s*#e8e6df/, 'Açık tema saf beyaz yerine düşük parlamalı sıcak zemin kullanmalı');
+assert.match(styles, /\.floating-web-player\s*\{[\s\S]*clip-path:\s*polygon/, 'Oynatıcı barı yuvarlak kapsül yerine kesik köşeli kasa kullanmalı');
+assert.match(themeInit, /document\.documentElement\.dataset\.theme\s*=\s*theme/, 'Tema ilk boyamadan önce belge köküne uygulanmalı');
 assert.match(styles, /realisticBoltBurst/, 'Gerçekçi yıldırım düzensiz çoklu çakma animasyonu kullanmalı');
 assert.match(styles, /energy-bolt-branch/, 'Yıldırım efektinde bağımsız yan dallar bulunmalı');
 assert.match(html, /animate attributeName="d"/, 'Zikzak yıldırım hattının geometrisi hareket halinde değişmeli');
