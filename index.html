@@ -1064,6 +1064,20 @@
         <button id="btnCloseWebPlayer" class="player-ctrl-btn" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
+      <div id="spotifyEmbedFallback" class="spotify-embed-fallback hidden" aria-live="polite">
+        <div class="spotify-embed-copy">
+          <span><i class="fa-brands fa-spotify"></i> Resmî Spotify oynatıcısı</span>
+          <small>Tarayıcı oynatıcısı açılamadığı için parça güvenli Spotify panelinde gösteriliyor.</small>
+        </div>
+        <iframe
+          id="spotifyEmbedFrame"
+          title="Spotify şarkı oynatıcısı"
+          src="about:blank"
+          loading="eager"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+
       <!-- Hidden Native Audio Object -->
       <audio id="nativeAudioPlayer" preload="none"></audio>
     </div>

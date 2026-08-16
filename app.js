@@ -3310,6 +3310,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerDevicesList = document.getElementById('playerDevicesList');
   const playerVolumeSlider = document.getElementById('playerVolumeSlider');
   const btnPlayerMute = document.getElementById('btnPlayerMute');
+  const spotifyEmbedFallback = document.getElementById('spotifyEmbedFallback');
+  const spotifyEmbedFrame = document.getElementById('spotifyEmbedFrame');
   let lastPlayerVolume = 0.85;
   let activeSpotifyDeviceId = null;
   let activeSpotifyDeviceName = '';
@@ -3388,6 +3390,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showSpotifyLoginRequired() {
+    hideSpotifyEmbedFallback(true);
     if (cassetteAudioPlayer) {
       cassetteAudioPlayer.pause();
       cassetteAudioPlayer.removeAttribute('src');
@@ -3538,6 +3541,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (track.uri && String(track.uri).startsWith('spotify:track:')) return track.uri;
     const id = String(track.id || '');
     return /^[A-Za-z0-9]{22}$/.test(id) ? `spotify:track:${id}` : null;
+  }
+
+  function getSpotifyTrackId(track) {
+    const uriMatch = String(track?.uri || '').match(/^spotify:track:([A-Za-z0-9]{22})$/);
+    if (uriMatch) return uriMatch[1];
+    const id = String(track?.id || '');
+    return /^[A-Za-z0-9]{22}$/.test(id) ? id : null;
+  }
+
+  function hideSpotifyEmbedFallback(clearFrame = false) {
+    spotifyEmbedFallback?.classList.add('hidden');
+    floatingWebPlayer?.classList.remove('embed-fallback-active');
+    if (clearFrame && spotifyEmbedFrame) spotifyEmbedFrame.src = 'about:blank';
+  }
+
+  function showSpotifyEmbedFallback(track) {
+    const trackId = getSpotifyTrackId(track);
+    if (!trackId || !spotifyEmbedFallback || !spotifyEmbedFrame) return false;
+
+    const embedUrl = `https://open.spotify.com/embed/track/${encodeURIComponent(trackId)}?utm_source=generator&theme=0`;
+    if (spotifyEmbedFrame.src !== embedUrl) spotifyEmbedFrame.src = embedUrl;
+    spotifyEmbedFallback.classList.remove('hidden');
+    floatingWebPlayer?.classList.add('embed-fallback-active');
+    setPlayerSource('spotify-embed', 'Spotify Embed');
+    setUnifiedPlaybackState(false);
+    showToast('Resmî Spotify oynatıcısı açıldı. Oynatmak için paneldeki yeşil düğmeye dokunun.', 'info');
+    return true;
   }
 
   function loadSpotifySdk() {
@@ -3731,6 +3761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { signal } = playbackAbortController;
 
     currentCassetteTrack = track;
+    hideSpotifyEmbedFallback(true);
     currentPlaylistContextName = playlistName || "SOOND Koleksiyonu";
     cassetteCurrentSec = 0;
     applyTrackVisualSignature(track);
@@ -3777,9 +3808,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (spotifyPlayerFailureReason === 'premium') {
       setPlayerSource('none', 'Spotify Premium gerekli');
       showToast('Tarayıcı içinde tam şarkı oynatma Spotify Premium hesabı gerektirir.', 'warning');
-    } else if (spotifyPlayerFailureReason === 'initialization') {
-      setPlayerSource('none', 'Korumalı ses açılamadı');
-      showToast('Bu mobil tarayıcı Spotify’ın korumalı ses sistemini başlatamadı. Chrome’u normal sekmede açın ve korumalı içerik iznini etkinleştirin.', 'warning');
+    } else if (showSpotifyEmbedFallback(track)) {
+      console.warn('[Spotify Playback Fallback]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
+      return;
     } else {
       setPlayerSource('none', 'Player hazırlanamadı');
       console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
@@ -3867,6 +3898,10 @@ document.addEventListener('DOMContentLoaded', () => {
     requestSpotifyMediaActivation();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
+      return;
+    }
+    if (playbackBackend === 'spotify-embed') {
+      showToast('Oynatmayı resmî Spotify panelindeki yeşil düğmeden kontrol edin.', 'info');
       return;
     }
     if (playbackBackend === 'spotify' && spotifyPlayer) {
@@ -3999,6 +4034,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCloseWebPlayer) {
     btnCloseWebPlayer.addEventListener('click', () => {
       if (isCassettePlaying) toggleUnifiedPlayPause();
+      hideSpotifyEmbedFallback(true);
       if (floatingWebPlayer) floatingWebPlayer.classList.add('hidden');
     });
   }
