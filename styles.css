@@ -285,11 +285,11 @@ body::before {
 }
 .brand-title small {
   margin-left: 7px;
-  color: var(--cyan);
-  font: 800 8px/1 var(--f-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  vertical-align: top;
+  color: var(--lime);
+  font: inherit;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  vertical-align: baseline;
 }
 
 .app-mode-badge {
@@ -3399,7 +3399,7 @@ html[data-theme="light"] .player-mode-btn[aria-pressed="true"] {
   .pulse-symbol-logo { box-shadow: 0 0 24px rgba(177,248,61,.18); }
   .brand-wrapper { gap: 10px; }
   .brand-title { font: 750 19px/1 var(--f-display); letter-spacing: -.025em; }
-  .brand-title small { color: #83d7df; font: 700 7px/1 var(--f-body); letter-spacing: .09em; }
+  .brand-title small { color: var(--lime); font: inherit; letter-spacing: .02em; }
   .language-picker {
     min-width: 82px; padding-inline: 10px; border-radius: 14px;
     background: #101722; box-shadow: none;

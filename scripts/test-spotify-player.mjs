@@ -194,6 +194,7 @@ assert.match(styles, /\.player-right\s*\{[\s\S]*clip-path:\s*polygon/, 'Sağ oyn
 assert.match(styles, /#playerOpenSpotifyBtn[\s\S]*border-radius:\s*50%/, 'Spotify aksiyonu kontrol rayında özel dairesel düğme olmalı');
 assert.match(html, /id="btnThemeToggle"/, 'Site başlığında erişilebilir tema anahtarı bulunmalı');
 assert.match(html, /Tify<sup class="brand-plus"[^>]*>\+<\/sup><small>Pulse<\/small>/, 'Görsel marka Tify üstü artı ve Pulse olarak yazılmalı');
+assert.match(styles, /\.brand-title small\s*\{[\s\S]*color:\s*var\(--lime\);[\s\S]*font:\s*inherit;/, 'Pulse eski Plus ile aynı yeşil tipografik ölçüyü kullanmalı');
 assert.match(html, /id="playerVolumeValue"/, 'Ses kontrolünde canlı yüzde göstergesi bulunmalı');
 assert.match(styles, /html\[data-theme="light"\][\s\S]*--bg:\s*#e8e6df/, 'Açık tema saf beyaz yerine düşük parlamalı sıcak zemin kullanmalı');
 assert.match(styles, /\.floating-web-player\s*\{[\s\S]*clip-path:\s*polygon/, 'Oynatıcı barı yuvarlak kapsül yerine kesik köşeli kasa kullanmalı');
