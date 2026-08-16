@@ -933,27 +933,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const initial = (state.userName || 'S').trim().charAt(0).toUpperCase();
 
-    const useRemoteHeaderAvatar = Boolean(state.userAvatar) && !window.matchMedia('(max-width: 720px)').matches;
+    const useRemoteHeaderAvatar = Boolean(state.userAvatar);
 
     if (useRemoteHeaderAvatar) {
       if (headerAvatarImg) {
-        headerAvatarImg.src = state.userAvatar;
+        headerAvatarImg.classList.add('hidden');
+        if (headerAvatarFallback) headerAvatarFallback.classList.remove('hidden');
+        headerAvatarImg.referrerPolicy = 'no-referrer';
+        headerAvatarImg.onload = () => {
+          headerAvatarImg.classList.remove('hidden');
+          if (headerAvatarFallback) headerAvatarFallback.classList.add('hidden');
+        };
         headerAvatarImg.onerror = () => {
           headerAvatarImg.classList.add('hidden');
           if (headerAvatarFallback) headerAvatarFallback.classList.remove('hidden');
         };
-        headerAvatarImg.classList.remove('hidden');
+        headerAvatarImg.src = state.userAvatar;
       }
-      if (headerAvatarFallback) headerAvatarFallback.classList.add('hidden');
       if (dropdownAvatarImg) {
-        dropdownAvatarImg.src = state.userAvatar;
+        dropdownAvatarImg.classList.add('hidden');
+        if (dropdownAvatarFallback) dropdownAvatarFallback.classList.remove('hidden');
+        dropdownAvatarImg.referrerPolicy = 'no-referrer';
+        dropdownAvatarImg.onload = () => {
+          dropdownAvatarImg.classList.remove('hidden');
+          if (dropdownAvatarFallback) dropdownAvatarFallback.classList.add('hidden');
+        };
         dropdownAvatarImg.onerror = () => {
           dropdownAvatarImg.classList.add('hidden');
           if (dropdownAvatarFallback) dropdownAvatarFallback.classList.remove('hidden');
         };
-        dropdownAvatarImg.classList.remove('hidden');
+        dropdownAvatarImg.src = state.userAvatar;
       }
-      if (dropdownAvatarFallback) dropdownAvatarFallback.classList.add('hidden');
     } else {
       if (headerAvatarImg) headerAvatarImg.classList.add('hidden');
       if (headerAvatarFallback) {
@@ -3046,6 +3056,7 @@ document.addEventListener('DOMContentLoaded', () => {
       response_type: 'code',
       client_id: clientId,
       scope: scope,
+      show_dialog: 'true',
       code_challenge_method: 'S256',
       code_challenge: codeChallenge,
       redirect_uri: redirectUri,
@@ -3623,7 +3634,7 @@ document.addEventListener('DOMContentLoaded', () => {
           spotifyPlayerFailureReason = reason;
           spotifyPlayerFailureMessage = String(message || '');
           if (['initialization', 'connection', 'timeout', 'sdk'].includes(reason)) {
-            spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
+            spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
           }
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
           finish(false);
@@ -3648,7 +3659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           spotifyPlayerFailureReason ||= 'timeout';
           spotifyPlayerFailureMessage ||= 'Spotify oynatıcı bağlantısı zaman aşımına uğradı.';
-          spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
+          spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
           finish(false);
         }, window.matchMedia('(max-width: 720px), (pointer: coarse)').matches ? 4500 : 12000);
       });
@@ -3656,7 +3667,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('[Spotify SDK]', error);
       spotifyPlayerFailureReason = 'sdk';
       spotifyPlayerFailureMessage = String(error?.message || error || '');
-      spotifySdkUnavailableUntil = Date.now() + 5 * 60 * 1000;
+      spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
       return false;
     }).finally(() => {
       if (!spotifyDeviceId) {
@@ -3766,6 +3777,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (spotifyPlayerFailureReason === 'premium') {
       setPlayerSource('none', 'Spotify Premium gerekli');
       showToast('Tarayıcı içinde tam şarkı oynatma Spotify Premium hesabı gerektirir.', 'warning');
+    } else if (spotifyPlayerFailureReason === 'initialization') {
+      setPlayerSource('none', 'Korumalı ses açılamadı');
+      showToast('Bu mobil tarayıcı Spotify’ın korumalı ses sistemini başlatamadı. Chrome’u normal sekmede açın ve korumalı içerik iznini etkinleştirin.', 'warning');
     } else {
       setPlayerSource('none', 'Player hazırlanamadı');
       console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
