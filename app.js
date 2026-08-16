@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     userName: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_name')) || "S O O N D",
     userEmail: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_email')) || "",
     userAvatar: (allowsFunctionalStorage() && localStorage.getItem('spotify_user_avatar')) || "",
+    userProduct: "",
     playlists: [],
     currentPlaylist: null,
     selectedTrackIds: new Set(),
@@ -749,6 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.userName = meData.display_name || meData.id || "Spotify Kullanıcısı";
       state.userEmail = meData.email || "";
       state.userAvatar = (meData.images && meData.images.length > 0) ? meData.images[0].url : "";
+      state.userProduct = String(meData.product || '').toLowerCase();
       if (allowsFunctionalStorage()) {
         localStorage.setItem('spotify_user_name', state.userName);
         localStorage.setItem('spotify_user_email', state.userEmail);
@@ -3274,6 +3276,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let playbackAbortController = null;
   let localPlaybackQueue = [];
   let localPlaybackQueueIndex = -1;
+  let isPlaybackStarting = false;
 
   // DOM Elements - Hero Cassette Deck
   const cassetteAudioPlayer = document.getElementById('cassetteAudioPlayer') || document.getElementById('nativeAudioPlayer');
@@ -3295,6 +3298,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const playerCoverImg = document.getElementById('playerCoverImg');
   const playerTrackTitle = document.getElementById('playerTrackTitle');
   const playerTrackArtist = document.getElementById('playerTrackArtist');
+  const playerPlaybackStatus = document.getElementById('playerPlaybackStatus');
   const btnPlayerPrev = document.getElementById('btnPlayerPrev');
   const btnPlayerPlayToggle = document.getElementById('btnPlayerPlayToggle');
   const playerPlayIcon = document.getElementById('playerPlayIcon');
@@ -3540,6 +3544,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setPlayerSource(mode, label) {
     playbackBackend = mode;
+    if (playerPlaybackStatus) {
+      playerPlaybackStatus.classList.toggle('is-active', String(mode).startsWith('spotify'));
+      playerPlaybackStatus.innerHTML = `<i></i> ${escapeMarkup(label)}`;
+    }
     if (!playerSourceBadge) return;
     const isSpotifySource = String(mode).startsWith('spotify');
     playerSourceBadge.className = `player-source-badge ${mode === 'preview' ? 'preview' : isSpotifySource ? '' : 'offline'}`;
@@ -3695,6 +3703,11 @@ document.addEventListener('DOMContentLoaded', () => {
   async function playThroughSpotify(track, requestId, signal) {
     const uri = getSpotifyTrackUri(track);
     if (!state.accessToken || !uri) return false;
+    if (state.userProduct && state.userProduct !== 'premium') {
+      spotifyPlayerFailureReason = 'premium';
+      spotifyPlayerFailureMessage = 'Spotify hesabı Premium değil.';
+      return false;
+    }
     requestSpotifyMediaActivation();
     const ready = await initializeSpotifyPlayer(true);
     if (!ready || !spotifyDeviceId || !isCurrentPlaybackRequest(requestId, signal)) return false;
@@ -3780,6 +3793,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerOpenSpotifyBtn) playerOpenSpotifyBtn.href = spotifyUrl;
     if (floatingWebPlayer) floatingWebPlayer.classList.remove('hidden');
     setUnifiedPlaybackState(false);
+    isPlaybackStarting = true;
+    floatingWebPlayer?.classList.add('is-loading');
+    btnPlayerPlayToggle?.setAttribute('aria-busy', 'true');
+    if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-spinner fa-spin';
 
     // 3. Prefer Spotify's official full-track Web Playback SDK.
     if (cassetteAudioPlayer) {
@@ -3788,15 +3805,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     setPlayerSource('none', 'Parça hazırlanıyor');
     const spotifyStarted = await playThroughSpotify(track, requestId, signal);
-    if (!isCurrentPlaybackRequest(requestId, signal) || spotifyStarted) return;
+    if (!isCurrentPlaybackRequest(requestId, signal)) return;
+    isPlaybackStarting = false;
+    floatingWebPlayer?.classList.remove('is-loading');
+    btnPlayerPlayToggle?.removeAttribute('aria-busy');
+    if (spotifyStarted) {
+      setPlayerSource('spotify', 'Bu cihazda çalıyor');
+      if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-pause';
+      return;
+    }
+    if (playerPlayIcon) playerPlayIcon.className = 'fa-solid fa-play';
 
     setUnifiedPlaybackState(false);
     if (spotifyPlayerFailureReason === 'autoplay') {
-      setPlayerSource('none', 'Dokunarak başlatın');
+      setPlayerSource('none', 'Oynatmaya yeniden dokunun');
     } else if (spotifyPlayerFailureReason === 'authentication') {
       setPlayerSource('none', 'Bağlantıyı yenileyin');
     } else if (spotifyPlayerFailureReason === 'premium') {
       setPlayerSource('none', 'Spotify Premium gerekli');
+    } else if (spotifyPlayerFailureReason === 'initialization') {
+      setPlayerSource('none', 'Tarayıcı korumalı sesi desteklemiyor');
+    } else if (spotifyPlayerFailureReason === 'timeout') {
+      setPlayerSource('none', 'Spotify bağlantısı zaman aşımına uğradı');
     } else {
       setPlayerSource('none', 'Yeniden denemek için oynatın');
       console.warn('[Spotify Playback Diagnostics]', spotifyPlayerFailureReason, spotifyPlayerFailureMessage);
@@ -3824,7 +3854,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update Bottom Sticky Player
     if (playerPlayIcon) {
-      playerPlayIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+      if (!isPlaybackStarting) playerPlayIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+    }
+    if (playing && playerPlaybackStatus) {
+      playerPlaybackStatus.classList.add('is-active');
+      playerPlaybackStatus.innerHTML = '<i></i> Bu cihazda çalıyor';
+    } else if (!playing && !isPlaybackStarting && playerPlaybackStatus && String(playbackBackend).startsWith('spotify')) {
+      playerPlaybackStatus.classList.remove('is-active');
+      playerPlaybackStatus.innerHTML = '<i></i> Duraklatıldı';
     }
     if (playerVisualizerBars) {
       if (playing) playerVisualizerBars.classList.add('playing');
@@ -3885,6 +3922,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showSpotifyLoginRequired();
       return;
     }
+    if (isPlaybackStarting) return;
     if (playbackBackend === 'spotify' && spotifyPlayer) {
       try {
         if (spotifyPlayer.activateElement) await spotifyPlayer.activateElement();

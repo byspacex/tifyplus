@@ -2384,6 +2384,16 @@ body.modal-open { overflow: hidden; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.player-track-status {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 5px;
+  color: #82909c; font: 700 8px/1 var(--f-mono); letter-spacing: .04em;
+  white-space: nowrap;
+}
+.player-track-status i { width: 5px; height: 5px; border-radius: 50%; background: #68747f; }
+.player-track-status.is-active { color: #baff2b; }
+.player-track-status.is-active i { background: #baff2b; box-shadow: 0 0 8px rgba(186,255,43,.75); }
+.floating-web-player.is-loading .player-track-status i { background: #38e6ef; animation: signalDot .8s ease-in-out infinite; }
+.floating-web-player.is-loading .player-play-btn { color: #07110a; cursor: wait; }
 
 /* Center Controls & Timeline */
 .player-center {
@@ -2920,6 +2930,7 @@ body.modal-open { overflow: hidden; }
   .player-cover { width: 48px; height: 48px; border-radius: 14px; }
   .player-track-info h5 { font-size: 12.5px; }
   .player-track-info p { font-size: 10.5px; }
+  .player-track-status { font-size: 7.5px; margin-top: 4px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
   .player-center { grid-column: 1 / -1; grid-row: 2; max-width: none; width: 100%; gap: 4px; }
   .player-controls { gap: 20px; }
   .player-ctrl-btn { min-width: 44px; min-height: 44px; }
