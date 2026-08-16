@@ -1,4 +1,4 @@
-# Tify⁺ Pulse
+# Tify Plus
 
 [![Canlı site](https://img.shields.io/badge/Canlı-tifyplus.com-78b900?style=for-the-badge)](https://tifyplus.com/)
 [![MIT Lisansı](https://img.shields.io/badge/Lisans-MIT-008e9a?style=for-the-badge)](LICENSE)
@@ -8,23 +8,24 @@
 
 **Canlı uygulama:** [https://tifyplus.com/](https://tifyplus.com/)
 
-![Tify Plus Pulse sosyal önizleme](public/brand/tify-plus-social-1200x630.png)
+![Tify Plus sosyal önizleme](public/brand/tify-plus-social-1200x630.png)
 
 ## Ne işe yarar?
 
-Tify⁺ Pulse, Spotify müzik arşivini tek bir çalışma alanında daha anlaşılır ve yönetilebilir hâle getirir. Çalma listelerini görüntüler, parçaları analiz etmeye yardımcı olur, benzer listeleri eşleştirir ve desteklenen hesaplarda Spotify'ın resmî oynatma altyapısını kullanır.
+Tify Plus, Spotify müzik arşivini tek bir kişisel çalışma alanında daha anlaşılır ve yönetilebilir hâle getirir. İlk ziyaret tanıtım sayfasını gösterir; Spotify ile girişten sonra yalnızca bağlanan hesabın kütüphanesiyle hazırlanan özel dashboard açılır.
 
 ### Öne çıkan özellikler
 
 - Spotify OAuth 2.0 + PKCE ile güvenli hesap bağlantısı
 - Çalma listesi ve parça koleksiyonu görünümü
-- Playlist DNA analizi ve akıllı eşleştirme araçları
+- Kullanılabilir Spotify metaverisiyle tekrar ve liste ilişkisi inceleme araçları
 - Toplu düzenleme ve Spotify'a aktarma akışları
 - Spotify Web Playback SDK ile tarayıcı içi oynatma
 - Cihaz, ses, ileri/geri sarma ve karışık çalma kontrolleri
 - Mobil ve masaüstü uyumlu arayüz
 - Düşük parlamalı açık tema ve koyu tema
-- Sunucu tarafında Tify⁺ Pulse kullanıcı hesabı oluşturmayan gizlilik odaklı yapı
+- Sunucu tarafında Tify Plus kullanıcı hesabı oluşturmayan gizlilik odaklı yapı
+- Giriş yapmadan herkese açık playlist için resmî Spotify önizlemesi
 
 ## Hızlı kullanım
 
@@ -61,7 +62,7 @@ npm run build
 
 1. Spotify Developer Dashboard'da bir uygulama oluşturun.
 2. Yönlendirme adreslerine çalıştırdığınız sitenin tam adresini ekleyin. Canlı sürüm için `https://tifyplus.com/` kullanılır; sondaki `/` önemlidir.
-3. Yalnızca herkese açık **Client ID** değerini Tify⁺ Pulse içindeki “Kendi Spotify uygulamam” alanına girin.
+3. Yalnızca herkese açık **Client ID** değerini Tify Plus içindeki “Kendi Spotify uygulamam” alanına girin.
 4. **Client Secret** değerini tarayıcıya, repoya veya kaynak koda eklemeyin.
 
 Uygulama Authorization Code + PKCE akışını kullanır.
@@ -72,7 +73,7 @@ Uygulama Authorization Code + PKCE akışını kullanır.
 - Kişisel Spotify kütüphanesi ve parça önbelleği yalnızca aktif sekmenin oturumunda tutulur; başka hesapların çalışma alanına karışmaz.
 - Dil ve tema gibi arayüz tercihleri yalnızca izin verildiğinde tarayıcıda kalıcı olarak saklanır.
 - Reklam veya davranış analitiği kullanılmaz.
-- Sunucu tarafında Tify⁺ Pulse kullanıcı profili oluşturulmaz.
+- Sunucu tarafında Tify Plus kullanıcı profili oluşturulmaz.
 - Spotify parolanız uygulama tarafından görülmez veya saklanmaz.
 
 ## Test ve kalite kontrolü
@@ -99,6 +100,6 @@ Hata bildirimi veya iyileştirme önerisi için GitHub Issues kullanabilirsiniz.
 
 ## Marka ve lisans
 
-Tify⁺ Pulse bağımsız bir üründür; Spotify tarafından desteklenmez, sponsor edilmez veya Spotify'ın resmî ürünü değildir. Spotify®, Spotify AB'nin tescilli markasıdır.
+Tify Plus bağımsız bir üründür; Spotify tarafından desteklenmez, sponsor edilmez veya Spotify'ın resmî ürünü değildir. Spotify®, Spotify AB'nin tescilli markasıdır.
 
 Kaynak kod [MIT Lisansı](LICENSE) ile yayımlanır.

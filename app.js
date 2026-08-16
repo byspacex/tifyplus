@@ -1,5 +1,5 @@
 /**
- * Tify Plus Pulse - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
+ * Tify Plus - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
  */
 
 // The removed mobile dock used URL fragments such as #catalogSection. Mobile
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const legacyKeys = [];
     for (let index = 0; index < localStorage.length; index++) {
       const key = localStorage.key(index);
-      if (key && (['spotify_library_cache', 'spotify_pulse_snapshots', 'spotify_last_sync', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar'].includes(key) || key.startsWith('spotify_tracks_'))) {
+      if (key && (['spotify_library_cache', 'spotify_pulse_snapshots', 'tify_plus_snapshots', 'spotify_last_sync', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar'].includes(key) || key.startsWith('spotify_tracks_'))) {
         legacyKeys.push(key);
       }
     }
@@ -92,20 +92,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // App-native localization. Locale is selected from the browser's country-aware
   // language tag (for example pt-BR or de-DE) without requesting precise location.
   const LOCALES = {
-    tr: { name:'Türkçe', demo:'Örnek Demo', backups:'Yedekler', connect:'Spotify ile Giriş', studio:'Stüdyoya Bağlan →', collection:'SOOND Koleksiyonu', eyebrow:'● DÜZENLE. BAĞLAN. KONTROL ET.', heroDescription:'Spotify arşivinizi akıllı eşleştirme, gerçek rastgelelik ve profesyonel düzenleme araçlarıyla yönetin.', analyze:'İncele', fusionEngine:'FÜZYON MOTORU', fusionTitle:'Akıllı Playlist Eşleşmeleri & DNA Analizi', fusionSubtitle:'Müzik türü ve frekans benzerliğine göre keşfedilen güçlü eşleşmeler', collectionLabel:'KOLEKSİYON', playlists:'Çalma Listeleri', list:'Liste', tracks:'Şarkı', curator:'Küratör', private:'Gizli', public:'Açık', compatible:'Uyumlu', common:'Ortak Şarkı', match:'Eşleşmeyi Aç', search:'Koleksiyonda ara...', vinyl:'Albüm Vitrini', rack:'Liste Modu', auto:'Otomatik' },
-    en: { name:'English', demo:'Live Demo', backups:'Backups', connect:'Connect Spotify', studio:'Connect Studio →', collection:'SOOND Collection', eyebrow:'● CURATE. CONNECT. CONTROL.', heroDescription:'Shape your Spotify library with smart matching, true randomness and professional curation tools.', analyze:'Analyze', fusionEngine:'FUSION ENGINE', fusionTitle:'Smart Playlist Matches & DNA Analysis', fusionSubtitle:'High-signal matches discovered through genre and frequency similarity', collectionLabel:'COLLECTION', playlists:'Playlists', list:'List', tracks:'Tracks', curator:'Curator', private:'Private', public:'Public', compatible:'Compatible', common:'Shared Tracks', match:'Open Match', search:'Search collection...', vinyl:'Cover Gallery', rack:'List View', auto:'Auto' },
-    de: { name:'Deutsch', demo:'Live-Demo', backups:'Sicherungen', connect:'Spotify verbinden', studio:'Studio verbinden →', collection:'SOOND-Sammlung', eyebrow:'● KURATIEREN. VERBINDEN. STEUERN.', heroDescription:'Verwalte deine Spotify-Sammlung mit intelligentem Matching, echtem Zufall und professionellen Werkzeugen.', analyze:'Analysieren', fusionEngine:'FUSIONSMOTOR', fusionTitle:'Intelligente Playlist-Matches & DNA-Analyse', fusionSubtitle:'Starke Übereinstimmungen nach Genre- und Frequenzähnlichkeit', collectionLabel:'SAMMLUNG', playlists:'Playlists', list:'Liste', tracks:'Titel', curator:'Kurator', private:'Privat', public:'Öffentlich', compatible:'Kompatibel', common:'Gemeinsame Titel', match:'Match öffnen', search:'Sammlung durchsuchen...', vinyl:'Cover-Galerie', rack:'Listenansicht', auto:'Automatisch' },
-    fr: { name:'Français', demo:'Démo', backups:'Sauvegardes', connect:'Connecter Spotify', studio:'Connecter le studio →', collection:'Collection SOOND', eyebrow:'● CRÉER. CONNECTER. CONTRÔLER.', heroDescription:'Façonnez votre bibliothèque Spotify avec des correspondances intelligentes et des outils de curation professionnels.', analyze:'Analyser', fusionEngine:'MOTEUR DE FUSION', fusionTitle:'Correspondances intelligentes & analyse ADN', fusionSubtitle:'Correspondances fortes selon les genres et les fréquences', collectionLabel:'COLLECTION', playlists:'Playlists', list:'Liste', tracks:'Titres', curator:'Curateur', private:'Privée', public:'Publique', compatible:'Compatible', common:'Titres communs', match:'Ouvrir', search:'Rechercher...', vinyl:'Galerie', rack:'Vue liste', auto:'Automatique' },
-    es: { name:'Español', demo:'Demo', backups:'Copias', connect:'Conectar Spotify', studio:'Conectar estudio →', collection:'Colección SOOND', eyebrow:'● CURA. CONECTA. CONTROLA.', heroDescription:'Organiza tu biblioteca de Spotify con coincidencias inteligentes y herramientas profesionales.', analyze:'Analizar', fusionEngine:'MOTOR DE FUSIÓN', fusionTitle:'Coincidencias inteligentes y análisis de ADN', fusionSubtitle:'Coincidencias por similitud de género y frecuencia', collectionLabel:'COLECCIÓN', playlists:'Playlists', list:'Lista', tracks:'Canciones', curator:'Curador', private:'Privada', public:'Pública', compatible:'Compatible', common:'Canciones comunes', match:'Abrir coincidencia', search:'Buscar colección...', vinyl:'Galería', rack:'Vista de lista', auto:'Automático' },
-    it: { name:'Italiano', demo:'Demo', backups:'Backup', connect:'Collega Spotify', studio:'Collega lo studio →', collection:'Collezione SOOND', eyebrow:'● CURA. CONNETTI. CONTROLLA.', heroDescription:'Organizza la tua libreria Spotify con abbinamenti intelligenti e strumenti professionali.', analyze:'Analizza', fusionEngine:'MOTORE FUSIONE', fusionTitle:'Abbinamenti intelligenti e analisi DNA', fusionSubtitle:'Abbinamenti per genere e frequenza', collectionLabel:'COLLEZIONE', playlists:'Playlist', list:'Elenco', tracks:'Brani', curator:'Curatore', private:'Privata', public:'Pubblica', compatible:'Compatibile', common:'Brani comuni', match:'Apri', search:'Cerca...', vinyl:'Galleria', rack:'Vista elenco', auto:'Automatico' },
-    pt: { name:'Português', demo:'Demonstração', backups:'Backups', connect:'Conectar Spotify', studio:'Conectar estúdio →', collection:'Coleção SOOND', eyebrow:'● ORGANIZE. CONECTE. CONTROLE.', heroDescription:'Organize sua biblioteca Spotify com combinações inteligentes e ferramentas profissionais.', analyze:'Analisar', fusionEngine:'MOTOR DE FUSÃO', fusionTitle:'Combinações inteligentes e análise de DNA', fusionSubtitle:'Combinações por gênero e frequência', collectionLabel:'COLEÇÃO', playlists:'Playlists', list:'Lista', tracks:'Faixas', curator:'Curador', private:'Privada', public:'Pública', compatible:'Compatível', common:'Faixas em comum', match:'Abrir', search:'Buscar coleção...', vinyl:'Galeria', rack:'Lista', auto:'Automático' },
-    ru: { name:'Русский', demo:'Демо', backups:'Резервные копии', connect:'Подключить Spotify', studio:'Подключить студию →', collection:'Коллекция SOOND', eyebrow:'● СОЗДАВАЙ. ПОДКЛЮЧАЙ. УПРАВЛЯЙ.', heroDescription:'Управляйте медиатекой Spotify с умным подбором и профессиональными инструментами.', analyze:'Анализ', fusionEngine:'ДВИЖОК СЛИЯНИЯ', fusionTitle:'Умные совпадения и ДНК-анализ', fusionSubtitle:'Совпадения по жанру и частотному профилю', collectionLabel:'КОЛЛЕКЦИЯ', playlists:'Плейлисты', list:'Список', tracks:'Треки', curator:'Куратор', private:'Приватный', public:'Публичный', compatible:'Совместимо', common:'Общие треки', match:'Открыть', search:'Поиск...', vinyl:'Обложки', rack:'Список', auto:'Авто' },
-    ar: { name:'العربية', demo:'عرض تجريبي', backups:'النسخ الاحتياطية', connect:'ربط Spotify', studio:'ربط الاستوديو ←', collection:'مجموعة SOOND', eyebrow:'● نظّم. اتصل. تحكّم.', heroDescription:'نظّم مكتبة Spotify بالمطابقة الذكية وأدوات التنظيم الاحترافية.', analyze:'تحليل', fusionEngine:'محرك الدمج', fusionTitle:'مطابقات ذكية وتحليل DNA', fusionSubtitle:'مطابقات حسب النوع والتردد', collectionLabel:'المجموعة', playlists:'قوائم التشغيل', list:'قائمة', tracks:'مقاطع', curator:'المنسق', private:'خاصة', public:'عامة', compatible:'متوافق', common:'مقاطع مشتركة', match:'فتح', search:'بحث في المجموعة...', vinyl:'معرض الأغلفة', rack:'عرض القائمة', auto:'تلقائي' },
-    zh: { name:'中文', demo:'演示', backups:'备份', connect:'连接 Spotify', studio:'连接工作室 →', collection:'SOOND 收藏', eyebrow:'● 编排・连接・掌控', heroDescription:'使用智能匹配和专业编排工具管理您的 Spotify 音乐库。', analyze:'分析', fusionEngine:'融合引擎', fusionTitle:'智能歌单匹配与 DNA 分析', fusionSubtitle:'根据流派和频率相似度发现匹配', collectionLabel:'收藏', playlists:'播放列表', list:'列表', tracks:'歌曲', curator:'创建者', private:'私密', public:'公开', compatible:'匹配', common:'共同歌曲', match:'打开匹配', search:'搜索收藏...', vinyl:'封面画廊', rack:'列表视图', auto:'自动' },
-    ja: { name:'日本語', demo:'デモ', backups:'バックアップ', connect:'Spotifyに接続', studio:'スタジオに接続 →', collection:'SOONDコレクション', eyebrow:'● 選ぶ・つなぐ・操る', heroDescription:'スマートマッチングとプロ向けツールでSpotifyライブラリを整理します。', analyze:'分析', fusionEngine:'フュージョンエンジン', fusionTitle:'スマートプレイリストマッチ＆DNA分析', fusionSubtitle:'ジャンルと周波数の類似性から強い組み合わせを発見', collectionLabel:'コレクション', playlists:'プレイリスト', list:'リスト', tracks:'曲', curator:'作成者', private:'非公開', public:'公開', compatible:'相性良好', common:'共通曲', match:'開く', search:'コレクションを検索...', vinyl:'カバー表示', rack:'リスト表示', auto:'自動' },
-    ko: { name:'한국어', demo:'데모', backups:'백업', connect:'Spotify 연결', studio:'스튜디오 연결 →', collection:'SOOND 컬렉션', eyebrow:'● 큐레이션. 연결. 제어.', heroDescription:'스마트 매칭과 전문 도구로 Spotify 라이브러리를 관리하세요.', analyze:'분석', fusionEngine:'퓨전 엔진', fusionTitle:'스마트 플레이리스트 매칭 및 DNA 분석', fusionSubtitle:'장르와 주파수 유사도로 발견한 매칭', collectionLabel:'컬렉션', playlists:'플레이리스트', list:'목록', tracks:'곡', curator:'큐레이터', private:'비공개', public:'공개', compatible:'호환', common:'공통 곡', match:'열기', search:'컬렉션 검색...', vinyl:'커버 갤러리', rack:'목록 보기', auto:'자동' },
-    hi: { name:'हिन्दी', demo:'डेमो', backups:'बैकअप', connect:'Spotify जोड़ें', studio:'स्टूडियो जोड़ें →', collection:'SOOND संग्रह', eyebrow:'● चुनें. जोड़ें. नियंत्रित करें.', heroDescription:'स्मार्ट मैचिंग और पेशेवर टूल से अपनी Spotify लाइब्रेरी व्यवस्थित करें।', analyze:'विश्लेषण', fusionEngine:'फ्यूज़न इंजन', fusionTitle:'स्मार्ट प्लेलिस्ट मिलान और DNA विश्लेषण', fusionSubtitle:'शैली और फ़्रीक्वेंसी के आधार पर मिलान', collectionLabel:'संग्रह', playlists:'प्लेलिस्ट', list:'सूची', tracks:'गाने', curator:'क्यूरेटर', private:'निजी', public:'सार्वजनिक', compatible:'अनुकूल', common:'साझा गाने', match:'खोलें', search:'संग्रह खोजें...', vinyl:'कवर गैलरी', rack:'सूची दृश्य', auto:'स्वचालित' },
-    nl: { name:'Nederlands', demo:'Demo', backups:'Back-ups', connect:'Spotify koppelen', studio:'Studio koppelen →', collection:'SOOND-collectie', eyebrow:'● SELECTEER. VERBIND. BEHEER.', heroDescription:'Beheer je Spotify-bibliotheek met slimme matching en professionele tools.', analyze:'Analyseren', fusionEngine:'FUSIEMOTOR', fusionTitle:'Slimme matches & DNA-analyse', fusionSubtitle:'Matches op genre- en frequentieprofiel', collectionLabel:'COLLECTIE', playlists:'Playlists', list:'Lijst', tracks:'Nummers', curator:'Curator', private:'Privé', public:'Openbaar', compatible:'Compatibel', common:'Gedeelde nummers', match:'Openen', search:'Collectie zoeken...', vinyl:'Covergalerij', rack:'Lijstweergave', auto:'Automatisch' }
+    tr: { name:'Türkçe', demo:'Örnek Demo', backups:'Yedekler', connect:'Spotify ile Giriş', studio:'Stüdyoya Bağlan →', collection:'Tify Plus Koleksiyonu', eyebrow:'● DÜZENLE. BAĞLAN. KONTROL ET.', heroDescription:'Spotify arşivinizi akıllı eşleştirme, gerçek rastgelelik ve profesyonel düzenleme araçlarıyla yönetin.', analyze:'İncele', fusionEngine:'FÜZYON MOTORU', fusionTitle:'Akıllı Playlist Eşleşmeleri & DNA Analizi', fusionSubtitle:'Müzik türü ve frekans benzerliğine göre keşfedilen güçlü eşleşmeler', collectionLabel:'KOLEKSİYON', playlists:'Çalma Listeleri', list:'Liste', tracks:'Şarkı', curator:'Küratör', private:'Gizli', public:'Açık', compatible:'Uyumlu', common:'Ortak Şarkı', match:'Eşleşmeyi Aç', search:'Koleksiyonda ara...', vinyl:'Albüm Vitrini', rack:'Liste Modu', auto:'Otomatik' },
+    en: { name:'English', demo:'Live Demo', backups:'Backups', connect:'Connect Spotify', studio:'Connect Studio →', collection:'Tify Plus Collection', eyebrow:'● CURATE. CONNECT. CONTROL.', heroDescription:'Shape your Spotify library with smart matching, true randomness and professional curation tools.', analyze:'Analyze', fusionEngine:'FUSION ENGINE', fusionTitle:'Smart Playlist Matches & DNA Analysis', fusionSubtitle:'High-signal matches discovered through genre and frequency similarity', collectionLabel:'COLLECTION', playlists:'Playlists', list:'List', tracks:'Tracks', curator:'Curator', private:'Private', public:'Public', compatible:'Compatible', common:'Shared Tracks', match:'Open Match', search:'Search collection...', vinyl:'Cover Gallery', rack:'List View', auto:'Auto' },
+    de: { name:'Deutsch', demo:'Live-Demo', backups:'Sicherungen', connect:'Spotify verbinden', studio:'Studio verbinden →', collection:'Tify Plus-Sammlung', eyebrow:'● KURATIEREN. VERBINDEN. STEUERN.', heroDescription:'Verwalte deine Spotify-Sammlung mit intelligentem Matching, echtem Zufall und professionellen Werkzeugen.', analyze:'Analysieren', fusionEngine:'FUSIONSMOTOR', fusionTitle:'Intelligente Playlist-Matches & DNA-Analyse', fusionSubtitle:'Starke Übereinstimmungen nach Genre- und Frequenzähnlichkeit', collectionLabel:'SAMMLUNG', playlists:'Playlists', list:'Liste', tracks:'Titel', curator:'Kurator', private:'Privat', public:'Öffentlich', compatible:'Kompatibel', common:'Gemeinsame Titel', match:'Match öffnen', search:'Sammlung durchsuchen...', vinyl:'Cover-Galerie', rack:'Listenansicht', auto:'Automatisch' },
+    fr: { name:'Français', demo:'Démo', backups:'Sauvegardes', connect:'Connecter Spotify', studio:'Connecter le studio →', collection:'Collection Tify Plus', eyebrow:'● CRÉER. CONNECTER. CONTRÔLER.', heroDescription:'Façonnez votre bibliothèque Spotify avec des correspondances intelligentes et des outils de curation professionnels.', analyze:'Analyser', fusionEngine:'MOTEUR DE FUSION', fusionTitle:'Correspondances intelligentes & analyse ADN', fusionSubtitle:'Correspondances fortes selon les genres et les fréquences', collectionLabel:'COLLECTION', playlists:'Playlists', list:'Liste', tracks:'Titres', curator:'Curateur', private:'Privée', public:'Publique', compatible:'Compatible', common:'Titres communs', match:'Ouvrir', search:'Rechercher...', vinyl:'Galerie', rack:'Vue liste', auto:'Automatique' },
+    es: { name:'Español', demo:'Demo', backups:'Copias', connect:'Conectar Spotify', studio:'Conectar estudio →', collection:'Colección Tify Plus', eyebrow:'● CURA. CONECTA. CONTROLA.', heroDescription:'Organiza tu biblioteca de Spotify con coincidencias inteligentes y herramientas profesionales.', analyze:'Analizar', fusionEngine:'MOTOR DE FUSIÓN', fusionTitle:'Coincidencias inteligentes y análisis de ADN', fusionSubtitle:'Coincidencias por similitud de género y frecuencia', collectionLabel:'COLECCIÓN', playlists:'Playlists', list:'Lista', tracks:'Canciones', curator:'Curador', private:'Privada', public:'Pública', compatible:'Compatible', common:'Canciones comunes', match:'Abrir coincidencia', search:'Buscar colección...', vinyl:'Galería', rack:'Vista de lista', auto:'Automático' },
+    it: { name:'Italiano', demo:'Demo', backups:'Backup', connect:'Collega Spotify', studio:'Collega lo studio →', collection:'Collezione Tify Plus', eyebrow:'● CURA. CONNETTI. CONTROLLA.', heroDescription:'Organizza la tua libreria Spotify con abbinamenti intelligenti e strumenti professionali.', analyze:'Analizza', fusionEngine:'MOTORE FUSIONE', fusionTitle:'Abbinamenti intelligenti e analisi DNA', fusionSubtitle:'Abbinamenti per genere e frequenza', collectionLabel:'COLLEZIONE', playlists:'Playlist', list:'Elenco', tracks:'Brani', curator:'Curatore', private:'Privata', public:'Pubblica', compatible:'Compatibile', common:'Brani comuni', match:'Apri', search:'Cerca...', vinyl:'Galleria', rack:'Vista elenco', auto:'Automatico' },
+    pt: { name:'Português', demo:'Demonstração', backups:'Backups', connect:'Conectar Spotify', studio:'Conectar estúdio →', collection:'Coleção Tify Plus', eyebrow:'● ORGANIZE. CONECTE. CONTROLE.', heroDescription:'Organize sua biblioteca Spotify com combinações inteligentes e ferramentas profissionais.', analyze:'Analisar', fusionEngine:'MOTOR DE FUSÃO', fusionTitle:'Combinações inteligentes e análise de DNA', fusionSubtitle:'Combinações por gênero e frequência', collectionLabel:'COLEÇÃO', playlists:'Playlists', list:'Lista', tracks:'Faixas', curator:'Curador', private:'Privada', public:'Pública', compatible:'Compatível', common:'Faixas em comum', match:'Abrir', search:'Buscar coleção...', vinyl:'Galeria', rack:'Lista', auto:'Automático' },
+    ru: { name:'Русский', demo:'Демо', backups:'Резервные копии', connect:'Подключить Spotify', studio:'Подключить студию →', collection:'Коллекция Tify Plus', eyebrow:'● СОЗДАВАЙ. ПОДКЛЮЧАЙ. УПРАВЛЯЙ.', heroDescription:'Управляйте медиатекой Spotify с умным подбором и профессиональными инструментами.', analyze:'Анализ', fusionEngine:'ДВИЖОК СЛИЯНИЯ', fusionTitle:'Умные совпадения и ДНК-анализ', fusionSubtitle:'Совпадения по жанру и частотному профилю', collectionLabel:'КОЛЛЕКЦИЯ', playlists:'Плейлисты', list:'Список', tracks:'Треки', curator:'Куратор', private:'Приватный', public:'Публичный', compatible:'Совместимо', common:'Общие треки', match:'Открыть', search:'Поиск...', vinyl:'Обложки', rack:'Список', auto:'Авто' },
+    ar: { name:'العربية', demo:'عرض تجريبي', backups:'النسخ الاحتياطية', connect:'ربط Spotify', studio:'ربط الاستوديو ←', collection:'مجموعة Tify Plus', eyebrow:'● نظّم. اتصل. تحكّم.', heroDescription:'نظّم مكتبة Spotify بالمطابقة الذكية وأدوات التنظيم الاحترافية.', analyze:'تحليل', fusionEngine:'محرك الدمج', fusionTitle:'مطابقات ذكية وتحليل DNA', fusionSubtitle:'مطابقات حسب النوع والتردد', collectionLabel:'المجموعة', playlists:'قوائم التشغيل', list:'قائمة', tracks:'مقاطع', curator:'المنسق', private:'خاصة', public:'عامة', compatible:'متوافق', common:'مقاطع مشتركة', match:'فتح', search:'بحث في المجموعة...', vinyl:'معرض الأغلفة', rack:'عرض القائمة', auto:'تلقائي' },
+    zh: { name:'中文', demo:'演示', backups:'备份', connect:'连接 Spotify', studio:'连接工作室 →', collection:'Tify Plus 收藏', eyebrow:'● 编排・连接・掌控', heroDescription:'使用智能匹配和专业编排工具管理您的 Spotify 音乐库。', analyze:'分析', fusionEngine:'融合引擎', fusionTitle:'智能歌单匹配与 DNA 分析', fusionSubtitle:'根据流派和频率相似度发现匹配', collectionLabel:'收藏', playlists:'播放列表', list:'列表', tracks:'歌曲', curator:'创建者', private:'私密', public:'公开', compatible:'匹配', common:'共同歌曲', match:'打开匹配', search:'搜索收藏...', vinyl:'封面画廊', rack:'列表视图', auto:'自动' },
+    ja: { name:'日本語', demo:'デモ', backups:'バックアップ', connect:'Spotifyに接続', studio:'スタジオに接続 →', collection:'Tify Plusコレクション', eyebrow:'● 選ぶ・つなぐ・操る', heroDescription:'スマートマッチングとプロ向けツールでSpotifyライブラリを整理します。', analyze:'分析', fusionEngine:'フュージョンエンジン', fusionTitle:'スマートプレイリストマッチ＆DNA分析', fusionSubtitle:'ジャンルと周波数の類似性から強い組み合わせを発見', collectionLabel:'コレクション', playlists:'プレイリスト', list:'リスト', tracks:'曲', curator:'作成者', private:'非公開', public:'公開', compatible:'相性良好', common:'共通曲', match:'開く', search:'コレクションを検索...', vinyl:'カバー表示', rack:'リスト表示', auto:'自動' },
+    ko: { name:'한국어', demo:'데모', backups:'백업', connect:'Spotify 연결', studio:'스튜디오 연결 →', collection:'Tify Plus 컬렉션', eyebrow:'● 큐레이션. 연결. 제어.', heroDescription:'스마트 매칭과 전문 도구로 Spotify 라이브러리를 관리하세요.', analyze:'분석', fusionEngine:'퓨전 엔진', fusionTitle:'스마트 플레이리스트 매칭 및 DNA 분석', fusionSubtitle:'장르와 주파수 유사도로 발견한 매칭', collectionLabel:'컬렉션', playlists:'플레이리스트', list:'목록', tracks:'곡', curator:'큐레이터', private:'비공개', public:'공개', compatible:'호환', common:'공통 곡', match:'열기', search:'컬렉션 검색...', vinyl:'커버 갤러리', rack:'목록 보기', auto:'자동' },
+    hi: { name:'हिन्दी', demo:'डेमो', backups:'बैकअप', connect:'Spotify जोड़ें', studio:'स्टूडियो जोड़ें →', collection:'Tify Plus संग्रह', eyebrow:'● चुनें. जोड़ें. नियंत्रित करें.', heroDescription:'स्मार्ट मैचिंग और पेशेवर टूल से अपनी Spotify लाइब्रेरी व्यवस्थित करें।', analyze:'विश्लेषण', fusionEngine:'फ्यूज़न इंजन', fusionTitle:'स्मार्ट प्लेलिस्ट मिलान और DNA विश्लेषण', fusionSubtitle:'शैली और फ़्रीक्वेंसी के आधार पर मिलान', collectionLabel:'संग्रह', playlists:'प्लेलिस्ट', list:'सूची', tracks:'गाने', curator:'क्यूरेटर', private:'निजी', public:'सार्वजनिक', compatible:'अनुकूल', common:'साझा गाने', match:'खोलें', search:'संग्रह खोजें...', vinyl:'कवर गैलरी', rack:'सूची दृश्य', auto:'स्वचालित' },
+    nl: { name:'Nederlands', demo:'Demo', backups:'Back-ups', connect:'Spotify koppelen', studio:'Studio koppelen →', collection:'Tify Plus-collectie', eyebrow:'● SELECTEER. VERBIND. BEHEER.', heroDescription:'Beheer je Spotify-bibliotheek met slimme matching en professionele tools.', analyze:'Analyseren', fusionEngine:'FUSIEMOTOR', fusionTitle:'Slimme matches & DNA-analyse', fusionSubtitle:'Matches op genre- en frequentieprofiel', collectionLabel:'COLLECTIE', playlists:'Playlists', list:'Lijst', tracks:'Nummers', curator:'Curator', private:'Privé', public:'Openbaar', compatible:'Compatibel', common:'Gedeelde nummers', match:'Openen', search:'Collectie zoeken...', vinyl:'Covergalerij', rack:'Lijstweergave', auto:'Automatisch' }
   };
 
   const HERO_TITLES = {
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
 
     const setText = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = value; };
-    setText('#btnTryDemo span', t('demo'));
+    setText('#btnTryDemo span', currentLanguage === 'tr' ? 'Nasıl çalışır' : 'How it works');
     setText('#btnOpenHistoryModalDemo span', t('backups'));
     setText('#btnConnectSpotify span', t('connect'));
     setText('#btnHeroLogin', t('studio'));
@@ -290,7 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const headerUserName = document.getElementById('headerUserName');
 
   const landingHeroSection = document.getElementById('landingHeroSection');
-  const userDashboardHeader = document.getElementById('userDashboardHeader');
+  const landingView = document.getElementById('landingView');
+  const dashboardView = document.getElementById('dashboardView');
   const dashDisplayName = document.getElementById('dashDisplayName');
 
   const catalogTitleText = document.getElementById('catalogTitleText');
@@ -308,6 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTryDemo = document.getElementById('btnTryDemo');
   const btnHeroLogin = document.getElementById('btnHeroLogin');
   const btnHeroDemo = document.getElementById('btnHeroDemo');
+  const btnLandingLogin = document.getElementById('btnLandingLogin');
+  const btnLandingPreview = document.getElementById('btnLandingPreview');
+  const landingPlaylistUrlInput = document.getElementById('landingPlaylistUrlInput');
   const btnLogout = document.getElementById('btnLogout');
 
   const authModal = document.getElementById('authModal');
@@ -417,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fallback: If /me/playlists returned 0, try /users/{userId}/playlists
     if (allPlaylists.length === 0 && !userId && state.userName && state.userName !== "Spotify Kullanıcısı") {
-      console.log(`[Tify Plus Pulse] /me/playlists returned 0, trying /users/${state.userName}/playlists...`);
+      console.log(`[Tify Plus] /me/playlists returned 0, trying /users/${state.userName}/playlists...`);
       return await fetchSpotifyPlaylists(token, state.userName);
     }
 
@@ -689,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   // SAFETY SNAPSHOT & UNDO RESTORATION ENGINE
   // ============================================================
-  const SNAPSHOT_STORAGE_KEY = 'spotify_pulse_snapshots';
+  const SNAPSHOT_STORAGE_KEY = 'tify_plus_snapshots';
 
   function saveSafetySnapshotsToStorage() {
     try {
@@ -899,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save library to localStorage cache
       saveLibraryCache(parsedPlaylists);
 
-      console.log(`[Tify Plus Pulse Sync] ${parsedPlaylists.length} playlist yüklendi. API: 2 çağrı (profil + liste). Tracklar tıklanınca lazy-load.`);
+      console.log(`[Tify Plus Sync] ${parsedPlaylists.length} playlist yüklendi. API: 2 çağrı (profil + liste). Tracklar tıklanınca lazy-load.`);
 
       showLoader(true, `Tamamlandı! ${parsedPlaylists.length} Çalma Listesi Yüklendi.`, 100);
 
@@ -1164,6 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- DUAL SESSION STATE SWITCHER ---
   function setAppSessionState(isLoggedIn) {
     state.isLoggedIn = isLoggedIn;
+    document.body.dataset.session = isLoggedIn ? 'dashboard' : 'landing';
     updatePlaybackLockUi();
 
     const cockpitLoggedOutActions = document.getElementById('cockpitLoggedOutActions');
@@ -1172,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isLoggedIn) {
       // Demo catalog belongs only to the public landing page. Never carry it
       // into an authenticated user's private workspace.
-      if (state.playlists === MOCK_PLAYLISTS || state.playlists.some(playlist => String(playlist?.id || '').startsWith('soond_pl_'))) {
+      if (state.playlists.some(playlist => String(playlist?.id || '').startsWith('demo_'))) {
         state.playlists = [];
         state.currentPlaylist = null;
         state.presenceMap = {};
@@ -1191,8 +1196,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cockpitLoggedOutActions) cockpitLoggedOutActions.classList.add('hidden');
       if (cockpitLoggedInActions) cockpitLoggedInActions.classList.remove('hidden');
 
-      if (landingHeroSection) landingHeroSection.classList.add('hidden');
-      if (userDashboardHeader) userDashboardHeader.classList.remove('hidden');
+      if (landingView) landingView.classList.add('hidden');
+      if (dashboardView) dashboardView.classList.remove('hidden');
 
       if (state.accessToken) {
         // Create the Spotify Connect device while the library is loading so a
@@ -1240,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHeaderUserInfo();
     } else {
       if (appModeBadge) {
-        appModeBadge.textContent = "Ziyaretçi / Demo Modu";
+        appModeBadge.textContent = "Tanıtım / Giriş Yapılmadı";
         appModeBadge.style.background = "rgba(0, 242, 254, 0.15)";
         appModeBadge.style.color = "var(--cyan-accent)";
       }
@@ -1251,14 +1256,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cockpitLoggedOutActions) cockpitLoggedOutActions.classList.remove('hidden');
       if (cockpitLoggedInActions) cockpitLoggedInActions.classList.add('hidden');
 
-      if (landingHeroSection) landingHeroSection.classList.remove('hidden');
-      if (userDashboardHeader) userDashboardHeader.classList.add('hidden');
+      if (landingView) landingView.classList.remove('hidden');
+      if (dashboardView) dashboardView.classList.add('hidden');
 
-      state.playlists = MOCK_PLAYLISTS;
-      if (catalogTitleText) catalogTitleText.innerHTML = `<i class="fa-solid fa-compact-disc text-cyan"></i> Örnek Çalma Listeleri Kataloğu (Demo)`;
-      if (catalogTotalCount) catalogTotalCount.textContent = `${MOCK_PLAYLISTS.length} Liste`;
-      buildGlobalPresenceMap();
-      renderPlaylistsCatalog();
+      // Public landing never exposes the developer's sample playlists. A
+      // personal catalog is created only after the visitor authorizes Spotify.
+      state.playlists = [];
+      state.currentPlaylist = null;
+      state.externalPlaylist = null;
+      state.presenceMap = {};
+      if (playlistsCatalogGrid) playlistsCatalogGrid.replaceChildren();
+      document.getElementById('recommendationsGrid')?.replaceChildren();
+      analysisResults?.classList.add('hidden');
       updateHeaderUserInfo();
     }
   }
@@ -1267,202 +1276,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // PLAYLIST DNA & COSINE SIMILARITY ENGINE (Bölüm 2)
   // ============================================================
 
-  // ============================================================
-  // SOOND'S AUTHENTIC PUBLIC PLAYLIST ARCHIVE (DEFAULT LIBRARY)
-  // ============================================================
-
-  const SOOND_PUBLIC_PLAYLISTS = [
-    {
-      id: 'soond_pl_1',
-      name: 'Global Cheri',
-      owner: 'SOOND',
-      followers: 4320,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80',
-      description: 'Global dans listeleri, pop hitleri ve enerjik kulüp remixleri arşivi.',
-      trackTotal: 87,
-      genreVector: { 'Dance Pop': 0.95, Pop: 0.9, Electronic: 0.75, House: 0.5 },
-      dnaTag: '🔥 Global Hits / 126 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'gc_t1', title: 'Cheri Cheri Lady', artist: 'Modern Talking', album: 'Let\'s Talk About Love', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=100&q=80', durationMs: 225000, genre: 'Pop', camelot: '8A' },
-        { id: 'gc_t2', title: 'Midnight City', artist: 'M83', album: 'Hurry Up, We\'re Dreaming', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&q=80', durationMs: 243000, genre: 'Electronic', camelot: '11B' },
-        { id: 'gc_t3', title: 'One More Time', artist: 'Daft Punk', album: 'Discovery', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&q=80', durationMs: 320000, genre: 'House', camelot: '8A' },
-        { id: 'gc_t4', title: 'Blinding Lights', artist: 'The Weeknd', album: 'After Hours', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&q=80', durationMs: 200000, genre: 'Synthwave', camelot: '9A' },
-        { id: 'gc_t5', title: 'Levitating', artist: 'Dua Lipa', album: 'Future Nostalgia', cover: 'https://images.unsplash.com/photo-1445307806294-bff7f67ff225?w=100&q=80', durationMs: 203000, genre: 'Dance Pop', camelot: '7A' }
-      ]
-    },
-    {
-      id: 'soond_pl_2',
-      name: 'WORK FLOW',
-      owner: 'SOOND',
-      followers: 8910,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80',
-      description: 'Derin odaklanma, kodlama ve kesintisiz akış için tasarlanmış minimalist elektronik ve lo-fi ritimler.',
-      trackTotal: 79,
-      genreVector: { 'Deep Electronic': 0.95, 'Lo-Fi': 0.85, Ambient: 0.8, Chillhop: 0.6 },
-      dnaTag: '💻 Deep Flow / 110 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'wf_t1', title: 'Resonance', artist: 'HOME', album: 'Odyssey', cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=100&q=80', durationMs: 212000, genre: 'Synthwave', camelot: '8A' },
-        { id: 'wf_t2', title: 'Affection', artist: 'Jinsang', album: 'Life', cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=100&q=80', durationMs: 180000, genre: 'Lo-Fi', camelot: '4A' },
-        { id: 'wf_t3', title: 'Controlla', artist: 'Idealism', album: 'Amaranthine', cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=100&q=80', durationMs: 165000, genre: 'Ambient', camelot: '6B' },
-        { id: 'wf_t4', title: 'Snowman', artist: 'Wun Two', album: 'Rio', cover: 'https://images.unsplash.com/photo-1445307806294-bff7f67ff225?w=100&q=80', durationMs: 154000, genre: 'Chillhop', camelot: '5A' }
-      ]
-    },
-    {
-      id: 'soond_pl_3',
-      name: 'Chill Old Country',
-      owner: 'SOOND',
-      followers: 2450,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=400&q=80',
-      description: 'Samimi akustik gitar riffleri, sıcak country ezgileri ve nostaljik tınılar.',
-      trackTotal: 45,
-      genreVector: { Acoustic: 0.95, Country: 0.9, Folk: 0.8, Indie: 0.5 },
-      dnaTag: '🌾 Warm Country / 92 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'coc_t1', title: 'Take Me Home, Country Roads', artist: 'John Denver', album: 'Poems, Prayers & Promises', cover: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=100&q=80', durationMs: 198000, genre: 'Country', camelot: '9B' },
-        { id: 'coc_t2', title: 'Heart of Gold', artist: 'Neil Young', album: 'Harvest', cover: 'https://images.unsplash.com/photo-1445307806294-bff7f67ff225?w=100&q=80', durationMs: 187000, genre: 'Folk', camelot: '7B' },
-        { id: 'coc_t3', title: 'Tennessee Whiskey', artist: 'Chris Stapleton', album: 'Traveller', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&q=80', durationMs: 293000, genre: 'Country', camelot: '8A' }
-      ]
-    },
-    {
-      id: 'soond_pl_4',
-      name: 'Kasa Edit',
-      owner: 'SOOND',
-      followers: 3890,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80',
-      description: 'Agresif 808 baslar, drift phonk ve ağır tempolu urban trap kesitleri.',
-      trackTotal: 42,
-      genreVector: { Phonk: 0.95, 'Hip-Hop': 0.85, Trap: 0.8, Electronic: 0.6 },
-      dnaTag: '⚡ Aggressive 808 / 140 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'ke_t1', title: 'Murder In My Mind', artist: 'Kordhell', album: 'Phonk Master', cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=100&q=80', durationMs: 145000, genre: 'Phonk', camelot: '1A' },
-        { id: 'ke_t2', title: 'Metamorphosis', artist: 'INTERWORLD', album: 'Metamorphosis', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&q=80', durationMs: 143000, genre: 'Phonk', camelot: '1A' },
-        { id: 'ke_t3', title: 'Rapture', artist: 'INTERWORLD', album: 'Rapture', cover: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=100&q=80', durationMs: 135000, genre: 'Phonk', camelot: '2A' }
-      ]
-    },
-    {
-      id: 'soond_pl_5',
-      name: 'my SoundTRACK',
-      owner: 'SOOND',
-      followers: 1980,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=400&q=80',
-      description: 'Epik film müzikleri, Hans Zimmer atmosferi ve dramatik senfonik kompozisyonlar.',
-      trackTotal: 54,
-      genreVector: { Cinematic: 0.95, Soundtrack: 0.9, Orchestral: 0.85, Ambient: 0.4 },
-      dnaTag: '🎻 Cinematic Score / 75 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'st_t1', title: 'Time', artist: 'Hans Zimmer', album: 'Inception OST', cover: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=100&q=80', durationMs: 275000, genre: 'Cinematic', camelot: '4A' },
-        { id: 'st_t2', title: 'Cornfield Chase', artist: 'Hans Zimmer', album: 'Interstellar OST', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&q=80', durationMs: 126000, genre: 'Soundtrack', camelot: '5A' },
-        { id: 'st_t3', title: 'Experience', artist: 'Ludovico Einaudi', album: 'In a Time Lapse', cover: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=100&q=80', durationMs: 315000, genre: 'Orchestral', camelot: '6A' }
-      ]
-    },
-    {
-      id: 'soond_pl_6',
-      name: 'LAZ',
-      owner: 'SOOND',
-      followers: 1200,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
-      description: 'Karadeniz tınıları, kemençe füzyonu ve enerjik etnik rock ezgileri.',
-      trackTotal: 8,
-      genreVector: { Folk: 0.9, Rock: 0.75, Ethnic: 0.7 },
-      dnaTag: '🌊 Ethnic Rock / 120 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'lz_t1', title: 'Gelevera Deresi', artist: 'Kazım Koyuncu', album: 'Hayde', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&q=80', durationMs: 245000, genre: 'Folk', camelot: '8A' },
-        { id: 'lz_t2', title: 'Koyverdin Gittin Beni', artist: 'Kazım Koyuncu', album: 'Viya!', cover: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=100&q=80', durationMs: 260000, genre: 'Rock', camelot: '7A' }
-      ]
-    },
-    {
-      id: 'soond_pl_7',
-      name: '39. Çalma Listem',
-      owner: 'SOOND',
-      followers: 850,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-      description: 'Günlük miks ve taze keşif parçalarından oluşan dinamik seçki.',
-      trackTotal: 3,
-      genreVector: { Indie: 0.8, Pop: 0.6, Electronic: 0.5 },
-      dnaTag: '✨ Daily Mix / 115 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: '39_t1', title: 'Holocene', artist: 'Bon Iver', album: 'Bon Iver', cover: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=100&q=80', durationMs: 337000, genre: 'Indie', camelot: '3A' },
-        { id: '39_t2', title: 'Tech Noir', artist: 'GUNSHIP', album: 'GUNSHIP', cover: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=100&q=80', durationMs: 297000, genre: 'Electronic', camelot: '8A' }
-      ]
-    },
-    {
-      id: 'soond_pl_8',
-      name: 'Shazam Seçtikleri',
-      owner: 'SOOND',
-      followers: 5120,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&q=80',
-      description: 'Radyoda, kulüpte veya sokakta keşfedilip Shazam ile kaydedilmiş özel hitler.',
-      trackTotal: 65,
-      genreVector: { Pop: 0.9, Electronic: 0.8, 'Dance Pop': 0.75 },
-      dnaTag: '🔍 Viral Discoveries / 124 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'sh_t1', title: 'Nightcall', artist: 'Kavinsky', album: 'OutRun', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&q=80', durationMs: 259000, genre: 'Synthwave', camelot: '8A' },
-        { id: 'sh_t2', title: 'Turbo Killer', artist: 'Carpenter Brut', album: 'Trilogy', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&q=80', durationMs: 208000, genre: 'Electronic', camelot: '11B' }
-      ]
-    },
-    {
-      id: 'soond_pl_9',
-      name: 'Summer Vibes & Beach',
-      owner: 'SOOND',
-      followers: 6740,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80',
-      description: 'Yaz güneşi, sahil partileri ve ferah nu-disco house ritimleri.',
-      trackTotal: 92,
-      genreVector: { House: 0.95, 'Nu-Disco': 0.9, 'Dance Pop': 0.8 },
-      dnaTag: '🌴 Summer House / 122 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'sv_t1', title: 'My Head Is a Jungle', artist: 'Wankelmut & Emma Louise', album: 'Jungle EP', cover: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100&q=80', durationMs: 215000, genre: 'House', camelot: '6A' },
-        { id: 'sv_t2', title: 'Jubel', artist: 'Klingande', album: 'Jubel', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=100&q=80', durationMs: 202000, genre: 'House', camelot: '7A' }
-      ]
-    },
-    {
-      id: 'soond_pl_10',
-      name: 'Gece Sürüşü & Synth',
-      owner: 'SOOND',
-      followers: 4180,
-      isPrivate: false,
-      url: 'https://open.spotify.com',
-      cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80',
-      description: 'Boş otoyollar, neon ışıklar ve nostaljik 80ler analog synthesizer yolculuğu.',
-      trackTotal: 38,
-      genreVector: { Synthwave: 0.95, Retrowave: 0.9, Electronic: 0.7 },
-      dnaTag: '🌃 Midnight Drive / 128 BPM',
-      tracksLoaded: true,
-      tracks: [
-        { id: 'nd_t1', title: 'Days of Thunder', artist: 'The Midnight', album: 'Days of Thunder', cover: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=100&q=80', durationMs: 329000, genre: 'Synthwave', camelot: '10A' },
-        { id: 'nd_t2', title: 'Sunset', artist: 'The Midnight', album: 'Endless Summer', cover: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=100&q=80', durationMs: 326000, genre: 'Synthwave', camelot: '8A' }
-      ]
-    }
-  ];
-
-  const MOCK_PLAYLISTS = SOOND_PUBLIC_PLAYLISTS;
+  // Public visitors never receive bundled personal or developer playlist data.
+  // The catalog is populated exclusively from the authenticated Spotify session.
 
   const UNKNOWN_GENRE_LABELS = new Set(['', 'spotify parçası', 'spotify track', 'bilinmeyen', 'unknown', 'n/a']);
 
@@ -1583,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const recsGrid = document.getElementById('recommendationsGrid');
     if (!recsGrid) return;
 
-    const activePlaylists = state.isLoggedIn ? state.playlists : MOCK_PLAYLISTS;
+    const activePlaylists = state.isLoggedIn ? state.playlists : [];
     if (activePlaylists.length < 2) {
       recsGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; color: var(--t-muted); padding: 20px; font-size: 12px;">
@@ -1663,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.openSmartMatchModal = function(plAId, plBId) {
-    const playlists = state.isLoggedIn ? state.playlists : MOCK_PLAYLISTS;
+    const playlists = state.isLoggedIn ? state.playlists : [];
     const plA = playlists.find(pl => String(pl.id) === String(plAId));
     const plB = playlists.find(pl => String(pl.id) === String(plBId));
     const modal = document.getElementById('smartMatchModal');
@@ -1777,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const coverSrc = escapeMarkup(pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80');
         const playlistId = escapeMarkup(pl.id);
         const playlistName = escapeMarkup(pl.name);
-        const playlistOwner = escapeMarkup(pl.owner || 'SOOND');
+        const playlistOwner = escapeMarkup(pl.owner || 'Spotify kullanıcısı');
         const numStr = String(idx + 1).padStart(2, '0');
 
         return `
@@ -1813,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const coverSrc = escapeMarkup(pl.cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80');
         const playlistId = escapeMarkup(pl.id);
         const playlistName = escapeMarkup(pl.name);
-        const playlistOwner = escapeMarkup(pl.owner || 'SOOND');
+        const playlistOwner = escapeMarkup(pl.owner || 'Spotify kullanıcısı');
 
         return `
           <div class="playlist-grid-card" role="button" tabindex="0" data-action="select-playlist" data-playlist-id="${playlistId}">
@@ -1886,10 +1701,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- WINDOW HELPER: CLICK PLAYLIST (Lazy Track Loader with localStorage Cache) ---
   window.selectAndAnalyzePlaylist = async function(plId) {
-    let target = state.playlists.find(p => p.id === plId);
-    if (!target && !state.isLoggedIn) {
-      target = MOCK_PLAYLISTS.find(p => p.id === plId);
-    }
+    const target = state.playlists.find(p => p.id === plId);
     if (!target) return;
 
     // Reset filters and selection
@@ -2893,7 +2705,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute('href', csvContent);
-      downloadAnchor.setAttribute('download', `${plName}_TifyPlusPulse.csv`);
+      downloadAnchor.setAttribute('download', `${plName}_TifyPlus.csv`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -2932,10 +2744,26 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   if (btnConnectSpotify) btnConnectSpotify.addEventListener('click', triggerLoginModal);
   if (btnHeroLogin) btnHeroLogin.addEventListener('click', triggerLoginModal);
+  if (btnLandingLogin) btnLandingLogin.addEventListener('click', triggerLoginModal);
   if (btnCloseAuthModal) btnCloseAuthModal.addEventListener('click', () => authModal.classList.add('hidden'));
 
-  if (btnTryDemo) btnTryDemo.addEventListener('click', () => setAppSessionState(false));
+  if (btnTryDemo) btnTryDemo.addEventListener('click', () => document.getElementById('howItWorks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   if (btnHeroDemo) btnHeroDemo.addEventListener('click', () => setAppSessionState(false));
+  if (btnLandingPreview) {
+    btnLandingPreview.addEventListener('click', () => {
+      const value = landingPlaylistUrlInput?.value.trim() || '';
+      if (!value) {
+        showToast('Spotify playlist bağlantısını yapıştırın.', 'warning');
+        landingPlaylistUrlInput?.focus();
+        return;
+      }
+      playlistUrlInput.value = value;
+      btnAnalyze?.click();
+    });
+  }
+  landingPlaylistUrlInput?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') btnLandingPreview?.click();
+  });
 
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
@@ -3458,7 +3286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let cassetteDurationSec = 30;
   let isCassettePlaying = false;
   let currentCassetteTrack = null;
-  let currentPlaylistContextName = "SOOND Koleksiyonu";
+  let currentPlaylistContextName = "Tify Plus Kütüphanesi";
   let playbackBackend = 'none';
   let spotifyPlayer = null;
   let spotifyDeviceId = null;
@@ -3620,10 +3448,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const seedText = `${track.id || ''}|${track.title || ''}|${track.artist || ''}`;
     const seed = [...seedText].reduce((total, character) => ((total * 31) + character.charCodeAt(0)) >>> 0, 7);
     const hue = 78 + (seed % 74);
-    const pulseDuration = (1.35 + ((seed >> 3) % 115) / 100).toFixed(2);
+    const signalDuration = (1.35 + ((seed >> 3) % 115) / 100).toFixed(2);
     const signalStrength = (.58 + ((seed >> 5) % 34) / 100).toFixed(2);
     floatingWebPlayer.style.setProperty('--player-hue', hue);
-    floatingWebPlayer.style.setProperty('--signal-cycle', `${pulseDuration}s`);
+    floatingWebPlayer.style.setProperty('--signal-cycle', `${signalDuration}s`);
     floatingWebPlayer.style.setProperty('--signal-strength', signalStrength);
   }
 
@@ -3744,7 +3572,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (cassetteSubtitle && isLocked) cassetteSubtitle.textContent = 'Orijinal şarkılar için Spotify hesabını bağlayın';
     if (tapeTrackTitle && isLocked) tapeTrackTitle.textContent = 'Spotify ile dinle';
-    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY⁺ PULSE / HESAP BAĞLANTISI GEREKLİ';
+    if (tapeTrackArtist && isLocked) tapeTrackArtist.textContent = 'A / TIFY PLUS / HESAP BAĞLANTISI GEREKLİ';
   }
 
   // --- PLAY TRACK (CALLED FROM ANYWHERE IN THE APP) ---
@@ -3755,7 +3583,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     let track = null;
-    let plName = "SOOND Studio";
+    let plName = "Tify Plus";
 
     if (state.currentPlaylist && state.currentPlaylist.tracks) {
       track = state.currentPlaylist.tracks.find(t => t.id === trackId);
@@ -3764,18 +3592,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!track && state.externalPlaylist?.tracks) {
       track = state.externalPlaylist.tracks.find(t => t.id === trackId);
       if (track) plName = state.externalPlaylist.name;
-    }
-    if (!track && !state.isLoggedIn) {
-      for (const pl of SOOND_PUBLIC_PLAYLISTS) {
-        if (pl.tracks) {
-          const found = pl.tracks.find(t => t.id === trackId);
-          if (found) {
-            track = found;
-            plName = pl.name;
-            break;
-          }
-        }
-      }
     }
     if (!track) {
       for (const pl of state.playlists) {
@@ -3794,7 +3610,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAndPlayUnifiedTrack(track, plName);
   };
 
-  window.playTrackInCassette = function(track, playlistName = "SOOND Koleksiyonu") {
+  window.playTrackInCassette = function(track, playlistName = "Tify Plus Kütüphanesi") {
     prepareSpotifyPlayerFromUserGesture();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
@@ -4298,7 +4114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const { signal } = playbackAbortController;
 
     currentCassetteTrack = track;
-    currentPlaylistContextName = playlistName || "SOOND Koleksiyonu";
+    currentPlaylistContextName = playlistName || "Tify Plus Kütüphanesi";
     const matchingQueue = [state.currentPlaylist, ...state.playlists]
       .find(playlist => Array.isArray(playlist?.tracks) && playlist.tracks.some(item => item.id === track.id))?.tracks;
     if (matchingQueue?.length) {
@@ -4318,7 +4134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Update Hero Cassette Deck
     if (tapeTrackTitle) tapeTrackTitle.textContent = track.title;
-    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY⁺ PULSE / ${track.artist.toUpperCase()}`;
+    if (tapeTrackArtist) tapeTrackArtist.textContent = `A / TIFY PLUS / ${track.artist.toUpperCase()}`;
     if (cassetteSubtitle) cassetteSubtitle.textContent = `${track.artist} • ${currentPlaylistContextName}`;
     if (tapeCounter) tapeCounter.textContent = "00:00";
     if (cassetteProgressFill) cassetteProgressFill.style.width = "0%";
@@ -4595,7 +4411,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? localPlaybackQueue
       : (state.currentPlaylist && state.currentPlaylist.tracks && state.currentPlaylist.tracks.length > 0)
         ? state.currentPlaylist.tracks
-      : (!state.isLoggedIn ? (SOOND_PUBLIC_PLAYLISTS[0].tracks || []) : []);
+      : [];
     if (!activeList.length) return;
 
     let idx = activeList === localPlaybackQueue && localPlaybackQueueIndex >= 0
@@ -4618,7 +4434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? localPlaybackQueue
       : (state.currentPlaylist && state.currentPlaylist.tracks && state.currentPlaylist.tracks.length > 0)
         ? state.currentPlaylist.tracks
-      : (!state.isLoggedIn ? (SOOND_PUBLIC_PLAYLISTS[0].tracks || []) : []);
+      : [];
     if (!activeList.length) return;
 
     let idx = activeList === localPlaybackQueue && localPlaybackQueueIndex >= 0
@@ -4860,7 +4676,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isPrivate: isPrivate,
             url: 'https://open.spotify.com',
             cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&q=80',
-            description: desc || 'Tify Plus Pulse üzerinde oluşturulan çalma listesi.',
+            description: desc || 'Tify Plus üzerinde oluşturulan çalma listesi.',
             trackTotal: 0,
             tracks: [],
             tracksLoaded: true
@@ -4960,6 +4776,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const FUNCTIONAL_STORAGE_KEYS = new Set([
     'spotify_library_cache',
     'spotify_pulse_snapshots',
+    'tify_plus_snapshots',
     'spotify_last_sync',
     'spotify_user_name',
     'spotify_user_email',
@@ -5037,14 +4854,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getExportableLocalData() {
     const result = {};
-    const allowedPrefixes = ['spotify_library_cache', 'spotify_tracks_', 'spotify_pulse_snapshots', 'spotify_last_sync', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar', 'tify_', 'custom_spotify_client_id', 'spotify_app_mode'];
+    const allowedPrefixes = ['spotify_library_cache', 'spotify_tracks_', 'spotify_pulse_snapshots', 'tify_plus_snapshots', 'spotify_last_sync', 'spotify_user_name', 'spotify_user_email', 'spotify_user_avatar', 'tify_', 'custom_spotify_client_id', 'spotify_app_mode'];
     for (let index = 0; index < localStorage.length; index++) {
       const key = localStorage.key(index);
       if (!key || !allowedPrefixes.some(prefix => key.startsWith(prefix))) continue;
       const rawValue = localStorage.getItem(key);
       try { result[key] = JSON.parse(rawValue); } catch (_) { result[key] = rawValue; }
     }
-    return { exportedAt: new Date().toISOString(), product: 'Tify Plus Pulse', publisher: 'Locked Co Labs', developer: 'SOOND', data: result };
+    return { exportedAt: new Date().toISOString(), product: 'Tify Plus', publisher: 'Locked Co Labs', data: result };
   }
 
   function exportLocalPrivacyData() {
@@ -5053,7 +4870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `tify-plus-pulse-verilerim-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `tify-plus-verilerim-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -5062,7 +4879,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function deleteAllLocalPrivacyData() {
-    const confirmed = window.confirm('Spotify oturumu, yerel playlist önbelleği, yedekler ve tüm Tify Plus Pulse tercihleri bu tarayıcıdan silinecek. Devam edilsin mi?');
+    const confirmed = window.confirm('Spotify oturumu, yerel playlist önbelleği, yedekler ve tüm Tify Plus tercihleri bu tarayıcıdan silinecek. Devam edilsin mi?');
     if (!confirmed) return;
     const keysToDelete = [];
     for (let index = 0; index < localStorage.length; index++) {

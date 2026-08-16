@@ -1,26 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">Tify Plus Pulse marka simgesi</title>
-  <desc id="desc">Elektrik yeşili bir ses dalgasını çevreleyen koyu renkli dairesel Tify Plus Pulse simgesi.</desc>
+  <title id="title">Tify Plus marka simgesi</title>
+  <desc id="desc">T harfi, ses sinyali ve artı işaretini birleştiren köşeli Tify Plus monogramı.</desc>
   <defs>
-    <radialGradient id="surface" cx="34%" cy="28%" r="78%">
-      <stop offset="0" stop-color="#19372d"/>
-      <stop offset="0.55" stop-color="#0a1519"/>
-      <stop offset="1" stop-color="#060812"/>
-    </radialGradient>
-    <linearGradient id="ring" x1="72" y1="54" x2="442" y2="458" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#d6ff65"/>
-      <stop offset="0.48" stop-color="#a8ff26"/>
-      <stop offset="1" stop-color="#3cf5ff"/>
-    </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="10" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
+    <linearGradient id="case" x1="72" y1="48" x2="440" y2="464" gradientUnits="userSpaceOnUse"><stop stop-color="#22322d"/><stop offset=".42" stop-color="#0c1518"/><stop offset="1" stop-color="#05080d"/></linearGradient>
+    <linearGradient id="edge" x1="86" y1="75" x2="425" y2="448" gradientUnits="userSpaceOnUse"><stop stop-color="#e8ffb5"/><stop offset=".38" stop-color="#a8ff26"/><stop offset="1" stop-color="#3cf5ff"/></linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="11" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  <circle cx="256" cy="256" r="204" fill="url(#surface)" stroke="#14252a" stroke-width="12"/>
-  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#ring)" stroke-opacity="0.38" stroke-width="3"/>
-  <path d="M104 260h72l30-96 58 190 42-144 31 82h71" fill="none" stroke="#06100b" stroke-opacity="0.92" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M104 260h72l30-96 58 190 42-144 31 82h71" fill="none" stroke="url(#ring)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
-  <circle cx="104" cy="260" r="9" fill="#a8ff26"/>
-  <circle cx="408" cy="292" r="9" fill="#3cf5ff"/>
+  <path d="M86 28h274l124 124v274l-58 58H152L28 360V86z" fill="url(#case)" stroke="#24383a" stroke-width="10"/>
+  <path d="M86 28h274l124 124" fill="none" stroke="url(#edge)" stroke-width="4" stroke-opacity=".72"/>
+  <path d="M128 142h249l-39 70h-73v158h-82V212h-94z" fill="#f5f8f4"/>
+  <path d="M100 316h55l24-68 38 117 34-104 26 77h52" fill="none" stroke="url(#edge)" stroke-width="15" stroke-linecap="square" stroke-linejoin="miter" filter="url(#softGlow)"/>
+  <path d="M365 314h31v-31h35v31h31v35h-31v31h-35v-31h-31z" fill="#a8ff26" filter="url(#softGlow)"/>
+  <circle cx="100" cy="316" r="7" fill="#3cf5ff"/><circle cx="329" cy="338" r="7" fill="#a8ff26"/>
 </svg>

@@ -1,6 +1,6 @@
-# Tify Plus Pulse
+# Tify Plus
 
-> Tify Plus is the main brand at tifyplus.com, while Pulse identifies its free browser-based music analysis and Spotify playlist studio published by Locked Co Labs.
+> Tify Plus is a privacy-minded browser workspace for viewing and managing a connected user's Spotify music library, published by Locked Co Labs.
 
 Canonical website: https://tifyplus.com/
 Open-source repository: https://github.com/byspacex/tifyplus
@@ -13,8 +13,9 @@ Product category: Music library management and playlist utilities
 - Displays and organizes a user's Spotify playlists and track metadata.
 - Provides playlist matching, duplicate discovery, genre enrichment, sorting and curation tools.
 - Stores Spotify session tokens only in the active browser tab session.
-- Offers a demonstration mode without requiring a Spotify login.
+- Offers an account-free public playlist preview using Spotify's official embed.
+- Keeps the public introduction separate from the signed-in personal dashboard.
 
 ## Important clarification
 
-Tify Plus Pulse is an independent product. It is not endorsed, sponsored or operated by Spotify AB.
+Tify Plus is an independent product. It is not endorsed, sponsored or operated by Spotify AB.

@@ -193,8 +193,8 @@ assert.doesNotMatch(styles, /\.energy-head\s*\{[\s\S]{0,180}width:\s*4px;[\s\S]{
 assert.match(styles, /\.player-right\s*\{[\s\S]*clip-path:\s*polygon/, 'Sağ oynatıcı kontrolleri köşeli bütünleşik kontrol rayı kullanmalı');
 assert.match(styles, /#playerOpenSpotifyBtn[\s\S]*border-radius:\s*50%/, 'Spotify aksiyonu kontrol rayında özel dairesel düğme olmalı');
 assert.match(html, /id="btnThemeToggle"/, 'Site başlığında erişilebilir tema anahtarı bulunmalı');
-assert.match(html, /Tify<sup class="brand-plus"[^>]*>\+<\/sup><small>Pulse<\/small>/, 'Görsel marka Tify üstü artı ve Pulse olarak yazılmalı');
-assert.match(styles, /\.brand-title small\s*\{[\s\S]*color:\s*var\(--lime\);[\s\S]*font:\s*inherit;/, 'Pulse eski Plus ile aynı yeşil tipografik ölçüyü kullanmalı');
+assert.match(html, /Tify <span>Plus<\/span><sup class="brand-plus"[^>]*>\+<\/sup>/, 'Görsel marka Tify Plus adını ve üst artı simgesini taşımalı');
+assert.doesNotMatch(html, /Tify Plus Pulse|Tify⁺ Pulse|<small>Pulse<\/small>/i, 'Eski Pulse marka adı arayüzde görünmemeli');
 assert.match(html, /id="playerVolumeValue"/, 'Ses kontrolünde canlı yüzde göstergesi bulunmalı');
 assert.match(styles, /html\[data-theme="light"\][\s\S]*--bg:\s*#e8e6df/, 'Açık tema saf beyaz yerine düşük parlamalı sıcak zemin kullanmalı');
 assert.match(styles, /\.floating-web-player\s*\{[\s\S]*clip-path:\s*polygon/, 'Oynatıcı barı yuvarlak kapsül yerine kesik köşeli kasa kullanmalı');
@@ -202,7 +202,10 @@ assert.match(themeInit, /document\.documentElement\.dataset\.theme\s*=\s*theme/,
 assert.match(themeInit, /\? savedTheme : 'light'/, 'İlk ziyaret düşük parlamalı açık tema ile başlamalı');
 assert.match(styles, /@keyframes polarStarSpin/, 'Üst artı simgesi kutup yıldızı gibi dönmeli');
 assert.match(styles, /\.brand-title \.brand-plus::before[\s\S]*polarStarTwinkle/, 'Üst artı simgesinde yıldız ışını ve parıltı animasyonu bulunmalı');
-assert.match(styles, /--f-display:\s*'Inter'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');
+assert.match(styles, /--f-display:\s*'Noto Sans Variable'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');
+assert.match(styles, /html\[lang="ar"\][\s\S]*Noto Sans Arabic/, 'Arapça için uyumlu yerel yazı ailesi bulunmalı');
+assert.match(html, /id="landingView"[\s\S]*id="dashboardView"/, 'Tanıtım sayfası ile kişisel dashboard ayrı görünüm olmalı');
+assert.match(source, /document\.body\.dataset\.session = isLoggedIn \? 'dashboard' : 'landing'/, 'Oturum durumu tanıtım ve dashboard görünümünü ayırmalı');
 assert.match(html, /id="externalPlaylistModal"/, 'Dış Spotify bağlantıları için ayrı inceleme penceresi bulunmalı');
 assert.match(source, /openExternalPlaylistEmbed\(extractedId/, 'Dış bağlantı API hatasında gerçek Spotify embed görünümüne düşmeli');
 assert.match(source, /fetchSpotifyPlaylistOEmbed/, 'Dış Spotify bağlantısı resmî oEmbed metaverisiyle doğrulanmalı');
@@ -213,7 +216,8 @@ assert.match(source, /modalCard\.scrollTop = 0/, 'Dış playlist penceresi her a
 assert.match(styles, /#externalPlaylistModal \.external-playlist-card[^}]*overflow:hidden/, 'Genel modal kaydırması dış playlist başlığını kırpmamalı');
 assert.doesNotMatch(source, /Demo modunda örnek playlist analizi açıldı/, 'Dış playlist hatası kullanıcının karşısına demo playlist çıkarmamalı');
 assert.doesNotMatch(source, /state\.playlists\.unshift\(newPl\)/, 'Dış playlist kullanıcının kişisel kütüphanesine karıştırılmamalı');
-assert.match(source, /const activePlaylists = state\.isLoggedIn \? state\.playlists : MOCK_PLAYLISTS/, 'Demo eşleşmeleri yalnızca giriş yapılmamış ana sayfada çalışmalı');
+assert.match(source, /const activePlaylists = state\.isLoggedIn \? state\.playlists : \[\]/, 'Giriş yapılmadan kişisel veya geliştirici playlistleri eşleşmelere taşınmamalı');
+assert.match(source, /state\.playlists = \[\];[\s\S]*playlistsCatalogGrid\) playlistsCatalogGrid\.replaceChildren\(\)/, 'Oturum kapandığında kişisel katalog temizlenmeli');
 assert.match(source, /sessionStorage\.setItem\(LIBRARY_CACHE_KEY/, 'Kişisel Spotify kütüphanesi sekme oturumuna özel saklanmalı');
 const linkContext = { URL };
 vm.createContext(linkContext);
