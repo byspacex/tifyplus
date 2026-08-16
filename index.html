@@ -40,6 +40,8 @@
   <meta name="twitter:image" content="https://tifyplus.com/brand/tify-plus-social-1200x630.png">
   <meta name="twitter:image:alt" content="Tify Plus Pulse akıllı müzik stüdyosu">
 
+  <script src="https://sdk.scdn.co/spotify-player.js" async></script>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -1062,20 +1064,6 @@
           <i class="fa-brands fa-spotify text-green"></i>
         </a>
         <button id="btnCloseWebPlayer" class="player-ctrl-btn" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div id="spotifyEmbedFallback" class="spotify-embed-fallback hidden" aria-live="polite">
-        <div class="spotify-embed-copy">
-          <span><i class="fa-brands fa-spotify"></i> Resmî Spotify oynatıcısı</span>
-          <small>Tarayıcı oynatıcısı açılamadığı için parça güvenli Spotify panelinde gösteriliyor.</small>
-        </div>
-        <iframe
-          id="spotifyEmbedFrame"
-          title="Spotify şarkı oynatıcısı"
-          src="about:blank"
-          loading="eager"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
 
       <!-- Hidden Native Audio Object -->

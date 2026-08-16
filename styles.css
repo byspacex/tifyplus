@@ -2514,34 +2514,6 @@ body.modal-open { overflow: hidden; }
 .player-volume-control { display: flex; align-items: center; gap: 5px; padding: 0 7px 0 0; border-radius: 10px; background: rgba(255,255,255,.025); }
 .player-volume-slider { width: 72px; height: 3px; accent-color: var(--lime); cursor: pointer; }
 
-/* Official Spotify Embed fallback: shown in-page when Web Playback SDK cannot start. */
-.spotify-embed-fallback {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(170px, .34fr) minmax(300px, 1fr);
-  align-items: center;
-  gap: 18px;
-}
-.spotify-embed-copy { display: grid; gap: 4px; }
-.spotify-embed-copy span { color: #fff; font: 750 13px/1.2 var(--f-body); }
-.spotify-embed-copy span i { color: #1ed760; margin-right: 6px; }
-.spotify-embed-copy small { color: #8e9aa6; font: 500 10px/1.45 var(--f-body); }
-.spotify-embed-fallback iframe {
-  display: block;
-  width: 100%;
-  height: 80px;
-  border: 0;
-  border-radius: 12px;
-  background: #121212;
-  color-scheme: dark;
-}
-.floating-web-player.embed-fallback-active { min-height: 112px; }
-.floating-web-player.embed-fallback-active .player-center { display: none; }
-.floating-web-player.embed-fallback-active .player-right { min-width: auto; }
-.floating-web-player.embed-fallback-active .player-signal-module,
-.floating-web-player.embed-fallback-active .player-device-control,
-.floating-web-player.embed-fallback-active .player-volume-control { display: none; }
 .player-devices-popover { position: absolute; right: 0; bottom: calc(100% + 18px); width: 290px; padding: 14px; border-radius: 16px; background: rgba(7,12,21,.98); border: 1px solid rgba(255,255,255,.09); box-shadow: 0 22px 70px rgba(0,0,0,.8), 0 0 28px hsla(var(--player-hue),100%,55%,.09); backdrop-filter: blur(28px); }
 .devices-popover-head { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 3px 11px; border-bottom: 1px solid rgba(255,255,255,.07); }
 .devices-popover-head strong { color: #fff; font-size: 12px; }
@@ -2953,7 +2925,8 @@ body.modal-open { overflow: hidden; }
   .player-ctrl-btn { min-width: 44px; min-height: 44px; }
   .player-play-btn { width: 46px; height: 46px; }
   .player-right { grid-column: 2; grid-row: 1; min-width: auto; gap: 4px; }
-  .player-right .player-signal-module, .player-device-control, .player-volume-control { display: none; }
+  .player-right .player-signal-module, .player-volume-control { display: none; }
+  .player-device-control { display: block; }
   .player-right .btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; }
   .player-timeline-wrapper, .energy-timeline, .player-seek-slider { min-height: 44px; }
   .audio-visualizer-bars { display: none; }
@@ -2963,30 +2936,6 @@ body.modal-open { overflow: hidden; }
   .player-volume-control { padding: 0; }
   .player-volume-slider { display: none; }
   .player-devices-popover { position: fixed; left: 12px; right: 12px; bottom: calc(220px + env(safe-area-inset-bottom)); width: auto; }
-
-  body:has(.floating-web-player.embed-fallback-active:not(.hidden)) { padding-bottom: calc(204px + env(safe-area-inset-bottom)); }
-  .floating-web-player.embed-fallback-active {
-    display: grid; grid-template-columns: 1fr auto; padding: 10px;
-    min-height: 172px; overflow: hidden;
-  }
-  .floating-web-player.embed-fallback-active .player-left,
-  .floating-web-player.embed-fallback-active .player-center { display: none; }
-  .floating-web-player.embed-fallback-active .spotify-embed-fallback {
-    grid-column: 1 / -1; grid-row: 1; display: block; width: 100%;
-  }
-  .floating-web-player.embed-fallback-active .spotify-embed-copy { display: none; }
-  .floating-web-player.embed-fallback-active .spotify-embed-fallback iframe {
-    height: 152px; border-radius: 14px;
-  }
-  .floating-web-player.embed-fallback-active .player-right {
-    position: absolute; top: 14px; right: 14px; z-index: 4;
-  }
-  .floating-web-player.embed-fallback-active .player-right > *:not(#btnCloseWebPlayer) { display: none; }
-  .floating-web-player.embed-fallback-active #btnCloseWebPlayer {
-    width: 36px; min-width: 36px; height: 36px; min-height: 36px;
-    border-radius: 50%; color: #fff; background: rgba(0,0,0,.62);
-    backdrop-filter: blur(12px);
-  }
 
   .legal-footer-grid { grid-template-columns: 1fr; gap: 26px; }
   .publisher-block { grid-column: auto; }
