@@ -3421,6 +3421,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   }
 
+  function prepareSpotifyPlayerFromUserGesture() {
+    if (!state.accessToken) return false;
+    if (spotifyPlayer) return requestSpotifyMediaActivation();
+    if (!window.Spotify?.Player) return false;
+
+    // Mobile browsers only unlock protected audio while the original tap is
+    // still on the call stack. Create + activate the SDK player synchronously;
+    // waiting for an async SDK/token step first loses that user gesture.
+    spotifySdkUnavailableUntil = 0;
+    startSpotifyPlayerConnection(true).catch(error => console.warn('[Spotify Player Gesture Init]', error));
+    return true;
+  }
+
   function isCurrentPlaybackRequest(requestId, signal) {
     return requestId === playbackRequestSerial && !signal?.aborted;
   }
@@ -3447,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- PLAY TRACK (CALLED FROM ANYWHERE IN THE APP) ---
   window.playTrackInWebPlayer = function(trackId) {
-    requestSpotifyMediaActivation();
+    prepareSpotifyPlayerFromUserGesture();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3489,7 +3502,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.playTrackInCassette = function(track, playlistName = "SOOND Koleksiyonu") {
-    requestSpotifyMediaActivation();
+    prepareSpotifyPlayerFromUserGesture();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3502,7 +3515,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.playPlaylistFromCover = async function(playlistId) {
-    requestSpotifyMediaActivation();
+    prepareSpotifyPlayerFromUserGesture();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3598,27 +3611,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return spotifySdkPromise;
   }
 
-  async function initializeSpotifyPlayer(forceRetry = false) {
+  function startSpotifyPlayerConnection(activateFromUserGesture = false) {
     if (spotifyPlayer && spotifyDeviceId) return true;
     if (!state.accessToken) return false;
-    if (forceRetry) spotifySdkUnavailableUntil = 0;
-    if (!forceRetry && Date.now() < spotifySdkUnavailableUntil) return false;
-    if (spotifyPlayerInitPromise) return spotifyPlayerInitPromise;
+    if (spotifyPlayerInitPromise) {
+      if (activateFromUserGesture) requestSpotifyMediaActivation();
+      return spotifyPlayerInitPromise;
+    }
+    if (!window.Spotify?.Player) return Promise.resolve(false);
 
-    spotifyPlayerInitPromise = (async () => {
-      spotifyPlayerFailureReason = null;
-      spotifyPlayerFailureMessage = '';
-      await loadSpotifySdk();
-      return new Promise((resolve) => {
-        let settled = false;
-        const finish = (value) => {
-          if (!settled) {
-            settled = true;
-            resolve(value);
-          }
-        };
-
-        spotifyPlayer = new Spotify.Player({
+    spotifyPlayerFailureReason = null;
+    spotifyPlayerFailureMessage = '';
+    const player = new Spotify.Player({
           name: 'Tify Plus Pulse Web Player',
           getOAuthToken: callback => {
             getValidSpotifyAccessToken()
@@ -3630,11 +3634,24 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           volume: cassetteVolume ? parseFloat(cassetteVolume.value) : 0.85,
           enableMediaSession: true
-        });
+    });
+    spotifyPlayer = player;
 
-        spotifyPlayer.addListener('ready', ({ device_id }) => {
+    const connectionPromise = new Promise((resolve) => {
+      let settled = false;
+      let connectionTimer = null;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(connectionTimer);
+        resolve(value);
+      };
+
+        player.addListener('ready', ({ device_id }) => {
+          if (spotifyPlayer !== player) return;
           spotifyDeviceId = device_id;
           spotifyPlayerFailureReason = null;
+          spotifyPlayerFailureMessage = '';
           if (playbackBackend !== 'spotify-remote') {
             activeSpotifyDeviceId = device_id;
             activeSpotifyDeviceName = 'Tify Plus Pulse Web Player';
@@ -3642,11 +3659,13 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           finish(true);
         });
-        spotifyPlayer.addListener('not_ready', () => {
+        player.addListener('not_ready', () => {
+          if (spotifyPlayer !== player) return;
           spotifyDeviceId = null;
           setPlayerSource('none', 'Bağlantı kesildi');
         });
-        spotifyPlayer.addListener('player_state_changed', (sdkState) => {
+        player.addListener('player_state_changed', (sdkState) => {
+          if (spotifyPlayer !== player) return;
           if (!sdkState) return;
           const durationSec = Math.max(1, Math.floor(sdkState.duration / 1000));
           const positionSec = Math.floor(sdkState.position / 1000);
@@ -3671,44 +3690,66 @@ document.addEventListener('DOMContentLoaded', () => {
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
           finish(false);
         };
-        spotifyPlayer.addListener('initialization_error', ({ message }) => fail(message, 'initialization'));
-        spotifyPlayer.addListener('authentication_error', ({ message }) => fail(message, 'authentication', true));
-        spotifyPlayer.addListener('account_error', ({ message }) => fail(message, 'premium'));
-        spotifyPlayer.addListener('playback_error', ({ message }) => {
+        player.addListener('initialization_error', ({ message }) => fail(message, 'initialization'));
+        player.addListener('authentication_error', ({ message }) => fail(message, 'authentication', true));
+        player.addListener('account_error', ({ message }) => fail(message, 'premium'));
+        player.addListener('playback_error', ({ message }) => {
           console.warn('[Spotify Playback]', message);
           spotifyPlayerFailureReason = 'playback';
           setUnifiedPlaybackState(false);
         });
-        spotifyPlayer.addListener('autoplay_failed', () => {
+        player.addListener('autoplay_failed', () => {
           spotifyPlayerFailureReason = 'autoplay';
           setUnifiedPlaybackState(false);
         });
 
-        spotifyPlayer.connect().then(success => {
+        if (activateFromUserGesture && typeof player.activateElement === 'function') {
+          player.activateElement().catch(error => console.warn('[Spotify Media Activation]', error));
+        }
+
+        player.connect().then(success => {
           if (!success) fail('Spotify oynatıcı bağlantısı kurulamadı.', 'connection');
         }).catch(error => fail(error.message, 'connection'));
-        setTimeout(() => {
+
+        connectionTimer = setTimeout(() => {
+          if (settled || spotifyPlayer !== player) return;
           spotifyPlayerFailureReason ||= 'timeout';
           spotifyPlayerFailureMessage ||= 'Spotify oynatıcı bağlantısı zaman aşımına uğradı.';
           spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
           finish(false);
         }, 20000);
-      });
-    })().catch(error => {
+    });
+
+    spotifyPlayerInitPromise = connectionPromise.finally(() => {
+      if (!spotifyDeviceId && spotifyPlayer === player) {
+        player.disconnect?.();
+        spotifyPlayer = null;
+        spotifyPlayerInitPromise = null;
+      }
+    });
+    return spotifyPlayerInitPromise;
+  }
+
+  async function initializeSpotifyPlayer(forceRetry = false, activateFromUserGesture = false) {
+    if (spotifyPlayer && spotifyDeviceId) return true;
+    if (!state.accessToken) return false;
+    if (forceRetry) spotifySdkUnavailableUntil = 0;
+    if (!forceRetry && Date.now() < spotifySdkUnavailableUntil) return false;
+    if (spotifyPlayerInitPromise) {
+      if (activateFromUserGesture) requestSpotifyMediaActivation();
+      return spotifyPlayerInitPromise;
+    }
+
+    try {
+      await loadSpotifySdk();
+      return await startSpotifyPlayerConnection(activateFromUserGesture);
+    } catch (error) {
       console.warn('[Spotify SDK]', error);
       spotifyPlayerFailureReason = 'sdk';
       spotifyPlayerFailureMessage = String(error?.message || error || '');
       spotifySdkUnavailableUntil = Date.now() + 15 * 1000;
       return false;
-    }).finally(() => {
-      if (!spotifyDeviceId) {
-        spotifyPlayer?.disconnect?.();
-        spotifyPlayer = null;
-        spotifyPlayerInitPromise = null;
-      }
-    });
-
-    return spotifyPlayerInitPromise;
+    }
   }
 
   async function playThroughSpotify(track, requestId, signal) {
@@ -3719,8 +3760,8 @@ document.addEventListener('DOMContentLoaded', () => {
       spotifyPlayerFailureMessage = 'Spotify hesabı Premium değil.';
       return false;
     }
-    requestSpotifyMediaActivation();
-    const ready = await initializeSpotifyPlayer(true);
+    prepareSpotifyPlayerFromUserGesture();
+    const ready = await initializeSpotifyPlayer(true, true);
     if (!ready || !spotifyDeviceId || !isCurrentPlaybackRequest(requestId, signal)) return false;
 
     try {
@@ -4512,7 +4553,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // CSP-safe delegated actions for dynamically rendered cards and controls.
   function runDelegatedAction(actionElement) {
     const { action, playlistId, playlistA, playlistB, trackId, snapshotId, page } = actionElement.dataset;
-    if (action === 'play-playlist' || action === 'play-track') requestSpotifyMediaActivation();
+    if (action === 'play-playlist' || action === 'play-track') prepareSpotifyPlayerFromUserGesture();
     switch (action) {
       case 'restore-snapshot': restoreSafetySnapshot(snapshotId); break;
       case 'open-match': window.openSmartMatchModal?.(playlistA, playlistB); break;
