@@ -1072,6 +1072,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userDashboardHeader) userDashboardHeader.classList.remove('hidden');
 
       if (state.accessToken) {
+        // Create the Spotify Connect device while the library is loading so a
+        // later mobile Play tap can unlock media synchronously.
+        scheduleSpotifyPlayerWarmup(0);
         // Check localStorage cache before making any API call
         const cached = loadLibraryCache();
         if (cached && cached.data && cached.data.length > 0) {
@@ -3250,6 +3253,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let spotifyDeviceId = null;
   let spotifyPlayerInitPromise = null;
   let spotifySdkPromise = null;
+  let spotifyPlayerFailureReason = null;
+  let spotifyWarmupTimer = null;
 
   // DOM Elements - Hero Cassette Deck
   const cassetteAudioPlayer = document.getElementById('cassetteAudioPlayer') || document.getElementById('nativeAudioPlayer');
@@ -3377,6 +3382,20 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Orijinal şarkıları dinlemek için Spotify hesabınızı bağlayın.', 'warning');
   }
 
+  function requestSpotifyMediaActivation() {
+    if (!spotifyPlayer || typeof spotifyPlayer.activateElement !== 'function') return false;
+    spotifyPlayer.activateElement().catch(error => console.warn('[Spotify Media Activation]', error));
+    return true;
+  }
+
+  function scheduleSpotifyPlayerWarmup(delay = 0) {
+    if (!state.accessToken || spotifyDeviceId || spotifyPlayerInitPromise) return;
+    clearTimeout(spotifyWarmupTimer);
+    spotifyWarmupTimer = setTimeout(() => {
+      initializeSpotifyPlayer().catch(error => console.warn('[Spotify Player Warmup]', error));
+    }, delay);
+  }
+
   function updatePlaybackLockUi() {
     const isLocked = !state.accessToken;
     [btnCassettePlay, btnCassettePrev, btnCassetteNext].forEach(button => {
@@ -3391,6 +3410,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- PLAY TRACK (CALLED FROM ANYWHERE IN THE APP) ---
   window.playTrackInWebPlayer = function(trackId) {
+    requestSpotifyMediaActivation();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3432,6 +3452,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.playTrackInCassette = function(track, playlistName = "SOOND Koleksiyonu") {
+    requestSpotifyMediaActivation();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3444,6 +3465,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.playPlaylistFromCover = async function(playlistId) {
+    requestSpotifyMediaActivation();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -3516,6 +3538,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       script.addEventListener('error', () => reject(new Error('Spotify Web Playback SDK yüklenemedi.')), { once: true });
       setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 12000);
+    }).catch(error => {
+      spotifySdkPromise = null;
+      throw error;
     });
     return spotifySdkPromise;
   }
@@ -3526,6 +3551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spotifyPlayerInitPromise) return spotifyPlayerInitPromise;
 
     spotifyPlayerInitPromise = (async () => {
+      spotifyPlayerFailureReason = null;
       await loadSpotifySdk();
       return new Promise((resolve) => {
         let settled = false;
@@ -3552,6 +3578,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         spotifyPlayer.addListener('ready', ({ device_id }) => {
           spotifyDeviceId = device_id;
+          spotifyPlayerFailureReason = null;
           setPlayerSource('spotify', 'Spotify Premium');
           finish(true);
         });
@@ -3574,33 +3601,44 @@ document.addEventListener('DOMContentLoaded', () => {
           setUnifiedPlaybackState(!sdkState.paused);
         });
 
-        const fail = (message, needsReconnect = false) => {
+        const fail = (message, reason = 'unknown', needsReconnect = false) => {
           console.warn('[Spotify Player]', message);
+          spotifyPlayerFailureReason = reason;
           if (needsReconnect) setPlayerSource('none', 'Yeniden bağlan');
           finish(false);
         };
-        spotifyPlayer.addListener('initialization_error', ({ message }) => fail(message));
-        spotifyPlayer.addListener('authentication_error', ({ message }) => fail(message, true));
-        spotifyPlayer.addListener('account_error', ({ message }) => fail(message));
+        spotifyPlayer.addListener('initialization_error', ({ message }) => fail(message, 'initialization'));
+        spotifyPlayer.addListener('authentication_error', ({ message }) => fail(message, 'authentication', true));
+        spotifyPlayer.addListener('account_error', ({ message }) => fail(message, 'premium'));
         spotifyPlayer.addListener('playback_error', ({ message }) => {
           console.warn('[Spotify Playback]', message);
+          spotifyPlayerFailureReason = 'playback';
           showToast('Spotify parçayı oynatamadı. Parçayı Spotify\'da açabilirsiniz.', 'warning');
         });
         spotifyPlayer.addListener('autoplay_failed', () => {
+          spotifyPlayerFailureReason = 'autoplay';
           setUnifiedPlaybackState(false);
           showToast('Tarayıcı otomatik oynatmayı engelledi; oynat düğmesine tekrar basın.', 'warning');
         });
 
         spotifyPlayer.connect().then(success => {
-          if (!success) fail('Spotify oynatıcı bağlantısı kurulamadı.');
-        }).catch(error => fail(error.message));
-        setTimeout(() => finish(false), 12000);
+          if (!success) fail('Spotify oynatıcı bağlantısı kurulamadı.', 'connection');
+        }).catch(error => fail(error.message, 'connection'));
+        setTimeout(() => {
+          spotifyPlayerFailureReason ||= 'timeout';
+          finish(false);
+        }, 12000);
       });
     })().catch(error => {
       console.warn('[Spotify SDK]', error);
+      spotifyPlayerFailureReason = 'sdk';
       return false;
     }).finally(() => {
-      if (!spotifyDeviceId) spotifyPlayerInitPromise = null;
+      if (!spotifyDeviceId) {
+        spotifyPlayer?.disconnect?.();
+        spotifyPlayer = null;
+        spotifyPlayerInitPromise = null;
+      }
     });
 
     return spotifyPlayerInitPromise;
@@ -3609,6 +3647,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function playThroughSpotify(track) {
     const uri = getSpotifyTrackUri(track);
     if (!state.accessToken || !uri) return false;
+    requestSpotifyMediaActivation();
     const ready = await initializeSpotifyPlayer();
     if (!ready || !spotifyDeviceId) return false;
 
@@ -3625,8 +3664,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (!response.ok) {
         const details = await response.json().catch(() => ({}));
+        spotifyPlayerFailureReason = response.status === 401
+          ? 'authentication'
+          : response.status === 403
+            ? 'premium'
+            : 'playback';
         throw new Error(details?.error?.message || `Spotify playback HTTP ${response.status}`);
       }
+      spotifyPlayerFailureReason = null;
       setPlayerSource('spotify', 'Spotify Premium');
       return true;
     } catch (error) {
@@ -3677,8 +3722,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (spotifyStarted) return;
 
     setUnifiedPlaybackState(false);
-    setPlayerSource('none', 'Spotify Premium gerekli');
-    showToast('Orijinal tam parçayı çalmak için Spotify Premium ve oynatma izinleri gerekir. Bağlantıyı yenileyin.', 'warning');
+    if (spotifyPlayerFailureReason === 'autoplay') {
+      setPlayerSource('none', 'Dokunarak başlatın');
+      showToast('Mobil tarayıcı oynatmayı duraklattı. Açılan player’daki oynat düğmesine bir kez dokunun.', 'warning');
+    } else if (spotifyPlayerFailureReason === 'authentication') {
+      setPlayerSource('none', 'Bağlantıyı yenileyin');
+      showToast('Spotify oynatma izni doğrulanamadı. Hesap menüsünden Spotify bağlantısını yenileyin.', 'warning');
+    } else if (spotifyPlayerFailureReason === 'premium') {
+      setPlayerSource('none', 'Spotify Premium gerekli');
+      showToast('Tarayıcı içinde tam şarkı oynatma Spotify Premium hesabı gerektirir.', 'warning');
+    } else {
+      setPlayerSource('none', 'Player hazırlanamadı');
+      showToast('Spotify Web Player başlatılamadı. Player’daki Spotify düğmesiyle parçayı uygulamada açabilirsiniz.', 'warning');
+    }
   }
 
   function setUnifiedPlaybackState(playing) {
@@ -3758,6 +3814,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function toggleUnifiedPlayPause() {
+    requestSpotifyMediaActivation();
     if (!state.accessToken) {
       showSpotifyLoginRequired();
       return;
@@ -4271,6 +4328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // CSP-safe delegated actions for dynamically rendered cards and controls.
   function runDelegatedAction(actionElement) {
     const { action, playlistId, playlistA, playlistB, trackId, snapshotId, page } = actionElement.dataset;
+    if (action === 'play-playlist' || action === 'play-track') requestSpotifyMediaActivation();
     switch (action) {
       case 'restore-snapshot': restoreSafetySnapshot(snapshotId); break;
       case 'open-match': window.openSmartMatchModal?.(playlistA, playlistB); break;
