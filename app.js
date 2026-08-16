@@ -3564,6 +3564,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.Spotify) return Promise.resolve();
     if (spotifySdkPromise) return spotifySdkPromise;
 
+    if (window.__tifySpotifySdkReadyPromise) {
+      spotifySdkPromise = Promise.race([
+        window.__tifySpotifySdkReadyPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Spotify oynatıcı bağlantısı zaman aşımına uğradı.')), 20000))
+      ]).catch(error => {
+        spotifySdkPromise = null;
+        throw error;
+      });
+      return spotifySdkPromise;
+    }
+
     spotifySdkPromise = new Promise((resolve, reject) => {
       const previousReady = window.onSpotifyWebPlaybackSDKReady;
       window.onSpotifyWebPlaybackSDKReady = () => {
