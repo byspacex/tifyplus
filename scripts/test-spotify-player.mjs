@@ -5,6 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const headers = fs.readFileSync(new URL('../public/_headers', import.meta.url), 'utf8');
+const styles = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
 function extractFunction(name) {
   const asyncStart = source.indexOf(`async function ${name}(`);
@@ -178,6 +179,9 @@ assert.match(headers, /script-src[^;]*https:\/\/embed-cdn\.spotifycdn\.com/, 'Cl
 assert.match(headers, /script-src[^;]*'unsafe-eval'/, 'Spotify resmi embed çalışma zamanı için gereken değerlendirme izni bulunmalı');
 assert.match(headers, /frame-src[^;]*https:\/\/sdk\.scdn\.co/, 'Spotify Web Playback SDK gizli oynatıcı çerçevesine izin verilmeli');
 assert.match(headers, /encrypted-media=\(self "https:\/\/sdk\.scdn\.co"\)/, 'Spotify SDK çerçevesine şifreli medya yetkisi aktarılmalı');
+assert.match(styles, /\.floating-web-player \.player-center[\s\S]*left:\s*50%[\s\S]*translateX\(-50%\)/, 'Masaüstü player kontrolleri parça metninden bağımsız ekran merkezinde kalmalı');
+assert.match(styles, /\.energy-head i\s*\{\s*display:\s*none/, 'İlerleme göstergesinde yıldırım logosu görünmemeli');
+assert.match(styles, /energyRingFlash/, 'İlerleme göstergesi ikon yerine enerji parlamasıyla hareket etmeli');
 
 console.log('SPOTIFY_PLAYER_GESTURE_TEST=PASS');
 console.log('SPOTIFY_CONNECT_FALLBACK_TEST=PASS');
