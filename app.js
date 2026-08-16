@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (allowsFunctionalStorage()) localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
   }
 
-  applyTheme(document.documentElement.dataset.theme || 'dark', false);
+  applyTheme(document.documentElement.dataset.theme || 'light', false);
   themeToggle?.addEventListener('click', () => {
     applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
   });

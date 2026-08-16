@@ -2,7 +2,7 @@
   ============================================================
   VORTEX AUDIO // SPOTIFYPULSE PRO — SPACE-AGE FRAMELESS EDITION
   Theme: OLED Deep Void (#060812) · Electric Lime (#a8ff26) · Ice Cyan (#3cf5ff)
-  Architectural Typography: Syne + Inter + JetBrains Mono
+  Universal Typography: Inter/System UI + JetBrains Mono
   Frameless Liquid Glass & Floating Luminous Aurora Ribbons
   ============================================================
 */
@@ -13,9 +13,6 @@
 @import '@fontsource/inter/latin-ext-600.css';
 @import '@fontsource/inter/latin-ext-700.css';
 @import '@fontsource/inter/latin-ext-800.css';
-@import '@fontsource/syne/latin-ext-600.css';
-@import '@fontsource/syne/latin-ext-700.css';
-@import '@fontsource/syne/latin-ext-800.css';
 @import '@fontsource/jetbrains-mono/latin-ext-400.css';
 @import '@fontsource/jetbrains-mono/latin-ext-500.css';
 @import '@fontsource/jetbrains-mono/latin-ext-700.css';
@@ -38,9 +35,9 @@
   --shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 50px 120px rgba(0, 0, 0, 0.75);
 
-  --f-display: 'Syne', sans-serif;
-  --f-body: 'Inter', system-ui, sans-serif;
-  --f-mono: 'JetBrains Mono', monospace;
+  --f-display: 'Inter', 'Segoe UI Variable Display', 'Segoe UI', 'Noto Sans', Arial, sans-serif;
+  --f-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --f-mono: 'JetBrains Mono', 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace;
 
   --r-xs: 8px;
   --r-sm: 14px;
@@ -276,12 +273,29 @@ body::before {
 }
 .brand-title .brand-plus {
   position: relative;
-  top: -.58em;
-  margin-left: 2px;
-  color: var(--lime);
-  font: 900 .52em/1 var(--f-display);
+  top: -.48em;
+  display: inline-grid;
+  place-items: center;
+  width: .95em;
+  height: .95em;
+  margin-left: 3px;
+  color: #59eaff;
+  font: 900 .86em/1 var(--f-display);
   letter-spacing: 0;
-  text-shadow: 0 0 12px rgba(168,255,38,.42);
+  text-shadow: 0 0 5px rgba(255,255,255,.9), 0 0 14px rgba(89,234,255,.76);
+  transform-origin: 50% 50%;
+  animation: polarStarSpin 6.4s linear infinite;
+}
+.brand-title .brand-plus::before {
+  content: "";
+  position: absolute;
+  inset: -.3em;
+  background: conic-gradient(from 0deg, transparent 0 10%, rgba(89,234,255,.9) 11% 13%, transparent 14% 35%, rgba(255,255,255,.9) 36% 38%, transparent 39% 60%, rgba(89,234,255,.9) 61% 63%, transparent 64% 85%, rgba(255,255,255,.9) 86% 88%, transparent 89% 100%);
+  clip-path: polygon(50% 0, 57% 38%, 100% 50%, 57% 62%, 50% 100%, 43% 62%, 0 50%, 43% 38%);
+  opacity: .62;
+  filter: drop-shadow(0 0 5px rgba(89,234,255,.72));
+  animation: polarStarTwinkle 1.9s ease-in-out infinite;
+  pointer-events: none;
 }
 .brand-title small {
   margin-left: 7px;
@@ -290,6 +304,19 @@ body::before {
   letter-spacing: 0.02em;
   text-transform: none;
   vertical-align: baseline;
+}
+
+@keyframes polarStarSpin {
+  0% { transform: rotate(0deg) scale(.94); }
+  45% { transform: rotate(162deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.14); }
+  100% { transform: rotate(360deg) scale(.94); }
+}
+@keyframes polarStarTwinkle {
+  0%, 100% { opacity: .3; transform: scale(.72); }
+  45% { opacity: .78; transform: scale(1); }
+  52% { opacity: 1; transform: scale(1.28); }
+  62% { opacity: .55; transform: scale(.9); }
 }
 
 .app-mode-badge {
@@ -1252,7 +1279,8 @@ body::before {
 @keyframes fusionHeadingNode { 0%,100% { opacity: .45; } 50% { opacity: 1; filter: drop-shadow(0 0 7px var(--lime)); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .deck-orbit, .fusion-trace, .fusion-node, .fusion-heading-mark circle { animation: none !important; }
+  .deck-orbit, .fusion-trace, .fusion-node, .fusion-heading-mark circle,
+  .brand-title .brand-plus, .brand-title .brand-plus::before { animation: none !important; }
 }
 
 /* ============================================================
