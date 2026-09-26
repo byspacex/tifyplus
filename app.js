@@ -943,21 +943,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function undoSpotifyAdditions(undo) {
     if (undo.undone) throw new Error(currentLanguage === 'tr' ? 'Bu işlem daha önce geri alınmış.' : 'This operation has already been undone.');
+    if (undo.unknown) throw new Error(currentLanguage === 'tr' ? 'Geri alma yanıtı belirsiz. Spotify listesini kontrol etmeden yinelemeyin.' : 'Undo outcome is uncertain. Inspect the Spotify playlist before retrying.');
     let snapshotId = undo.snapshotId;
     const token = await getValidSpotifyAccessToken();
     const current = await fetchSpotifyPlaylistDetails(token, undo.playlistId);
     if (!snapshotId || current.snapshot_id !== snapshotId) throw new Error(currentLanguage === 'tr' ? 'Liste işlemden sonra değişti. Güvenli geri alma durduruldu.' : 'The playlist changed after this operation. Safe undo stopped.');
-    for (let index = 0; index < undo.addedUris.length; index += 100) {
-      const uris = undo.addedUris.slice(index, index + 100);
-      const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: uris.map(uri => ({ uri })), ...(snapshotId ? { snapshot_id: snapshotId } : {}) })
-      });
-      if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify eklemeleri geri alınamadı');
+    const remaining = undo.remaining || undo.addedUris;
+    for (let index = 0; index < remaining.length; index += 100) {
+      const latest = await fetchSpotifyPlaylistDetails(token, undo.playlistId);
+      if (!latest.snapshot_id || latest.snapshot_id !== snapshotId) throw new Error(currentLanguage === 'tr' ? 'Liste geri alma sırasında değişti. Kalan adımlar durduruldu.' : 'The playlist changed during undo. Remaining steps were stopped.');
+      const uris = remaining.slice(index, index + 100);
+      let response;
+      try {
+        response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: uris.map(uri => ({ uri })), snapshot_id: snapshotId })
+        });
+      } catch {
+        undo.unknown = true;
+        saveSafetySnapshotsToStorage();
+        throw new Error(currentLanguage === 'tr' ? 'Geri alma yanıtı alınamadı. Yinelenme riskine karşı tekrar gönderilmedi; Spotify listesini kontrol edin.' : 'Undo response was lost. It was not retried; check the playlist in Spotify.');
+      }
+      if (!response.ok) {
+        const error = await createSpotifyResponseError(response, 'Spotify eklemeleri geri alınamadı');
+        if (response.status >= 500) { undo.unknown = true; saveSafetySnapshotsToStorage(); }
+        throw error;
+      }
       const result = await response.json().catch(() => ({}));
       snapshotId = result.snapshot_id || snapshotId;
+      undo.snapshotId = snapshotId;
+      undo.remaining = remaining.slice(index + uris.length);
+      saveSafetySnapshotsToStorage();
     }
+    undo.undone = true;
+    undo.remaining = [];
+    saveSafetySnapshotsToStorage();
   }
 
   function renderHistoryModalList() {

@@ -61,6 +61,12 @@ export async function undoPlaylistAddOperation({ operation, token, getSnapshotId
   }
   const remaining = operation.undo.remaining || operation.results.added.map(item => item.uri);
   for (let offset = 0; offset < remaining.length; offset += 100) {
+    const beforeBatchSnapshot = await getSnapshotId(operation.targetPlaylistId);
+    if (!beforeBatchSnapshot || beforeBatchSnapshot !== operation.undo.snapshotId) {
+      const conflicted = { ...operation, undo: { ...operation.undo, status: 'conflict' }, status: 'conflict' };
+      await persist?.(conflicted);
+      return conflicted;
+    }
     const batch = remaining.slice(offset, offset + 100);
     let response;
     try {
@@ -76,7 +82,8 @@ export async function undoPlaylistAddOperation({ operation, token, getSnapshotId
     }
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      const partial = { ...operation, undo: { ...operation.undo, status: 'failed', error: error?.error?.message || 'http_' + response.status, remaining: remaining.slice(offset) }, status: 'partial' };
+      const uncertain = response.status >= 500;
+      const partial = { ...operation, undo: { ...operation.undo, status: uncertain ? 'unknown' : 'failed', error: error?.error?.message || 'http_' + response.status, remaining: remaining.slice(offset) }, status: uncertain ? 'unknown' : 'partial' };
       await persist?.(partial);
       return partial;
     }

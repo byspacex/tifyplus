@@ -32,6 +32,21 @@ const undoable = { ...retry, targetPlaylistId: 'playlist', undo: { status: 'avai
 const conflict = await undoPlaylistAddOperation({ operation: undoable, token: 'secret', getSnapshotId: async () => 'newer-snapshot', fetchImpl: async () => { undoCalls++; } });
 assert.equal(conflict.undo.status, 'conflict');
 assert.equal(undoCalls, 0, 'undo refuses to overwrite a newer playlist edit');
+let snapshotReads = 0, batchedUndoCalls = 0;
+const partialUndo = await undoPlaylistAddOperation({
+  operation: { ...undoable, undo: { status: 'available', items: undoable.results.added.map(item => item.uri), snapshotId: 'snap-2' } },
+  token: 'secret',
+  getSnapshotId: async () => (++snapshotReads <= 2 ? 'snap-2' : 'snap-4'),
+  fetchImpl: async () => { batchedUndoCalls++; return response(true, 'snap-3'); }
+});
+assert.equal(batchedUndoCalls, 1, 'undo rechecks the snapshot before each API batch');
+assert.equal(partialUndo.undo.status, 'conflict', 'a concurrent edit stops remaining undo batches');
+
+const unknownUndo = await undoPlaylistAddOperation({
+  operation: undoable, token: 'secret', getSnapshotId: async () => 'snap-2',
+  fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({ error: { message: 'server error' } }) })
+});
+assert.equal(unknownUndo.undo.status, 'unknown', 'uncertain server errors during undo are not blindly retried');
 
 const unknown = await executePlaylistAddOperation({
   operation: makeOperation(1), playlistId: 'playlist', token: 'secret',
