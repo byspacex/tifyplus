@@ -1,6 +1,7 @@
 /**
  * Tify Plus - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
  */
+import { initializeLibraryWorkbench } from './src/workbench/controller.js';
 
 // The removed mobile dock used URL fragments such as #catalogSection. Mobile
 // browsers persist that fragment between visits and otherwise jump halfway down
@@ -78,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     externalPlaylist: null,
     selectedTrackIds: new Set(),
     versionedHistory: [],
-    presenceMap: {}
+    presenceMap: {},
+    trackUriPresenceMap: {}
   };
 
   // Personal Spotify data used to be stored under unscoped localStorage keys.
@@ -253,6 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFooterLanguage(englishIntroduction);
 
     const setText = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = value; };
+    setText('[data-i18n="heroDescription"]', englishIntroduction
+      ? 'Compare playlists, remove repeated recordings, organize by clear rules, and review every change before saving it back to Spotify.'
+      : 'Listeleri karşılaştırın, tekrarları ayıklayın, açık kurallarla düzenleyin ve Spotify’a kaydetmeden önce her değişikliği inceleyin.');
+    setText('#btnOpenDjModal span', englishIntroduction ? 'Smart Assistant: organize playlists' : 'Akıllı Asistan: listeleri düzenle');
+    setText('#btnTriggerAntiShuffle span', englishIntroduction ? 'Smart Assistant: space out artists' : 'Akıllı Asistan: sanatçıları aralıklı sırala');
+    document.getElementById('btnOpenDjModal')?.setAttribute('title', englishIntroduction ? 'Open the rule-based playlist assistant' : 'Kural tabanlı liste asistanını aç');
+    document.getElementById('btnTriggerAntiShuffle')?.setAttribute('title', englishIntroduction ? 'Open the artist-spacing preview' : 'Sanatçı aralığı önizlemesini aç');
     setText('#btnTryDemo span', currentLanguage === 'tr' ? 'Nasıl çalışır' : 'How it works');
     setText('#btnOpenHistoryModalDemo span', t('backups'));
     setText('#btnConnectSpotify span', t('connect'));
@@ -268,11 +277,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setText('#transferPreviewSummary', currentLanguage === 'tr'
       ? 'Spotify listeniz henüz değiştirilmedi.'
       : 'Your Spotify playlist has not been changed yet.');
+    setText('#healthModalScoreLabel', currentLanguage === 'tr' ? 'AYNI LİSTEDEKİ TEKRAR GİRİŞ' : 'REPEATED ENTRIES IN THIS PLAYLIST');
+    setText('#healthFactorDupTitle', currentLanguage === 'tr' ? 'Bu listedeki tekrarlar' : 'Repeats in this playlist');
+    setText('#healthFactorArtistTitle', currentLanguage === 'tr' ? 'Sanatçı yoğunluğu' : 'Artist concentration');
+    setText('#healthFactorDeadTitle', currentLanguage === 'tr' ? 'Çalınabilirlik durumu' : 'Playability status');
+    setText('#btnAutoHealPlaylist', currentLanguage === 'tr' ? 'Tekrarları filtrele' : 'Filter repeats');
+    setText('#btnOpenZombieModal', currentLanguage === 'tr' ? 'Erişilemeyen Parçaları Gör' : 'Review Unavailable Tracks');
     const search = document.getElementById('catalogSearchInput');
     if (search) search.placeholder = t('search');
     const selector = document.getElementById('languageSelector');
     if (selector) selector.value = currentLanguage;
     renderHeroTitle();
+    if (state.currentPlaylist) updatePlaylistHealthBadge(state.currentPlaylist);
+    document.dispatchEvent(new CustomEvent('tify:languagechange', { detail: { language: currentLanguage } }));
   }
 
   let neonFaultTimer = null;
@@ -592,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let tracks = [];
 
     // Robust Parser for Spotify Track items in any Web API format
-    function parseTrackItems(items) {
+    function parseTrackItems(items, offset = 0) {
       const parsed = [];
       if (items && Array.isArray(items)) {
         items.forEach((item, idx) => {
@@ -616,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             parsed.push({
               id: trackId,
+              entryId: `${playlistId}:${offset + idx}`,
               uri: tr.uri || '',
               title: tr.name || tr.title || 'İsimsiz Şarkı',
               artist: artistNames,
@@ -667,10 +685,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
 
         if (data.tracks && Array.isArray(data.tracks.items)) {
-          endpointTracks = endpointTracks.concat(parseTrackItems(data.tracks.items));
+          endpointTracks = endpointTracks.concat(parseTrackItems(data.tracks.items, endpointTracks.length));
           currentUrl = data.tracks.next || null;
         } else if (data.items && Array.isArray(data.items)) {
-          endpointTracks = endpointTracks.concat(parseTrackItems(data.items));
+          endpointTracks = endpointTracks.concat(parseTrackItems(data.items, endpointTracks.length));
           currentUrl = data.next || null;
         } else {
           currentUrl = null;
@@ -716,6 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.externalPlaylist = null;
     state.versionedHistory = [];
     state.presenceMap = {};
+    state.trackUriPresenceMap = {};
   }
 
   function saveLibraryCache(playlists) {
@@ -825,11 +844,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSafetySnapshotsFromStorage();
 
-  function pushSafetySnapshot(actionLabel) {
+  function pushSafetySnapshot(actionLabel, playlistId = null) {
     const snapshot = {
       id: 'snap_' + Date.now(),
       timestamp: Date.now(),
       actionLabel: actionLabel || 'Kütüphane Değişikliği',
+      playlistId,
       playlists: JSON.parse(JSON.stringify(state.playlists || []))
     };
     state.versionedHistory.unshift(snapshot);
@@ -867,14 +887,47 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(error.message || 'Spotify işlemi geri alınamadı.', 'error');
         return;
       }
+      const target = state.playlists.find(playlist => playlist.id === targetSnap.spotifyUndo.playlistId);
+      if (target) {
+        try {
+          const token = await getValidSpotifyAccessToken();
+          target.tracks = await fetchSpotifyPlaylistTracks(token, target.id);
+          target.trackTotal = target.tracks.length;
+          target.tracksLoaded = true;
+          saveTrackCache(target.id, target.tracks);
+        } catch (error) {
+          showToast(currentLanguage === 'tr' ? 'Spotify geri alındı ancak yerel liste yenilenemedi; yeniden eşitleyin.' : 'Spotify undo succeeded, but the local playlist could not refresh; sync it again.', 'warning');
+        }
+      }
+      buildGlobalPresenceMap();
+      saveLibraryCache(state.playlists);
+      renderPlaylistsCatalog();
+      state.versionedHistory = state.versionedHistory.map(snapshot => snapshot.id === targetSnap.id
+        ? { ...snapshot, spotifyUndo: { ...snapshot.spotifyUndo, undone: true } }
+        : snapshot);
+      saveSafetySnapshotsToStorage();
+      if (undoSafetyBar) undoSafetyBar.classList.add('hidden');
+      const historyModal = document.getElementById('historyModal');
+      if (historyModal) historyModal.classList.add('hidden');
+      showToast(currentLanguage === 'tr' ? `Spotify listesine eklenen ${targetSnap.spotifyUndo.addedUris.length} parça geri alındı.` : `Undid ${targetSnap.spotifyUndo.addedUris.length} Spotify additions.`, 'success');
+      return;
     }
 
-    state.playlists = JSON.parse(JSON.stringify(targetSnap.playlists));
+    if (!targetSnap.playlistId) {
+      showToast(currentLanguage === 'tr' ? 'Bu eski yedeğin etkilenen listesi belirlenemedi; çalışma alanı değiştirilmedi.' : 'This older snapshot has no target playlist; the workspace was left unchanged.', 'warning');
+      return;
+    }
+    const snapshotPlaylist = targetSnap.playlists.find(playlist => playlist.id === targetSnap.playlistId);
+    const currentTarget = state.playlists.find(playlist => playlist.id === targetSnap.playlistId);
+    if (!snapshotPlaylist || !currentTarget) {
+      showToast(currentLanguage === 'tr' ? 'Yedekteki liste artık bu kütüphanede değil; çalışma alanı değiştirilmedi.' : 'The snapshot playlist is no longer in this library; the workspace was left unchanged.', 'warning');
+      return;
+    }
+    Object.assign(currentTarget, JSON.parse(JSON.stringify(snapshotPlaylist)));
+    if (state.currentPlaylist?.id === currentTarget.id) state.currentPlaylist = currentTarget;
     buildGlobalPresenceMap();
     saveLibraryCache(state.playlists);
-    state.playlists.forEach(pl => {
-      if (pl.tracks && pl.tracks.length > 0) saveTrackCache(pl.id, pl.tracks);
-    });
+    if (currentTarget.tracks?.length) saveTrackCache(currentTarget.id, currentTarget.tracks);
 
     renderPlaylistsCatalog();
     if (state.currentPlaylist) {
@@ -896,19 +949,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function undoSpotifyAdditions(undo) {
+    if (undo.undone) throw new Error(currentLanguage === 'tr' ? 'Bu işlem daha önce geri alınmış.' : 'This operation has already been undone.');
+    if (undo.unknown) throw new Error(currentLanguage === 'tr' ? 'Geri alma yanıtı belirsiz. Spotify listesini kontrol etmeden yinelemeyin.' : 'Undo outcome is uncertain. Inspect the Spotify playlist before retrying.');
     let snapshotId = undo.snapshotId;
     const token = await getValidSpotifyAccessToken();
-    for (let index = 0; index < undo.addedUris.length; index += 100) {
-      const uris = undo.addedUris.slice(index, index + 100);
-      const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: uris.map(uri => ({ uri })), ...(snapshotId ? { snapshot_id: snapshotId } : {}) })
-      });
-      if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify eklemeleri geri alınamadı');
+    const current = await fetchSpotifyPlaylistDetails(token, undo.playlistId);
+    if (!snapshotId || current.snapshot_id !== snapshotId) throw new Error(currentLanguage === 'tr' ? 'Liste işlemden sonra değişti. Güvenli geri alma durduruldu.' : 'The playlist changed after this operation. Safe undo stopped.');
+    const remaining = undo.remaining || undo.addedUris;
+    for (let index = 0; index < remaining.length; index += 100) {
+      const latest = await fetchSpotifyPlaylistDetails(token, undo.playlistId);
+      if (!latest.snapshot_id || latest.snapshot_id !== snapshotId) throw new Error(currentLanguage === 'tr' ? 'Liste geri alma sırasında değişti. Kalan adımlar durduruldu.' : 'The playlist changed during undo. Remaining steps were stopped.');
+      const uris = remaining.slice(index, index + 100);
+      let response;
+      try {
+        response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: uris.map(uri => ({ uri })), snapshot_id: snapshotId })
+        });
+      } catch {
+        undo.unknown = true;
+        saveSafetySnapshotsToStorage();
+        throw new Error(currentLanguage === 'tr' ? 'Geri alma yanıtı alınamadı. Yinelenme riskine karşı tekrar gönderilmedi; Spotify listesini kontrol edin.' : 'Undo response was lost. It was not retried; check the playlist in Spotify.');
+      }
+      if (!response.ok) {
+        const error = await createSpotifyResponseError(response, 'Spotify eklemeleri geri alınamadı');
+        if (response.status >= 500) { undo.unknown = true; saveSafetySnapshotsToStorage(); }
+        throw error;
+      }
       const result = await response.json().catch(() => ({}));
       snapshotId = result.snapshot_id || snapshotId;
+      undo.snapshotId = snapshotId;
+      undo.remaining = remaining.slice(index + uris.length);
+      saveSafetySnapshotsToStorage();
     }
+    undo.undone = true;
+    undo.remaining = [];
+    saveSafetySnapshotsToStorage();
   }
 
   function renderHistoryModalList() {
@@ -1131,9 +1208,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- ACCURATE CROSS-PLAYLIST PRESENCE MAP ---
   function buildGlobalPresenceMap() {
     const pMap = {};
+    const uriMap = {};
 
     state.playlists.forEach(pl => {
       (pl.tracks || []).forEach(t => {
+        if (t.uri && /^spotify:track:[A-Za-z0-9]+$/.test(t.uri)) {
+          if (!uriMap[t.uri]) uriMap[t.uri] = { playlists: [] };
+          if (!uriMap[t.uri].playlists.some(item => item.plId === pl.id)) uriMap[t.uri].playlists.push({ plId: pl.id, plName: pl.name, plCoverUrl: pl.cover });
+        }
         const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
         if (!pMap[key]) {
           pMap[key] = {
@@ -1154,6 +1236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     state.presenceMap = pMap;
+    state.trackUriPresenceMap = uriMap;
   }
 
   // --- LOADER UI CONTROL ---
@@ -1337,6 +1420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.playlists = [];
         state.currentPlaylist = null;
         state.presenceMap = {};
+        state.trackUriPresenceMap = {};
         renderPlaylistsCatalog();
         renderFastRecommendations();
       }
@@ -1423,6 +1507,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.currentPlaylist = null;
       state.externalPlaylist = null;
       state.presenceMap = {};
+      state.trackUriPresenceMap = {};
       if (playlistsCatalogGrid) playlistsCatalogGrid.replaceChildren();
       document.getElementById('recommendationsGrid')?.replaceChildren();
       analysisResults?.classList.add('hidden');
@@ -1824,6 +1909,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('') : '<option value="">' + (currentLanguage === 'tr' ? 'Düzenlenebilir listeniz bulunamadı' : 'No editable playlists found') + '</option>';
     }
 
+    document.dispatchEvent(new Event('tify:librarychange'));
     renderFastRecommendations();
   }
 
@@ -1972,38 +2058,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- PLAYLIST HEALTH CALCULATION (RAPOR 6: HEALTH INDEX FORMULA) ---
+  // --- PLAYLIST FACTS: exact duplicate URIs and explicit playability only ---
   function computePlaylistHealth(playlist) {
     const tracks = playlist.tracks || [];
     const N = tracks.length;
     const trackCounts = new Map();
     const artistCounts = new Map();
-    let deadCount = 0;
-    let crossPlaylistCount = 0;
+    let deadCount = 0, unknownPlayableCount = 0, playableCount = 0;
     tracks.forEach(track => {
-      const identity = track.uri || `${(track.title || '').trim().toLocaleLowerCase()} - ${(track.artist || '').trim().toLocaleLowerCase()}`;
-      trackCounts.set(identity, (trackCounts.get(identity) || 0) + 1);
-      const artist = (track.artist || 'Bilinmeyen Sanatçı').trim();
-      artistCounts.set(artist, (artistCounts.get(artist) || 0) + 1);
-      if (track.isPlayable === false || track.isDead === true) deadCount++;
-      const key = `${(track.title || '').trim().toLocaleLowerCase()} - ${(track.artist || '').trim().toLocaleLowerCase()}`;
-      if ((state.presenceMap[key]?.playlists || []).filter(item => item.plId !== playlist.id).length > 0) crossPlaylistCount++;
+      const identity = track.uri;
+      if (identity && /^spotify:track:[A-Za-z0-9]+$/.test(identity)) trackCounts.set(identity, (trackCounts.get(identity) || 0) + 1);
+      const ids = Array.isArray(track.artistIds) ? track.artistIds : [];
+      ids.forEach(id => artistCounts.set(id, (artistCounts.get(id) || 0) + 1));
+      if (track.isPlayable === false) deadCount++;
+      else if (track.isPlayable === true) playableCount++;
+      else unknownPlayableCount++;
     });
     const duplicateExtraCount = [...trackCounts.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0);
     const maxArtistTracks = Math.max(0, ...artistCounts.values());
-    const uniquePlayable = new Set(tracks
-      .filter(track => track.isPlayable !== false && track.isDead !== true)
-      .map(track => track.uri || ((track.title || '').trim().toLocaleLowerCase() + ' - ' + (track.artist || '').trim().toLocaleLowerCase()))).size;
-    const score = N ? Math.round(uniquePlayable / N * 100) : 0;
-    const status = !N ? 'Henüz analiz edilmedi' : score >= 95 ? 'Az tekrar / erişilemeyen parça' : score >= 80 ? 'Bazı parçalar gözden geçirilebilir' : 'Tekrarları ve erişimi gözden geçirin';
-    return { score, dupCount: duplicateExtraCount, crossPlaylistCount, deadCount, maxArtistTracks, artistCount: artistCounts.size, trackCount: N, status };
+    return { dupCount: duplicateExtraCount, deadCount, unknownPlayableCount, playableCount, maxArtistTracks, artistCount: artistCounts.size, trackCount: N };
   }
 
   function updatePlaylistHealthBadge(playlist) {
     const bannerHealthScoreText = document.getElementById('bannerHealthScoreText');
     if (!bannerHealthScoreText) return;
     const health = computePlaylistHealth(playlist);
-    bannerHealthScoreText.textContent = health.trackCount ? `Tekil ve erişilebilir: %${health.score}` : 'Sağlık raporu için listeyi yükleyin';
+    bannerHealthScoreText.textContent = currentLanguage === 'tr'
+      ? (health.trackCount ? `${health.dupCount} tekrar · ${health.unknownPlayableCount} erişim durumu bilinmiyor` : 'Liste bulguları için parçaları yükleyin')
+      : (health.trackCount ? `${health.dupCount} repeats · ${health.unknownPlayableCount} availability unknown` : 'Load tracks to see playlist findings');
   }
 
   // --- RENDER FOCUSED TRACK INSPECTOR TABLE ---
@@ -2048,15 +2130,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calculate filter counts
     let dupCount = 0;
     let uniqueCount = 0;
-    allTracksList.forEach(t => {
-      const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-      const presence = state.presenceMap[key];
-      if (presence && presence.playlists && presence.playlists.length > 1) {
-        dupCount++;
-      } else {
-        uniqueCount++;
-      }
-    });
+    const uriCounts = new Map();
+    allTracksList.forEach(track => { if (track.uri && /^spotify:track:[A-Za-z0-9]+$/.test(track.uri)) uriCounts.set(track.uri, (uriCounts.get(track.uri) || 0) + 1); });
+    const repeatedUris = new Set([...uriCounts].filter(([, count]) => count > 1).map(([uri]) => uri));
+    dupCount = allTracksList.filter(track => repeatedUris.has(track.uri)).length;
+    uniqueCount = allTracksList.length - dupCount;
 
     const countAllEl = document.getElementById('countFilterAll');
     const countDupEl = document.getElementById('countFilterDup');
@@ -2090,9 +2168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filter tracks based on search query & active filter tab
     let displayTracks = allTracksList.filter(t => {
-      const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-      const presence = state.presenceMap[key];
-      const isDup = presence && presence.playlists && presence.playlists.length > 1;
+      const isDup = repeatedUris.has(t.uri);
 
       if (currentTrackFilter === 'duplicate' && !isDup) return false;
       if (currentTrackFilter === 'unique' && isDup) return false;
@@ -2135,16 +2211,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     proTrackTableBody.innerHTML = paginatedTracks.map((t, idx) => {
       const globalIdx = trackStartIndex + idx;
-      const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-      const presence = state.presenceMap[key] || { playlists: [{ plId: playlist.id, plName: playlist.name, plCoverUrl: playlist.cover }] };
-      const otherPlaylists = presence.playlists.filter(p => p.plId !== playlist.id);
-      const isDuplicate = presence.playlists.length > 1;
-      const isChecked = state.selectedTrackIds.has(t.id);
+      const presence = t.uri ? state.trackUriPresenceMap[t.uri] : null;
+      const otherPlaylists = (presence?.playlists || []).filter(p => p.plId !== playlist.id);
+      const isDuplicate = otherPlaylists.length > 0;
+      const selectionId = t.entryId || t.id;
+      const isChecked = state.selectedTrackIds.has(selectionId);
 
       const visibleOtherPlaylists = otherPlaylists.slice(0, 3);
       const remainingCount = otherPlaylists.length - visibleOtherPlaylists.length;
       const spotifySearchUrl = `https://open.spotify.com/search/${encodeURIComponent(t.title + ' ' + t.artist)}`;
       const safeTrackId = escapeMarkup(t.id);
+      const safeEntryId = escapeMarkup(selectionId);
       const safeTrackTitle = escapeMarkup(t.title);
       const safeTrackArtist = escapeMarkup(t.artist);
       const safeTrackCover = escapeMarkup(t.cover || playlist.cover);
@@ -2153,9 +2230,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const safePlaylistName = escapeMarkup(playlist.name);
 
       return `
-        <tr class="${isChecked ? 'selected-row' : ''}" data-row-id="${safeTrackId}">
+        <tr class="${isChecked ? 'selected-row' : ''}" data-row-id="${safeEntryId}">
           <td style="text-align:center;">
-            <input type="checkbox" class="track-select-checkbox" data-track-id="${safeTrackId}" ${isChecked ? 'checked' : ''} accent-color="var(--neon-green)">
+            <input type="checkbox" class="track-select-checkbox" data-track-id="${safeEntryId}" ${isChecked ? 'checked' : ''} accent-color="var(--neon-green)">
           </td>
           <td style="text-align:center;"><strong style="color: var(--t-dim); font-family: var(--f-mono); font-size:12px;">${globalIdx + 1}</strong></td>
           <td>
@@ -2209,7 +2286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="btn btn-secondary btn-sm" data-action="play-track" data-track-id="${safeTrackId}" title="Web Player ile Dinle / Önizle" style="padding: 4px 8px; margin-right: 4px;">
               <i class="fa-solid fa-play text-green"></i> Dinle
             </button>
-            <button class="btn btn-secondary btn-sm" data-action="quick-transfer" data-track-id="${safeTrackId}" title="Başka Listeye Aktar" style="padding: 4px 8px;">
+            <button class="btn btn-secondary btn-sm" data-action="quick-transfer" data-track-id="${safeTrackId}" data-selection-id="${safeEntryId}" title="Başka Listeye Aktar" style="padding: 4px 8px;">
               <i class="fa-solid fa-arrow-right-to-bracket text-cyan"></i> Aktar
             </button>
           </td>
@@ -2347,7 +2424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAllTracks.addEventListener('change', (e) => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
       if (e.target.checked) {
-        state.currentPlaylist.tracks.forEach(t => state.selectedTrackIds.add(t.id));
+        state.currentPlaylist.tracks.forEach(t => state.selectedTrackIds.add(t.entryId || t.id));
       } else {
         state.selectedTrackIds.clear();
       }
@@ -2375,10 +2452,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
       let count = 0;
       state.currentPlaylist.tracks.forEach(t => {
-        const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-        const presence = state.presenceMap[key];
-        if (presence && presence.playlists && presence.playlists.length > 1) {
-          state.selectedTrackIds.add(t.id);
+        if (t.uri && repeatedUris.has(t.uri)) {
+          state.selectedTrackIds.add(t.entryId || t.id);
           count++;
         }
       });
@@ -2394,10 +2469,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
       let count = 0;
       state.currentPlaylist.tracks.forEach(t => {
-        const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-        const presence = state.presenceMap[key];
-        if (!presence || !presence.playlists || presence.playlists.length <= 1) {
-          state.selectedTrackIds.add(t.id);
+        if (!repeatedUris.has(t.uri)) {
+          state.selectedTrackIds.add(t.entryId || t.id);
           count++;
         }
       });
@@ -2426,12 +2499,17 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoader(true, currentLanguage === 'tr' ? 'Aktarım önizlemesi hazırlanıyor…' : 'Preparing transfer preview…', 45);
     try {
       const token = await getValidSpotifyAccessToken();
-      if (!target.tracksLoaded) {
-        target.tracks = await fetchSpotifyPlaylistTracks(token, target.id);
-        target.tracksLoaded = true;
-        saveTrackCache(target.id, target.tracks);
-      }
-      const selected = (state.currentPlaylist.tracks || []).filter(track => state.selectedTrackIds.has(track.id));
+      const first = await fetchSpotifyPlaylistDetails(token, target.id);
+      const latestTracks = await fetchSpotifyPlaylistTracks(token, target.id);
+      const last = await fetchSpotifyPlaylistDetails(token, target.id);
+      if (first.snapshot_id && last.snapshot_id && first.snapshot_id !== last.snapshot_id) throw new Error(currentLanguage === 'tr' ? 'Hedef liste okunurken değişti. Önizlemeyi yenileyin.' : 'The target playlist changed while loading. Refresh the preview.');
+      const declaredTotal = first.items?.total ?? first.tracks?.total;
+      if (Number.isFinite(declaredTotal) && declaredTotal > latestTracks.length) throw new Error(currentLanguage === 'tr' ? 'Hedef listenin tüm parçaları yüklenmedi; eksik veride işlem yapılmadı.' : 'The target playlist did not fully load; no partial-data operation was prepared.');
+      target.tracks = latestTracks;
+      target.tracksLoaded = true;
+      target.snapshotId = last.snapshot_id || first.snapshot_id || null;
+      saveTrackCache(target.id, latestTracks);
+      const selected = (state.currentPlaylist.tracks || []).filter(track => state.selectedTrackIds.has(track.entryId || track.id));
       const existing = new Set((target.tracks || []).map(track => track.uri).filter(Boolean));
       const unique = new Set(), additions = [];
       let alreadyThere = 0, invalid = 0;
@@ -2440,7 +2518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (existing.has(track.uri) || unique.has(track.uri)) { alreadyThere++; return; }
         unique.add(track.uri); additions.push(track);
       });
-      pendingTransfer = { target, additions };
+      pendingTransfer = { target, additions, snapshotId: target.snapshotId };
       const english = currentLanguage !== 'tr';
       transferPreviewSummary.textContent = english
         ? additions.length + ' track(s) will be added to “' + target.name + '”. Spotify has not been changed. ' + alreadyThere + ' already present; ' + invalid + ' unavailable.'
@@ -2458,7 +2536,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function commitPendingTransfer() {
     if (!pendingTransfer?.additions?.length) return;
-    const { target, additions } = pendingTransfer;
+    const { target, additions, snapshotId } = pendingTransfer;
     const uris = additions.map(track => track.uri);
     const safetySnapshot = pushSafetySnapshot('Spotify’ya ' + additions.length + ' parça eklendi — ' + target.name);
     safetySnapshot.spotifyUndo = { playlistId: target.id, addedUris: [], snapshotId: null };
@@ -2467,17 +2545,33 @@ document.addEventListener('DOMContentLoaded', () => {
     btnConfirmTransfer.disabled = true;
     try {
       const token = await getValidSpotifyAccessToken();
+      const current = await fetchSpotifyPlaylistDetails(token, target.id);
+      if (snapshotId && current.snapshot_id && snapshotId !== current.snapshot_id) throw new Error(currentLanguage === 'tr' ? 'Hedef liste önizlemeden sonra değişti. Yeni önizleme hazırlayın.' : 'The target playlist changed after preview. Prepare a new preview.');
       for (let index = 0; index < uris.length; index += 100) {
         const batch = uris.slice(index, index + 100);
-        const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(target.id) + '/items', {
+        let response;
+        try { response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(target.id) + '/items', {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
           body: JSON.stringify({ uris: batch })
-        });
-        if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
+        }); } catch (networkError) {
+          // The server may have applied this batch; keep it out of any retry and surface uncertainty.
+          pendingTransfer.additions = additions.slice(index + batch.length);
+          throw new Error(currentLanguage === 'tr' ? 'Spotify yanıtı alınamadı. Bu parça grubu tekrar gönderilmedi; hedef listeyi kontrol edin.' : 'Spotify did not return a response. This batch was not retried; check the target playlist.');
+        }
+        if (!response.ok) {
+          const error = await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
+          if (response.status >= 500) {
+            pendingTransfer.additions = additions.slice(index + batch.length);
+            throw new Error(currentLanguage === 'tr' ? 'Spotify sunucusu belirsiz yanıt verdi. Bu parça grubu tekrar gönderilmedi; hedef listeyi kontrol edin.' : 'Spotify returned an uncertain server error. This batch was not retried; check the target playlist.');
+          }
+          throw error;
+        }
         const result = await response.json().catch(() => ({}));
         safetySnapshot.spotifyUndo.addedUris.push(...batch);
         safetySnapshot.spotifyUndo.snapshotId = result.snapshot_id || safetySnapshot.spotifyUndo.snapshotId;
+        pendingTransfer.additions = additions.slice(index + batch.length);
+        saveSafetySnapshotsToStorage();
       }
       target.tracks = (target.tracks || []).concat(additions);
       target.trackTotal = (target.trackTotal || 0) + additions.length;
@@ -2518,9 +2612,9 @@ document.addEventListener('DOMContentLoaded', () => {
   transferPreviewModal?.addEventListener('click', event => { if (event.target === transferPreviewModal) { transferPreviewModal.classList.add('hidden'); pendingTransfer = null; } });
 
   // --- SINGLE QUICK TRANSFER HELPER ---
-  window.quickTransferTrack = function(trackId) {
+  window.quickTransferTrack = function(trackId, selectionId = trackId) {
     state.selectedTrackIds.clear();
-    state.selectedTrackIds.add(trackId);
+    state.selectedTrackIds.add(selectionId);
     updateSelectedCountText();
     btnApplyBatchTransfer.click();
   };
@@ -2530,6 +2624,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fisher-Yates with Artist/Album Repulsion (k = floor(N / A_total))
   // ============================================================
   const btnTriggerAntiShuffle = document.getElementById('btnTriggerAntiShuffle');
+  const openRuleBasedWorkbench = event => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const workbench = document.getElementById('libraryWorkbench');
+    workbench?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('btnWorkbenchOrder')?.focus({ preventScroll: true });
+  };
+  btnTriggerAntiShuffle?.addEventListener('click', openRuleBasedWorkbench, true);
   if (btnTriggerAntiShuffle) {
     btnTriggerAntiShuffle.addEventListener('click', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks || state.currentPlaylist.tracks.length < 3) {
@@ -2537,7 +2639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      pushSafetySnapshot(`"${state.currentPlaylist.name}" Anti-Shuffle ile Yeniden Sıralandı`);
+      pushSafetySnapshot(`"${state.currentPlaylist.name}" Anti-Shuffle ile Yeniden Sıralandı`, state.currentPlaylist.id);
 
       const tracks = [...state.currentPlaylist.tracks];
       const N = tracks.length;
@@ -2599,6 +2701,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   const djMixingModal = document.getElementById('djMixingModal');
   const btnOpenDjModal = document.getElementById('btnOpenDjModal');
+  btnOpenDjModal?.addEventListener('click', openRuleBasedWorkbench, true);
   const btnCloseDjModal = document.getElementById('btnCloseDjModal');
   const btnCancelDj = document.getElementById('btnCancelDj');
   const btnApplyDjSort = document.getElementById('btnApplyDjSort');
@@ -2636,7 +2739,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
       const profile = document.querySelector('input[name="djProfile"]:checked')?.value || 'harmonic_flow';
 
-      pushSafetySnapshot(`"${state.currentPlaylist.name}" DJ Harmonik Sıralama (${profile})`);
+      pushSafetySnapshot(`"${state.currentPlaylist.name}" DJ Harmonik Sıralama (${profile})`, state.currentPlaylist.id);
 
       const tracks = [...state.currentPlaylist.tracks];
 
@@ -2678,7 +2781,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const openHealthModal = () => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      showToast("Lütfen önce bir çalma listesi açın!", "warning");
+      showToast(currentLanguage === 'tr' ? "Lütfen önce bir çalma listesi açın!" : 'Open a playlist first.', "warning");
       return;
     }
     const health = computePlaylistHealth(state.currentPlaylist);
@@ -2687,24 +2790,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDesc = document.getElementById('healthModalStatusDesc');
     const dupDesc = document.getElementById('healthFactorDupDesc');
     const dupBadge = document.getElementById('healthFactorDupBadge');
+    const scoreLabel = document.getElementById('healthModalScoreLabel');
+    const dupTitle = document.getElementById('healthFactorDupTitle');
+    const artistTitle = document.getElementById('healthFactorArtistTitle');
+    const deadTitle = document.getElementById('healthFactorDeadTitle');
 
-    if (scoreNum) scoreNum.textContent = health.score;
-    if (statusTitle) statusTitle.textContent = health.status;
+    if (scoreNum) scoreNum.textContent = health.dupCount;
+    if (scoreLabel) scoreLabel.textContent = currentLanguage === 'tr' ? 'AYNI LİSTEDEKİ TEKRAR GİRİŞ' : 'REPEATED ENTRIES IN THIS PLAYLIST';
+    if (dupTitle) dupTitle.textContent = currentLanguage === 'tr' ? 'Bu listedeki tekrarlar' : 'Repeats in this playlist';
+    if (artistTitle) artistTitle.textContent = currentLanguage === 'tr' ? 'Sanatçı yoğunluğu' : 'Artist concentration';
+    if (deadTitle) deadTitle.textContent = currentLanguage === 'tr' ? 'Çalınabilirlik durumu' : 'Playability status';
+    if (statusTitle) statusTitle.textContent = currentLanguage === 'tr' ? 'Liste bulguları' : 'Playlist findings';
     if (statusDesc) {
-      statusDesc.textContent = health.score >= 90
-        ? "Parçalar erişilebilir ve bu listede gereksiz tekrar az."
-        : "Bu rapor yalnızca yüklenen parçaları değerlendirir. Tekrar ve erişim durumunu kontrol edin.";
+      statusDesc.textContent = currentLanguage === 'tr'
+        ? `${health.trackCount} yüklenmiş giriş · ${health.playableCount} erişilebilir · ${health.deadCount} erişilemiyor · ${health.unknownPlayableCount} bilinmiyor`
+        : `${health.trackCount} loaded entries · ${health.playableCount} playable · ${health.deadCount} unavailable · ${health.unknownPlayableCount} unknown`;
     }
-    if (dupDesc) dupDesc.textContent = `${health.dupCount} yinelenen giriş bu listenin içinde; ${health.crossPlaylistCount} parça başka listelerinizde de var.`;
-    if (dupBadge) dupBadge.textContent = health.dupCount > 0 ? `${health.dupCount} tekrar` : 'Tekrar yok';
+    if (dupDesc) dupDesc.textContent = currentLanguage === 'tr' ? `Aynı Spotify URI'si bu listede ${health.dupCount} ek girişte yineleniyor.` : `The same Spotify URI repeats across ${health.dupCount} extra entries in this playlist.`;
+    if (dupBadge) dupBadge.textContent = health.dupCount > 0 ? `${health.dupCount} ${currentLanguage === 'tr' ? 'tekrar' : 'repeats'}` : (currentLanguage === 'tr' ? 'Tekrar yok' : 'No repeats');
     const artistDesc = document.getElementById('healthFactorArtistDesc');
     const artistBadge = document.getElementById('healthFactorArtistBadge');
     const deadDesc = document.getElementById('healthFactorDeadDesc');
     const deadBadge = document.getElementById('healthFactorDeadBadge');
-    if (artistDesc) artistDesc.textContent = `${health.artistCount} sanatçı · en sık sanatçıdan ${health.maxArtistTracks} parça`;
-    if (artistBadge) artistBadge.textContent = health.trackCount ? `${health.artistCount} sanatçı` : 'Veri yok';
-    if (deadDesc) deadDesc.textContent = `${health.deadCount} parça Spotify tarafından bu pazarda çalınamaz olarak işaretlenmiş.`;
-    if (deadBadge) deadBadge.textContent = health.deadCount ? `${health.deadCount} erişilemiyor` : 'Sorun yok';
+    if (artistDesc) artistDesc.textContent = currentLanguage === 'tr' ? `${health.artistCount} doğrulanmış sanatçı kimliği · en sık sanatçıdan ${health.maxArtistTracks} giriş` : `${health.artistCount} verified artist IDs · ${health.maxArtistTracks} entries from the most frequent artist`;
+    if (artistBadge) artistBadge.textContent = health.trackCount ? `${health.artistCount} ${currentLanguage === 'tr' ? 'sanatçı' : 'artists'}` : (currentLanguage === 'tr' ? 'Veri yok' : 'No data');
+    if (deadDesc) deadDesc.textContent = currentLanguage === 'tr' ? `${health.deadCount} giriş Spotify tarafından çalınamaz olarak işaretlenmiş; ${health.unknownPlayableCount} girişin durumu bilinmiyor.` : `${health.deadCount} entries are marked unplayable by Spotify; ${health.unknownPlayableCount} entries have unknown status.`;
+    if (deadBadge) deadBadge.textContent = health.deadCount ? `${health.deadCount} ${currentLanguage === 'tr' ? 'erişilemiyor' : 'unavailable'}` : (health.unknownPlayableCount ? (currentLanguage === 'tr' ? 'Belirsiz' : 'Unknown') : (currentLanguage === 'tr' ? 'Bilinen sorun yok' : 'No known issues'));
 
     if (playlistHealthModal) playlistHealthModal.classList.remove('hidden');
   };
@@ -2721,7 +2832,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateFilterPillsUI();
       renderProTrackTable(state.currentPlaylist);
       if (playlistHealthModal) playlistHealthModal.classList.add('hidden');
-      showToast('Bu listedeki tekrarlar filtrelendi. Spotify listenizde henüz değişiklik yapılmadı.', 'info');
+      showToast(currentLanguage === 'tr' ? 'Bu listedeki tekrarlar filtrelendi. Spotify listenizde henüz değişiklik yapılmadı.' : 'Repeats in this playlist are filtered. Your Spotify playlist has not been changed.', 'info');
     });
   }
 
@@ -2738,33 +2849,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnOpenZombieModal) {
     btnOpenZombieModal.addEventListener('click', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-        showToast("Lütfen önce bir çalma listesi açın!", "warning");
+        showToast(currentLanguage === 'tr' ? "Lütfen önce bir çalma listesi açın!" : 'Open a playlist first.', "warning");
         return;
       }
 
-      if (zombieResultsContainer) {
-        zombieResultsContainer.innerHTML = `
-          <div style="text-align:center; padding:30px 10px;">
-            <i class="fa-solid fa-spinner fa-spin text-warning" style="font-size:28px; margin-bottom:12px; display:block;"></i>
-            <strong style="color:#fff; font-size:14px;">Telif ve Lisans Kataloğu Taranıyor...</strong>
-            <p style="font-size:12px; color:var(--t-muted); margin-top:4px;">Spotify global kütüphanesindeki yayında olan alternatifler kontrol ediliyor.</p>
-          </div>
-        `;
-      }
+      const tracks = state.currentPlaylist.tracks;
+      const unavailable = tracks.filter(track => track.isPlayable === false);
+      const unknown = tracks.filter(track => track.isPlayable !== true && track.isPlayable !== false).length;
+      const english = currentLanguage !== 'tr';
+      if (zombieResultsContainer) zombieResultsContainer.innerHTML = unavailable.length
+        ? '<p class="workbench-status">' + (english ? unavailable.length + ' tracks are marked unplayable by Spotify. No alternate-version search was performed; ' + unknown + ' tracks have unknown status.' : unavailable.length + ' parça Spotify tarafından çalınamaz olarak işaretlenmiş. Benzer sürüm araması yapılmadı; ' + unknown + ' parçanın durumu bilinmiyor.') + '</p>' + unavailable.map(track => '<div class="workbench-result-row"><img src="' + escapeMarkup(track.cover || '') + '" alt=""><span><strong>' + escapeMarkup(track.title) + '</strong><small>' + escapeMarkup(track.artist) + '</small></span><em>' + (english ? 'Spotify: unavailable' : 'Spotify: çalınamaz') + '</em></div>').join('')
+        : '<p class="workbench-status">' + (english ? 'Spotify returned no tracks marked unplayable in this load. ' + unknown + ' tracks have unknown status; that does not mean they are playable.' : 'Spotify bu yüklemede çalınamaz olarak işaretlenmiş parça göstermedi. ' + unknown + ' parçanın durumu bilinmiyor; bu, çalınabilir olduğu anlamına gelmez.') + '</p>';
       if (zombieTrackModal) zombieTrackModal.classList.remove('hidden');
-
-      setTimeout(() => {
-        if (!zombieResultsContainer) return;
-        zombieResultsContainer.innerHTML = `
-          <div style="background: rgba(0,255,122,0.06); border:1px solid rgba(0,255,122,0.2); border-radius:10px; padding:18px 20px; text-align:center;">
-            <i class="fa-solid fa-circle-check text-green" style="font-size:36px; margin-bottom:10px; display:block;"></i>
-            <h4 style="font-size:15px; font-weight:800; color:#fff;">Tüm Şarkılar Yayında ve Canlı!</h4>
-            <p style="font-size:12.5px; color:var(--t-muted); margin-top:4px; max-width:480px; margin-left:auto; margin-right:auto;">
-              "${state.currentPlaylist.name}" listesindeki tüm parçaların Türkiye ve Global Spotify lisansları aktif. Grileşen veya ölü parça bulunmuyor.
-            </p>
-          </div>
-        `;
-      }, 700);
     });
   }
 
@@ -5141,7 +5237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // CSP-safe delegated actions for dynamically rendered cards and controls.
   function runDelegatedAction(actionElement) {
-    const { action, playlistId, playlistA, playlistB, trackId, snapshotId, page } = actionElement.dataset;
+    const { action, playlistId, playlistA, playlistB, trackId, selectionId, snapshotId, page } = actionElement.dataset;
     if (action === 'play-playlist' || action === 'play-track') prepareSpotifyPlayerFromUserGesture();
     switch (action) {
       case 'restore-snapshot': restoreSafetySnapshot(snapshotId); break;
@@ -5150,7 +5246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'play-playlist': window.playPlaylistFromCover?.(playlistId); break;
       case 're-auth': window.triggerReAuth?.(); break;
       case 'play-track': window.playTrackInWebPlayer?.(trackId); break;
-      case 'quick-transfer': window.quickTransferTrack?.(trackId); break;
+      case 'quick-transfer': window.quickTransferTrack?.(trackId, selectionId || trackId); break;
       case 'track-page': window.goToTrackPage?.(Number(page)); break;
       default: break;
     }
@@ -5197,6 +5293,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   syncModalDocumentState();
 
+  initializeLibraryWorkbench({
+    state,
+    getLanguage: () => currentLanguage === 'tr' ? 'tr' : 'en',
+    getToken: () => getValidSpotifyAccessToken(),
+    getPlaylistDetails: (token, id) => fetchSpotifyPlaylistDetails(token, id),
+    getPlaylistTracks: (token, id) => fetchSpotifyPlaylistTracks(token, id),
+    createResponseError: (response, context) => createSpotifyResponseError(response, context),
+    allowsFunctionalStorage,
+    showLoader,
+    showToast,
+    renderPlaylists: renderPlaylistsCatalog,
+    buildPresence: buildGlobalPresenceMap,
+    saveTrackCache,
+    saveLibraryCache
+  });
   initLanguageSelector();
   initFrequencyNeon();
 

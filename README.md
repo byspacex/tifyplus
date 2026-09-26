@@ -20,8 +20,13 @@ Tify Plus, Spotify müzik arşivini tek bir kişisel çalışma alanında daha a
 
 - Spotify OAuth 2.0 + PKCE ile güvenli hesap bağlantısı
 - Çalma listesi ve parça koleksiyonu görünümü
-- Kullanılabilir Spotify metaverisiyle tekrar ve liste ilişkisi inceleme araçları
-- Toplu düzenleme ve Spotify'a aktarma akışları
+- Birden fazla erişilebilir listeyi tam yükleyerek ortak ve listeye özgü parçaları karşılaştırma
+- Kaynakları değiştirmeden yeni listede birleştirme; tekrarları ayıklama ve ilk kayıtları sabitleyerek sanatçıları aralıklı sıralama seçenekleri
+- Tekrarlı bir listeyi ilk veya son kopyayı seçerek yeni temiz listeye aktarma
+- Seçilen Spotify sanatçı kimliğini bir veya daha fazla kaynaktan yeni kopyalara ayıklama
+- Süreye göre sıralı bölümler üretme ve sanatçı aralıklı yeni sıralamayı kopya listeye kaydetme
+- Kural tabanlı Akıllı Asistan: her Spotify yazımından önce sayfalanabilir önizleme ve açık onay
+- İşlem geçmişi, güvenli geri alma, başarısız istekleri ayırma ve belirsiz ağ yanıtlarında otomatik yinelemeyi durdurma
 - Spotify Web Playback SDK ile tarayıcı içi oynatma
 - Cihaz, ses, ileri/geri sarma ve karışık çalma kontrolleri
 - Mobil ve masaüstü uyumlu arayüz
@@ -82,6 +87,8 @@ Uygulama Authorization Code + PKCE akışını kullanır.
 
 ```bash
 npm run test:spotify-player
+npm run test:library-rules
+npm run test:operation-executor
 npm run build
 npm audit --omit=dev --audit-level=high
 ```

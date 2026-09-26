@@ -663,6 +663,78 @@
       </div>
     </section>
 
+    <section id="libraryWorkbench" class="library-workbench margin-top" aria-labelledby="libraryWorkbenchTitle">
+      <div class="workbench-heading">
+        <div>
+          <span class="studio-tag green" data-workbench-copy="kicker">KÜTÜPHANE ATÖLYESİ</span>
+          <h2 id="libraryWorkbenchTitle" data-workbench-copy="title">Listeleri karşılaştır ve düzenle</h2>
+          <p data-workbench-copy="subtitle">Kuralları seç, sonucu incele; Spotify listen değişmeden önce sen onayla.</p>
+        </div>
+        <span class="workbench-local-note"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span data-workbench-copy="local">Harici AI yok · Spotify içeriği modele gönderilmez</span></span>
+      </div>
+
+      <div class="workbench-layout">
+        <section class="workbench-panel" aria-labelledby="workbenchSourcesTitle">
+          <div class="workbench-panel-heading"><span class="workbench-step">01</span><div><h3 id="workbenchSourcesTitle" data-workbench-copy="sources">Kaynak listeleri</h3><p data-workbench-copy="sourcesHelp">Karşılaştırmak için en az iki liste, birleştirmek için iki veya daha fazla liste seç.</p></div></div>
+          <label class="workbench-field workbench-source-filter"><span data-workbench-copy="filterTags">Etiket veya liste adıyla filtrele</span><input id="workbenchSourceFilter" type="search"></label>
+          <div id="workbenchSourceList" class="workbench-source-list" role="group" aria-labelledby="workbenchSourcesTitle"></div>
+          <p id="workbenchSourceStatus" class="workbench-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="workbench-panel" aria-labelledby="workbenchActionsTitle">
+          <div class="workbench-panel-heading"><span class="workbench-step">02</span><div><h3 id="workbenchActionsTitle" data-workbench-copy="actions">Bir işlem seç</h3><p data-workbench-copy="actionsHelp">Hiçbir seçenek Spotify'a yazmaz; önce sonuç hazırlanır.</p></div></div>
+          <div class="workbench-action-grid">
+            <button id="btnWorkbenchCompare" class="workbench-action" type="button"><i class="fa-solid fa-code-compare" aria-hidden="true"></i><span><strong data-workbench-copy="compare">Karşılaştır</strong><small data-workbench-copy="compareHelp">Ortakları ve listeye özgü parçaları gör</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchMerge" class="workbench-action" type="button"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span><strong data-workbench-copy="merge">Yeni listede birleştir</strong><small data-workbench-copy="mergeHelp">Kaynakları koru, sıralarını takip et</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchDeduplicate" class="workbench-action" type="button"><i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i><span><strong data-workbench-copy="dedupeCopy">Tekrarları yeni kopyada ayıkla</strong><small data-workbench-copy="dedupeHelp">Kaynak listeyi koru, kalan kopyayı seç</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchExcludeArtist" class="workbench-action" type="button"><i class="fa-solid fa-user-minus" aria-hidden="true"></i><span><strong data-workbench-copy="excludeArtistTitle">Sanatçıyı yeni kopyadan çıkar</strong><small data-workbench-copy="excludeArtistHelp">Spotify sanatçı kimliğine göre eşleştir</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchSplit" class="workbench-action" type="button"><i class="fa-solid fa-scissors" aria-hidden="true"></i><span><strong data-workbench-copy="split">Süreye göre böl</strong><small data-workbench-copy="splitHelp">Bir listeyi hedef süreli parçalara ayır</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchOrder" class="workbench-action" type="button"><i class="fa-solid fa-shuffle" aria-hidden="true"></i><span><strong data-workbench-copy="order">Sanatçı aralığı kur</strong><small data-workbench-copy="orderHelp">Aynı sanatçının art arda gelmesini azalt</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+          </div>
+          <div class="workbench-options">
+            <label class="workbench-field"><span data-workbench-copy="mergeName">Yeni listenin adı</span><input id="workbenchMergeName" type="text" maxlength="100" autocomplete="off"></label>
+            <label class="workbench-field"><span data-workbench-copy="targetMinutes">Bölüm başına hedef dakika</span><input id="workbenchTargetMinutes" type="number" min="10" max="600" step="5" value="60"></label>
+            <label class="workbench-field"><span data-workbench-copy="pinnedFirst">Sıralamada sabitlenecek ilk parça sayısı</span><input id="workbenchPinnedFirst" type="number" min="0" max="50" step="1" value="0"></label>
+            <label class="workbench-field"><span data-workbench-copy="duplicateKeep">Tekrar varsa hangisi kalsın?</span><select id="workbenchDuplicateKeep"><option value="first">İlk kayıt</option><option value="last">Son kayıt</option></select></label>
+            <label class="workbench-field"><span data-workbench-copy="excludeArtist">Yeni kopyadan çıkarılacak Spotify sanatçısı</span><select id="workbenchArtistId"></select></label>
+            <label class="workbench-check"><input id="workbenchDedupe" type="checkbox" checked><span data-workbench-copy="dedupe">Birleştirirken aynı Spotify kaydını bir kez ekle</span></label>
+            <label class="workbench-check"><input id="workbenchSpaceMerge" type="checkbox"><span data-workbench-copy="spaceMerge">Birleştirirken sanatçıları aralıklı sırala; sabit başı koru</span></label>
+            <label class="workbench-check"><input id="workbenchPrivate" type="checkbox" checked><span data-workbench-copy="private">Yeni listeyi gizli oluştur</span></label>
+          </div>
+        </section>
+      </div>
+
+      <section class="workbench-personal" aria-labelledby="workbenchPersonalTitle">
+        <div><span class="workbench-step">03</span><h3 id="workbenchPersonalTitle" data-workbench-copy="personalTitle">Kişisel düzen</h3><p data-workbench-copy="personalHelp">Etiket ve notlar bu tarayıcıda, bağlı hesaba özel saklanır. Otomatik tür veya ruh hâli tahmini yapılmaz.</p></div>
+        <div class="workbench-personal-grid">
+          <label class="workbench-field"><span data-workbench-copy="tagsLabel">Seçili listelerin etiketleri (virgülle ayırın)</span><input id="workbenchTags" type="text" maxlength="240"></label>
+          <label class="workbench-field"><span data-workbench-copy="notesLabel">Liste notu</span><input id="workbenchNote" type="text" maxlength="240"></label>
+          <label class="workbench-field"><span data-workbench-copy="recipeName">Tarif adı</span><input id="workbenchRecipeName" type="text" maxlength="60"></label>
+          <label class="workbench-field"><span data-workbench-copy="recipeAction">Tarif işlemi</span><select id="workbenchRecipeAction"><option value="merge">Birleştir / Merge</option><option value="compare">Karşılaştır / Compare</option><option value="split">Süreye göre böl / Split</option><option value="order">Sanatçı aralığı / Space artists</option></select></label>
+          <div class="workbench-personal-actions"><button id="btnWorkbenchSavePersonal" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="savePersonal">Etiket ve notları kaydet</button><button id="btnWorkbenchSaveRecipe" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="saveRecipe">Tarifi kaydet</button></div>
+          <div id="workbenchRecipes" class="workbench-recipes" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="workbenchResultPanel" class="workbench-result hidden" aria-labelledby="workbenchResultTitle">
+        <div class="workbench-result-head">
+          <div><span class="studio-tag" data-workbench-copy="preview">ÖNİZLEME</span><h3 id="workbenchResultTitle">İşlem sonucu</h3><p id="workbenchResultSummary" role="status" aria-live="polite"></p></div>
+          <div class="workbench-result-actions">
+            <label class="workbench-field workbench-mode-field"><span data-workbench-copy="view">Görünüm</span><select id="workbenchResultMode"></select></label>
+            <button id="btnWorkbenchApply" class="btn btn-spotify btn-sm" type="button" disabled><i class="fa-brands fa-spotify" aria-hidden="true"></i><span data-workbench-copy="apply">Spotify'da uygula</span></button>
+            <button id="btnWorkbenchUndo" class="btn btn-secondary btn-sm hidden" type="button"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span data-workbench-copy="undo">Bu işlemi geri al</span></button>
+            <button id="btnWorkbenchClose" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="close">Kapat</button>
+          </div>
+        </div>
+        <div id="workbenchResultRows" class="workbench-result-rows" role="region" aria-label="Önizleme sonuçları" tabindex="0"></div>
+        <div class="workbench-pagination"><span id="workbenchPageStatus" aria-live="polite"></span><div><button id="btnWorkbenchPrev" class="btn btn-secondary btn-sm" type="button" disabled data-workbench-copy="previous">Önceki</button><button id="btnWorkbenchNext" class="btn btn-secondary btn-sm" type="button" disabled data-workbench-copy="next">Sonraki</button></div></div>
+      </section>
+      <details class="workbench-history">
+        <summary data-workbench-copy="history">Son işlemler</summary>
+        <div id="workbenchHistoryList" class="workbench-history-list"></div>
+      </details>
+    </section>
+
     <!-- MASTER CURATION WORKSPACE (ÇALMA LİSTELERİ VİTRİNİ) -->
     <section id="catalogSection" class="master-workspace-section margin-top">
       
@@ -735,19 +807,19 @@
 
           <!-- Quick Action Badges / Health Score / DJ Mode on Banner -->
           <div class="banner-action-pills">
-            <button id="btnOpenHealthModal" class="studio-pill-btn health-pill" title="Sağlık Skoru ve Kalite İndeksi">
+            <button id="btnOpenHealthModal" class="studio-pill-btn health-pill" title="Çalma listesi bulguları">
               <i class="fa-solid fa-heart-pulse text-green"></i>
-              <span id="bannerHealthScoreText">Sağlık Skoru: %98 (Mükemmel)</span>
+              <span id="bannerHealthScoreText">Çalma listesi bulguları</span>
             </button>
 
-            <button id="btnOpenDjModal" class="studio-pill-btn dj-pill" title="Camelot Wheel Harmonik Sıralama">
+            <button id="btnOpenDjModal" class="studio-pill-btn dj-pill" title="Kural tabanlı liste asistanı">
               <i class="fa-solid fa-sliders text-cyan"></i>
-              <span>Harmonik DJ & Enerji Sıralayıcı</span>
+              <span>Akıllı Asistan: listeleri düzenle</span>
             </button>
 
-            <button id="btnTriggerAntiShuffle" class="studio-pill-btn shuffle-pill" title="Fisher-Yates Deterministik Anti-Shuffle">
+            <button id="btnTriggerAntiShuffle" class="studio-pill-btn shuffle-pill" title="Sanatçı aralığı önizlemesi">
               <i class="fa-solid fa-shuffle text-purple"></i>
-              <span>Anti-Shuffle (Gerçek Rastgelelik)</span>
+              <span>Akıllı Asistan: sanatçıları aralıklı sırala</span>
             </button>
 
             <button id="btnOpenZombieModal" class="studio-pill-btn zombie-pill" title="Ölü / Grileşen Parçaları Tara ve Canlı Sürümlerle Değiştir">
@@ -955,10 +1027,10 @@
         <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
           <div>
             <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-heart-pulse text-green"></i> Çalma Listesi Sağlık Raporu
+              <i class="fa-solid fa-list-check text-green"></i> Çalma Listesi Bulguları
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-              Yalnızca bu oturumda yüklenen parçaları değerlendirir. Başka listelerde tekrar eden şarkılar hata sayılmaz.
+              Yalnızca yüklenen girişleri, Spotify URI tekrarlarını ve bilinen parça erişim durumunu sayar.
             </p>
           </div>
           <button id="btnCloseHealthModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -968,8 +1040,8 @@
           <!-- Circular Health Score Deck -->
           <div class="health-score-deck">
             <div class="health-gauge-box">
-              <span class="health-score-number" id="healthModalScoreNumber">96</span>
-              <span class="health-score-label">/ 100 TEKİL VE ERİŞİLEBİLİR</span>
+              <span class="health-score-number" id="healthModalScoreNumber">0</span>
+              <span class="health-score-label" id="healthModalScoreLabel">AYNI LİSTEDEKİ TEKRAR GİRİŞ</span>
             </div>
             <div class="health-gauge-info">
               <h4 id="healthModalStatusTitle" style="font-size:16px; font-weight:800; color:#fff;">Çok Yüksek Kalite</h4>
@@ -985,7 +1057,7 @@
               <div class="factor-left">
                 <i class="fa-solid fa-clone text-warning"></i>
                 <div>
-                  <h6>Bu listedeki tekrarlar</h6>
+                  <h6 id="healthFactorDupTitle">Bu listedeki tekrarlar</h6>
                   <p id="healthFactorDupDesc">Liste parçaları yüklenince hesaplanır.</p>
                 </div>
               </div>
@@ -996,7 +1068,7 @@
               <div class="factor-left">
                 <i class="fa-solid fa-users text-cyan"></i>
                 <div>
-                  <h6>Sanatçı Dağılımı ve Çeşitlilik</h6>
+                  <h6 id="healthFactorArtistTitle">Spotify sanatçı kimlikleri</h6>
                   <p id="healthFactorArtistDesc">Sanatçı dağılımı hesaplanıyor.</p>
                 </div>
               </div>
@@ -1007,7 +1079,7 @@
               <div class="factor-left">
                 <i class="fa-solid fa-skull text-muted"></i>
                 <div>
-                  <h6>Spotify'da erişilemeyen parçalar</h6>
+                  <h6 id="healthFactorDeadTitle">Spotify'da erişilemeyen parçalar</h6>
                   <p id="healthFactorDeadDesc">Spotify parça durumları yüklenince hesaplanır.</p>
                 </div>
               </div>
@@ -1025,16 +1097,16 @@
       </div>
     </div>
 
-    <!-- ZOMBIE / GREYED-OUT TRACKS MODAL (BÖLÜM 3) -->
+    <!-- TRACK AVAILABILITY FACTS -->
     <div id="zombieTrackModal" class="modal-overlay hidden">
       <div class="modal-card" style="max-width: 720px; padding: 24px;">
         <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
           <div>
-            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Zombi Parça Diriltme & Lisans Eşleme Motoru
+              <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-circle-info text-warning"></i> Parça erişim durumu
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-              Telif/lisans süresi biten gri parçaları Spotify kataloğundaki canlı, resmi alternatifleriyle eşler.
+              Yalnızca Spotify'ın bildirdiği erişim bilgisini gösterir. Benzer kayıt arama veya otomatik değiştirme yapılmaz.
             </p>
           </div>
           <button id="btnCloseZombieModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -1046,8 +1118,8 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
           <button id="btnCloseZombieBottom" class="btn btn-secondary btn-sm">Kapat</button>
-          <button id="btnResurrectAll" class="btn btn-spotify btn-sm hidden">
-            <i class="fa-solid fa-rotate"></i> Bulunan Tüm Canlı Sürümleri Takas Et
+          <button id="btnResurrectAll" class="btn btn-spotify btn-sm hidden" disabled>
+            <i class="fa-solid fa-ban"></i> Otomatik sürüm değiştirme kullanılamıyor
           </button>
         </div>
       </div>

@@ -1,13 +1,16 @@
 {
   "name": "tify-plus",
   "version": "1.0.0",
+  "type": "module",
   "description": "Spotify Playlist Analyzer & Smart Matcher Web App",
   "main": "index.html",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "vite build",
     "preview": "vite preview",
-    "test:spotify-player": "node scripts/test-spotify-player.mjs"
+    "test:spotify-player": "node scripts/test-spotify-player.mjs",
+    "test:library-rules": "node scripts/test-library-rules.mjs",
+    "test:operation-executor": "node scripts/test-operation-executor.mjs"
   },
   "devDependencies": {
     "vite": "^8.2.1"

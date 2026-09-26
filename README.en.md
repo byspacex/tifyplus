@@ -12,9 +12,13 @@
 
 Tify Plus is an independent, open-source workspace for your Spotify library. Connect your Spotify account to inspect playlists you own or collaborate on. Public playlists from other accounts open in an official Spotify preview, separate from your personal library.
 
-- Find repeated tracks and explore relationships between playlists.
-- Review tracks and available metadata in one workspace.
-- Start and approve playlist edits yourself.
+- Compare shared and playlist-specific tracks across fully loaded, accessible playlists.
+- Merge playlists into a new playlist, optionally removing repeats and spacing artists while keeping the opening tracks fixed.
+- Remove repeated recordings into a new clean playlist, choosing whether to keep the first or last occurrence.
+- Exclude a selected Spotify artist ID from one or more source playlists into separate new copies.
+- Split a playlist into duration-based sets or space out artists in a new copy.
+- Use the rule-based Smart Assistant to review a paginated preview and approve every Spotify write.
+- Review operation history, retry confirmed failures, and undo only when the target playlist snapshot is unchanged.
 - Play through Spotify's supported playback options.
 - Preview a public playlist without signing in.
 - Use privacy controls for local preferences and cached data.
@@ -40,6 +44,8 @@ The local URL is `http://127.0.0.1:5173/`. To run the existing checks:
 
 ```bash
 npm run test:spotify-player
+npm run test:library-rules
+npm run test:operation-executor
 npm run build
 ```
 
