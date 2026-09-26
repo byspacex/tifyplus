@@ -277,11 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
     setText('#transferPreviewSummary', currentLanguage === 'tr'
       ? 'Spotify listeniz henüz değiştirilmedi.'
       : 'Your Spotify playlist has not been changed yet.');
+    setText('#healthModalScoreLabel', currentLanguage === 'tr' ? 'AYNI LİSTEDEKİ TEKRAR GİRİŞ' : 'REPEATED ENTRIES IN THIS PLAYLIST');
+    setText('#healthFactorDupTitle', currentLanguage === 'tr' ? 'Bu listedeki tekrarlar' : 'Repeats in this playlist');
+    setText('#healthFactorArtistTitle', currentLanguage === 'tr' ? 'Sanatçı yoğunluğu' : 'Artist concentration');
+    setText('#healthFactorDeadTitle', currentLanguage === 'tr' ? 'Çalınabilirlik durumu' : 'Playability status');
+    setText('#btnAutoHealPlaylist', currentLanguage === 'tr' ? 'Tekrarları filtrele' : 'Filter repeats');
+    setText('#btnOpenZombieModal', currentLanguage === 'tr' ? 'Erişilemeyen Parçaları Gör' : 'Review Unavailable Tracks');
     const search = document.getElementById('catalogSearchInput');
     if (search) search.placeholder = t('search');
     const selector = document.getElementById('languageSelector');
     if (selector) selector.value = currentLanguage;
     renderHeroTitle();
+    if (state.currentPlaylist) updatePlaylistHealthBadge(state.currentPlaylist);
     document.dispatchEvent(new CustomEvent('tify:languagechange', { detail: { language: currentLanguage } }));
   }
 
@@ -2076,7 +2083,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const bannerHealthScoreText = document.getElementById('bannerHealthScoreText');
     if (!bannerHealthScoreText) return;
     const health = computePlaylistHealth(playlist);
-    bannerHealthScoreText.textContent = health.trackCount ? `${health.dupCount} tekrar · ${health.unknownPlayableCount} erişim durumu bilinmiyor` : 'Liste bulguları için parçaları yükleyin';
+    bannerHealthScoreText.textContent = currentLanguage === 'tr'
+      ? (health.trackCount ? `${health.dupCount} tekrar · ${health.unknownPlayableCount} erişim durumu bilinmiyor` : 'Liste bulguları için parçaları yükleyin')
+      : (health.trackCount ? `${health.dupCount} repeats · ${health.unknownPlayableCount} availability unknown` : 'Load tracks to see playlist findings');
   }
 
   // --- RENDER FOCUSED TRACK INSPECTOR TABLE ---
@@ -2772,7 +2781,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const openHealthModal = () => {
     if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-      showToast("Lütfen önce bir çalma listesi açın!", "warning");
+      showToast(currentLanguage === 'tr' ? "Lütfen önce bir çalma listesi açın!" : 'Open a playlist first.', "warning");
       return;
     }
     const health = computePlaylistHealth(state.currentPlaylist);
@@ -2781,8 +2790,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDesc = document.getElementById('healthModalStatusDesc');
     const dupDesc = document.getElementById('healthFactorDupDesc');
     const dupBadge = document.getElementById('healthFactorDupBadge');
+    const scoreLabel = document.getElementById('healthModalScoreLabel');
+    const dupTitle = document.getElementById('healthFactorDupTitle');
+    const artistTitle = document.getElementById('healthFactorArtistTitle');
+    const deadTitle = document.getElementById('healthFactorDeadTitle');
 
     if (scoreNum) scoreNum.textContent = health.dupCount;
+    if (scoreLabel) scoreLabel.textContent = currentLanguage === 'tr' ? 'AYNI LİSTEDEKİ TEKRAR GİRİŞ' : 'REPEATED ENTRIES IN THIS PLAYLIST';
+    if (dupTitle) dupTitle.textContent = currentLanguage === 'tr' ? 'Bu listedeki tekrarlar' : 'Repeats in this playlist';
+    if (artistTitle) artistTitle.textContent = currentLanguage === 'tr' ? 'Sanatçı yoğunluğu' : 'Artist concentration';
+    if (deadTitle) deadTitle.textContent = currentLanguage === 'tr' ? 'Çalınabilirlik durumu' : 'Playability status';
     if (statusTitle) statusTitle.textContent = currentLanguage === 'tr' ? 'Liste bulguları' : 'Playlist findings';
     if (statusDesc) {
       statusDesc.textContent = currentLanguage === 'tr'
@@ -2815,7 +2832,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateFilterPillsUI();
       renderProTrackTable(state.currentPlaylist);
       if (playlistHealthModal) playlistHealthModal.classList.add('hidden');
-      showToast('Bu listedeki tekrarlar filtrelendi. Spotify listenizde henüz değişiklik yapılmadı.', 'info');
+      showToast(currentLanguage === 'tr' ? 'Bu listedeki tekrarlar filtrelendi. Spotify listenizde henüz değişiklik yapılmadı.' : 'Repeats in this playlist are filtered. Your Spotify playlist has not been changed.', 'info');
     });
   }
 
@@ -2832,16 +2849,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnOpenZombieModal) {
     btnOpenZombieModal.addEventListener('click', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) {
-        showToast("Lütfen önce bir çalma listesi açın!", "warning");
+        showToast(currentLanguage === 'tr' ? "Lütfen önce bir çalma listesi açın!" : 'Open a playlist first.', "warning");
         return;
       }
 
       const tracks = state.currentPlaylist.tracks;
       const unavailable = tracks.filter(track => track.isPlayable === false);
       const unknown = tracks.filter(track => track.isPlayable !== true && track.isPlayable !== false).length;
+      const english = currentLanguage !== 'tr';
       if (zombieResultsContainer) zombieResultsContainer.innerHTML = unavailable.length
-        ? '<p class="workbench-status">' + unavailable.length + ' parça Spotify tarafından çalınamaz olarak işaretlenmiş. Benzer sürüm araması yapılmadı; ' + unknown + ' parçanın durumu bilinmiyor.</p>' + unavailable.map(track => '<div class="workbench-result-row"><img src="' + escapeMarkup(track.cover || '') + '" alt=""><span><strong>' + escapeMarkup(track.title) + '</strong><small>' + escapeMarkup(track.artist) + '</small></span><em>Spotify: çalınamaz</em></div>').join('')
-        : '<p class="workbench-status">Spotify bu yüklemede çalınamaz olarak işaretlenmiş parça göstermedi. ' + unknown + ' parçanın durumu bilinmiyor; bu, çalınabilir olduğu anlamına gelmez.</p>';
+        ? '<p class="workbench-status">' + (english ? unavailable.length + ' tracks are marked unplayable by Spotify. No alternate-version search was performed; ' + unknown + ' tracks have unknown status.' : unavailable.length + ' parça Spotify tarafından çalınamaz olarak işaretlenmiş. Benzer sürüm araması yapılmadı; ' + unknown + ' parçanın durumu bilinmiyor.') + '</p>' + unavailable.map(track => '<div class="workbench-result-row"><img src="' + escapeMarkup(track.cover || '') + '" alt=""><span><strong>' + escapeMarkup(track.title) + '</strong><small>' + escapeMarkup(track.artist) + '</small></span><em>' + (english ? 'Spotify: unavailable' : 'Spotify: çalınamaz') + '</em></div>').join('')
+        : '<p class="workbench-status">' + (english ? 'Spotify returned no tracks marked unplayable in this load. ' + unknown + ' tracks have unknown status; that does not mean they are playable.' : 'Spotify bu yüklemede çalınamaz olarak işaretlenmiş parça göstermedi. ' + unknown + ' parçanın durumu bilinmiyor; bu, çalınabilir olduğu anlamına gelmez.') + '</p>';
       if (zombieTrackModal) zombieTrackModal.classList.remove('hidden');
     });
   }
