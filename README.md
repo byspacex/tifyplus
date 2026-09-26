@@ -21,7 +21,7 @@ Tify Plus, Spotify müzik arşivini tek bir kişisel çalışma alanında daha a
 - Spotify OAuth 2.0 + PKCE ile güvenli hesap bağlantısı
 - Çalma listesi ve parça koleksiyonu görünümü
 - Birden fazla erişilebilir listeyi tam yükleyerek ortak ve listeye özgü parçaları karşılaştırma
-- Kaynakları değiştirmeden yeni listede birleştirme; tekrarları ve desteklenmeyen girişleri önizlemede açıklama
+- Kaynakları değiştirmeden yeni listede birleştirme; tekrarları ayıklama ve ilk kayıtları sabitleyerek sanatçıları aralıklı sıralama seçenekleri
 - Tekrarlı bir listeyi ilk veya son kopyayı seçerek yeni temiz listeye aktarma
 - Spotify sanatçı kimliğiyle seçilen sanatçıyı kaynak listeyi değiştirmeden yeni kopyadan çıkarma
 - Süreye göre sıralı bölümler üretme ve sanatçı aralıklı yeni sıralamayı kopya listeye kaydetme

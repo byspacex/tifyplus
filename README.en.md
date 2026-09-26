@@ -13,7 +13,7 @@
 Tify Plus is an independent, open-source workspace for your Spotify library. Connect your Spotify account to inspect playlists you own or collaborate on. Public playlists from other accounts open in an official Spotify preview, separate from your personal library.
 
 - Compare shared and playlist-specific tracks across fully loaded, accessible playlists.
-- Merge playlists into a new playlist while preserving source order and explaining skipped entries.
+- Merge playlists into a new playlist, optionally removing repeats and spacing artists while keeping the opening tracks fixed.
 - Remove repeated recordings into a new clean playlist, choosing whether to keep the first or last occurrence.
 - Exclude a selected artist from a new copy by Spotify artist ID while leaving the source playlist intact.
 - Split a playlist into duration-based sets or space out artists in a new copy.

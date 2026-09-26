@@ -7,7 +7,7 @@ const COPY = {
     kicker:'AKILLI ASİSTAN · KURAL TABANLI', title:'Listeleri karşılaştır ve düzenle', subtitle:'Kuralları seç, sonucu incele; Spotify listen değişmeden önce sen onayla.', local:'Harici AI yok · Spotify içeriği modele gönderilmez',
     sources:'Kaynak listeleri', sourcesHelp:'Karşılaştırmak için en az iki liste, diğer işlemler için bir liste seç.', actions:'Bir işlem seç', actionsHelp:'Önce sonuç hazırlanır. Spotify’a yalnızca onayladığında yazılır.', allDistinct:'Tüm benzersiz kayıtlar',
     compare:'Karşılaştır', compareHelp:'Ortakları ve listeye özgü parçaları gör', merge:'Yeni listede birleştir', mergeHelp:'Kaynakları koru, sıralarını takip et', split:'Süreye göre böl', splitHelp:'Bir listeyi hedef süreli parçalara ayır',
-    order:'Sanatçı aralığı kur', orderHelp:'Aynı sanatçının art arda gelmesini azalt', mergeName:'Yeni listenin adı', targetMinutes:'Bölüm başına hedef dakika', pinnedFirst:'Sıralamada sabitlenecek ilk parça sayısı',
+    order:'Sanatçı aralığı kur', orderHelp:'Aynı sanatçının art arda gelmesini azalt', mergeName:'Yeni listenin adı', targetMinutes:'Bölüm başına hedef dakika', pinnedFirst:'Sıralamada sabitlenecek ilk parça sayısı', spaceMerge:'Birleştirirken sanatçıları aralıklı sırala; sabit başı koru',
     dedupe:'Birleştirirken aynı Spotify kaydını bir kez ekle', private:'Yeni listeyi gizli oluştur', preview:'ÖNİZLEME', view:'Görünüm', apply:'Spotify’da uygula', undo:'Bu işlemi geri al', close:'Kapat', previous:'Önceki', next:'Sonraki', history:'Son işlemler',
     common:'Ortak parçalar', onlyPrefix:'Yalnızca: ', unverified:'Kimliği doğrulanamayan', oversized:'Hedefi aşan parçalar', toAdd:'Eklenecek', skipped:'Atlananlar', segmentPrefix:'Bölüm ', ordered:'Yeni sıra', empty:'Bu görünümde parça yok.',
     selectTwo:'En az iki kaynak liste seç.', selectOne:'Bu işlem için tek liste seç.', connect:'Önce Spotify hesabını bağla.', noTracks:'Listelerde karşılaştırılabilir parça bulunamadı.',
@@ -28,7 +28,7 @@ const COPY = {
     kicker:'SMART ASSISTANT · RULE-BASED', title:'Compare and organize playlists', subtitle:'Choose rules, review the result, and approve before Spotify changes.', local:'No external AI · Spotify content is never sent to a model',
     sources:'Source playlists', sourcesHelp:'Choose at least two for comparison, or one for the other tools.', actions:'Choose an action', actionsHelp:'Results are prepared first. Spotify is only changed after approval.', allDistinct:'All unique recordings',
     compare:'Compare playlists', compareHelp:'See shared and playlist-specific tracks', merge:'Merge into a new playlist', mergeHelp:'Keep sources and follow their order', split:'Split by duration', splitHelp:'Divide one playlist into target-length sets',
-    order:'Space out artists', orderHelp:'Reduce consecutive tracks by one artist', mergeName:'New playlist name', targetMinutes:'Target minutes per set', pinnedFirst:'Keep the first tracks in place',
+    order:'Space out artists', orderHelp:'Reduce consecutive tracks by one artist', mergeName:'New playlist name', targetMinutes:'Target minutes per set', pinnedFirst:'Keep the first tracks in place', spaceMerge:'Space out artists in the merged playlist; keep the opening tracks fixed',
     dedupe:'Add each Spotify recording once', private:'Create the new playlist as private', preview:'PREVIEW', view:'View', apply:'Apply to Spotify', undo:'Undo this operation', close:'Close', previous:'Previous', next:'Next', history:'Recent operations',
     common:'Shared tracks', onlyPrefix:'Only in: ', unverified:'Unverified identity', oversized:'Over target duration', toAdd:'To add', skipped:'Skipped', segmentPrefix:'Set ', ordered:'New order', empty:'No tracks in this view.',
     selectTwo:'Select at least two source playlists.', selectOne:'Select one playlist for this action.', connect:'Connect your Spotify account first.', noTracks:'No comparable tracks were found.',
@@ -223,20 +223,31 @@ export function initializeLibraryWorkbench(dependencies) {
     if (kind === 'merge') {
       const deduplicate = $('workbenchDedupe').checked;
       const merge = createMergePlan(fresh, { deduplicate });
-      const supported = merge.items.filter(item => /^spotify:track:[A-Za-z0-9]+$/.test(item.track.uri || '') && !item.track.isLocal);
+      let supported = merge.items.filter(item => /^spotify:track:[A-Za-z0-9]+$/.test(item.track.uri || '') && !item.track.isLocal);
       const excluded = merge.items.filter(item => !supported.includes(item));
       const skipped = [...merge.skipped, ...excluded.map(item => ({ ...item, reason: 'unsupported' }))];
+      const spaceArtists = $('workbenchSpaceMerge').checked;
+      const pinnedFirst = Math.max(0, Math.min(50, Number($('workbenchPinnedFirst').value) || 0));
+      let spacingViolations = 0;
+      if (spaceArtists && supported.length > 1) {
+        const queues = new Map();
+        supported.forEach(item => { if (!queues.has(item.track)) queues.set(item.track, []); queues.get(item.track).push(item); });
+        const pins = Object.fromEntries(Array.from({ length: Math.min(pinnedFirst, supported.length) }, (_, index) => [index, index]));
+        const spaced = planArtistSpacedOrder(supported.map(item => item.track), { pinned: pins });
+        supported = spaced.tracks.filter(Boolean).map(track => queues.get(track).shift());
+        spacingViolations = spaced.violations.length;
+      }
       const name = $('workbenchMergeName').value.trim() || text('nameDefault');
       showPlan({
         title: text('titleMerge'),
-        summary: text('summaryMerge')(supported.length, merge.skipped.length, excluded.length),
+        summary: text('summaryMerge')(supported.length, merge.skipped.length, excluded.length) + (spaceArtists ? ' · ' + text('summaryOrder')(supported.length, spacingViolations) : ''),
         nextViews: {
           add: { label: text('toAdd'), rows: supported.map(item => ({ track: item.track, location: item.source.name })) },
           skipped: { label: text('skipped'), rows: skipped.map(item => ({ track: item.track, location: item.reason === 'duplicate' ? item.source.name + (getLanguage() === 'tr' ? ' · tekrar' : ' · repeat') : item.source.name + ' · ' + text('unsupported') })) },
           unverified: { label: text('unverified'), rows: comparison.unverifiable.map(item => ({ track: item.track, location: item.playlist.name })) }
         },
         actions: supported.length ? [{ name, items: supported }] : [],
-        sources, rules: { deduplicate, name, private: $('workbenchPrivate').checked }, canApply: supported.length > 0
+        sources, rules: { deduplicate, name, private: $('workbenchPrivate').checked, spaceArtists, pinnedFirst }, canApply: supported.length > 0
       });
       return;
     }
@@ -615,7 +626,7 @@ export function initializeLibraryWorkbench(dependencies) {
     const name = $('workbenchRecipeName').value.trim();
     if (!name) { $('workbenchRecipeName').focus(); return; }
     const data = readPersonal();
-    data.recipes.unshift({ id: 'recipe_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36)), name, action: $('workbenchRecipeAction').value, sourceIds: selected.map(playlist => playlist.id), options: { deduplicate: $('workbenchDedupe').checked, isPrivate: $('workbenchPrivate').checked, targetMinutes: Number($('workbenchTargetMinutes').value), pinnedFirst: Number($('workbenchPinnedFirst').value) || 0, keep: $('workbenchDuplicateKeep').value, artistId: $('workbenchArtistId').value }, createdAt: new Date().toISOString() });
+    data.recipes.unshift({ id: 'recipe_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36)), name, action: $('workbenchRecipeAction').value, sourceIds: selected.map(playlist => playlist.id), options: { deduplicate: $('workbenchDedupe').checked, spaceArtists: $('workbenchSpaceMerge').checked, isPrivate: $('workbenchPrivate').checked, targetMinutes: Number($('workbenchTargetMinutes').value), pinnedFirst: Number($('workbenchPinnedFirst').value) || 0, keep: $('workbenchDuplicateKeep').value, artistId: $('workbenchArtistId').value }, createdAt: new Date().toISOString() });
     data.recipes = data.recipes.slice(0, 20);
     if (writePersonal(data)) { renderPersonal(); showToast(text('recipeSaved'), 'success'); }
   });
@@ -631,6 +642,7 @@ export function initializeLibraryWorkbench(dependencies) {
     const sourceIds = recipe.sourceIds.map(String).filter(id => available.has(id));
     sourceList.querySelectorAll('input').forEach(input => { input.checked = sourceIds.includes(input.value); });
     $('workbenchDedupe').checked = !!recipe.options.deduplicate;
+    $('workbenchSpaceMerge').checked = !!recipe.options.spaceArtists;
     $('workbenchPrivate').checked = !!recipe.options.isPrivate;
     $('workbenchTargetMinutes').value = recipe.options.targetMinutes;
     $('workbenchPinnedFirst').value = recipe.options.pinnedFirst;
