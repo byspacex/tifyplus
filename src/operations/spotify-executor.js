@@ -27,9 +27,11 @@ export async function executePlaylistAddOperation({ operation, playlistId, token
     }
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      batch.forEach(item => { item.status = 'failed'; item.error = error?.error?.message || 'http_' + response.status; });
-      mutable.status = mutable.results.added.length ? 'partial' : 'failed';
-      mutable.results.failed.push(...batch.map(item => ({ uri: item.uri, status: 'failed', error: item.error })));
+      const uncertain = response.status >= 500;
+      batch.forEach(item => { item.status = uncertain ? 'unknown' : 'failed'; item.error = error?.error?.message || 'http_' + response.status; });
+      mutable.status = uncertain || mutable.results.added.length ? 'partial' : 'failed';
+      if (uncertain) mutable.undo.status = 'review_required';
+      mutable.results.failed.push(...batch.map(item => ({ uri: item.uri, status: uncertain ? 'unknown' : 'failed', error: item.error })));
       await persist?.(mutable);
       return mutable;
     }

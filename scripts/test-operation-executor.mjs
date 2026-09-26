@@ -39,6 +39,12 @@ const unknown = await executePlaylistAddOperation({
 });
 assert.equal(unknown.items[0].status, 'unknown');
 assert.equal(unknown.undo.status, 'review_required');
+const serverUncertain = await executePlaylistAddOperation({
+  operation: makeOperation(1), playlistId: 'playlist', token: 'secret',
+  fetchImpl: async () => ({ ok: false, status: 500, json: async () => ({ error: { message: 'server error' } }) })
+});
+assert.equal(serverUncertain.items[0].status, 'unknown', 'a server error may follow a committed write and must not be retried blindly');
+assert.equal(serverUncertain.undo.status, 'review_required');
 
 const interrupted = recoverInterruptedOperations([{
   status: 'applying', targetPlaylistId: 'playlist',

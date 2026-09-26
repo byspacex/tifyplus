@@ -837,11 +837,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadSafetySnapshotsFromStorage();
 
-  function pushSafetySnapshot(actionLabel) {
+  function pushSafetySnapshot(actionLabel, playlistId = null) {
     const snapshot = {
       id: 'snap_' + Date.now(),
       timestamp: Date.now(),
       actionLabel: actionLabel || 'Kütüphane Değişikliği',
+      playlistId,
       playlists: JSON.parse(JSON.stringify(state.playlists || []))
     };
     state.versionedHistory.unshift(snapshot);
@@ -905,12 +906,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    state.playlists = JSON.parse(JSON.stringify(targetSnap.playlists));
+    if (!targetSnap.playlistId) {
+      showToast(currentLanguage === 'tr' ? 'Bu eski yedeğin etkilenen listesi belirlenemedi; çalışma alanı değiştirilmedi.' : 'This older snapshot has no target playlist; the workspace was left unchanged.', 'warning');
+      return;
+    }
+    const snapshotPlaylist = targetSnap.playlists.find(playlist => playlist.id === targetSnap.playlistId);
+    const currentTarget = state.playlists.find(playlist => playlist.id === targetSnap.playlistId);
+    if (!snapshotPlaylist || !currentTarget) {
+      showToast(currentLanguage === 'tr' ? 'Yedekteki liste artık bu kütüphanede değil; çalışma alanı değiştirilmedi.' : 'The snapshot playlist is no longer in this library; the workspace was left unchanged.', 'warning');
+      return;
+    }
+    Object.assign(currentTarget, JSON.parse(JSON.stringify(snapshotPlaylist)));
+    if (state.currentPlaylist?.id === currentTarget.id) state.currentPlaylist = currentTarget;
     buildGlobalPresenceMap();
     saveLibraryCache(state.playlists);
-    state.playlists.forEach(pl => {
-      if (pl.tracks && pl.tracks.length > 0) saveTrackCache(pl.id, pl.tracks);
-    });
+    if (currentTarget.tracks?.length) saveTrackCache(currentTarget.id, currentTarget.tracks);
 
     renderPlaylistsCatalog();
     if (state.currentPlaylist) {
@@ -2519,7 +2529,14 @@ document.addEventListener('DOMContentLoaded', () => {
           pendingTransfer.additions = additions.slice(index + batch.length);
           throw new Error(currentLanguage === 'tr' ? 'Spotify yanıtı alınamadı. Bu parça grubu tekrar gönderilmedi; hedef listeyi kontrol edin.' : 'Spotify did not return a response. This batch was not retried; check the target playlist.');
         }
-        if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
+        if (!response.ok) {
+          const error = await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
+          if (response.status >= 500) {
+            pendingTransfer.additions = additions.slice(index + batch.length);
+            throw new Error(currentLanguage === 'tr' ? 'Spotify sunucusu belirsiz yanıt verdi. Bu parça grubu tekrar gönderilmedi; hedef listeyi kontrol edin.' : 'Spotify returned an uncertain server error. This batch was not retried; check the target playlist.');
+          }
+          throw error;
+        }
         const result = await response.json().catch(() => ({}));
         safetySnapshot.spotifyUndo.addedUris.push(...batch);
         safetySnapshot.spotifyUndo.snapshotId = result.snapshot_id || safetySnapshot.spotifyUndo.snapshotId;
@@ -2592,7 +2609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      pushSafetySnapshot(`"${state.currentPlaylist.name}" Anti-Shuffle ile Yeniden Sıralandı`);
+      pushSafetySnapshot(`"${state.currentPlaylist.name}" Anti-Shuffle ile Yeniden Sıralandı`, state.currentPlaylist.id);
 
       const tracks = [...state.currentPlaylist.tracks];
       const N = tracks.length;
@@ -2692,7 +2709,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
       const profile = document.querySelector('input[name="djProfile"]:checked')?.value || 'harmonic_flow';
 
-      pushSafetySnapshot(`"${state.currentPlaylist.name}" DJ Harmonik Sıralama (${profile})`);
+      pushSafetySnapshot(`"${state.currentPlaylist.name}" DJ Harmonik Sıralama (${profile})`, state.currentPlaylist.id);
 
       const tracks = [...state.currentPlaylist.tracks];
 
