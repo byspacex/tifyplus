@@ -22,6 +22,7 @@ Tify Plus, Spotify müzik arşivini tek bir kişisel çalışma alanında daha a
 - Çalma listesi ve parça koleksiyonu görünümü
 - Birden fazla erişilebilir listeyi tam yükleyerek ortak ve listeye özgü parçaları karşılaştırma
 - Kaynakları değiştirmeden yeni listede birleştirme; tekrarları ve desteklenmeyen girişleri önizlemede açıklama
+- Tekrarlı bir listeyi ilk veya son kopyayı seçerek yeni temiz listeye aktarma
 - Süreye göre sıralı bölümler üretme ve sanatçı aralıklı yeni sıralamayı kopya listeye kaydetme
 - Kural tabanlı Akıllı Asistan: her Spotify yazımından önce sayfalanabilir önizleme ve açık onay
 - İşlem geçmişi, güvenli geri alma, başarısız istekleri ayırma ve belirsiz ağ yanıtlarında otomatik yinelemeyi durdurma

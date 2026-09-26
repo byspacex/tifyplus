@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { getTrackIdentity } from '../src/library/identity.js';
-import { comparePlaylists, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../src/rules/library-rules.js';
+import { comparePlaylists, createDeduplicationPlan, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../src/rules/library-rules.js';
 import { createOperation, operationStorageKey, readOperations, updateOperation, writeOperations } from '../src/operations/journal.js';
 
 const track = (id, artist = 'A', durationMs = 60_000) => ({ id, uri: `spotify:track:${id}`, title: id, artist, durationMs });
@@ -16,6 +16,12 @@ const merged = createMergePlan([a, b]);
 assert.deepEqual(merged.items.map(item => item.identity), ['spotify:track:x', 'spotify:track:y', 'spotify:track:z']);
 assert.equal(merged.skipped.length, 2, 'both in-playlist and cross-playlist repeats are reported');
 assert.deepEqual(createMergePlan([a, b], { deduplicate: false }).items.map(item => item.identity), ['spotify:track:x', 'spotify:track:y', 'spotify:track:y', 'spotify:track:y', 'spotify:track:z']);
+const dedupeFirst = createDeduplicationPlan(a.tracks, { keep: 'first' });
+assert.deepEqual(dedupeFirst.kept.map(item => item.track.id), ['x', 'y']);
+assert.deepEqual(dedupeFirst.removed.map(item => item.index), [2]);
+const dedupeLast = createDeduplicationPlan(a.tracks, { keep: 'last' });
+assert.deepEqual(dedupeLast.kept.map(item => item.track.id), ['x', 'y']);
+assert.equal(dedupeLast.kept[1].index, 2, 'last occurrence is retained without changing source order');
 
 const duration = planDurationBuckets([
   { id: '1', durationMs: 40_000 }, { id: 'unknown', durationMs: 0 },

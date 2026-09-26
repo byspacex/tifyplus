@@ -45,6 +45,23 @@ export function createMergePlan(playlists, { deduplicate = true } = {}) {
   return { items, skipped, unknownDuration: items.filter(item => !(Number(item.track.durationMs) > 0)).length };
 }
 
+export function createDeduplicationPlan(tracks, { keep = 'first' } = {}) {
+  const input = tracks || [];
+  const indices = input.map((track, index) => ({ track, index, identity: getTrackIdentity(track) }));
+  const retained = new Set();
+  const kept = [], removed = [], unverifiable = [];
+  const ordered = keep === 'last' ? [...indices].reverse() : indices;
+  for (const item of ordered) {
+    if (!item.identity) { unverifiable.push(item); continue; }
+    if (retained.has(item.identity)) removed.push({ ...item, reason: 'duplicate' });
+    else { retained.add(item.identity); kept.push(item); }
+  }
+  if (keep === 'last') kept.reverse();
+  removed.sort((a, b) => a.index - b.index);
+  unverifiable.sort((a, b) => a.index - b.index);
+  return { kept, removed, unverifiable };
+}
+
 export function planDurationBuckets(tracks, targetMinutes) {
   const targetMs = Math.max(1, Number(targetMinutes)) * 60_000;
   const known = [], unknown = [], oversized = [];

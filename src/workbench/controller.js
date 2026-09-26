@@ -1,4 +1,4 @@
-import { comparePlaylists, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../rules/library-rules.js';
+import { comparePlaylists, createDeduplicationPlan, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../rules/library-rules.js';
 import { createOperation, readOperations, recoverInterruptedOperations, writeOperations } from '../operations/journal.js';
 import { executePlaylistAddOperation, undoPlaylistAddOperation } from '../operations/spotify-executor.js';
 
@@ -22,7 +22,7 @@ const COPY = {
     conflict:'Liste işlemden sonra değişmiş. Başka değişiklikleri ezmemek için geri alma durduruldu.', noHistory:'Bu Spotify hesabı için henüz işlem kaydı yok.',
     nameDefault:'Tify Plus Mix', playlistSuffix:'Bölüm ', titleCompare:'Liste karşılaştırması', titleMerge:'Birleştirme önizlemesi', titleSplit:'Süreye göre bölme', titleOrder:'Yeni sıra önizlemesi',
     playlistCreateError:'Yeni Spotify listesi oluşturulamadı.', invalidDuration:'Hedef süre 10–600 dakika arasında olmalı.', writeError:'İşlem kaydı kaydedilemedi; Spotify’da değişiklik yapılmadı.',
-    emptyDuration:'Hedef süreye sığan kayıt yok.', unknownUndo:'Geri alma yanıtı kayboldu. Yeniden denemeden önce Spotify listesini kontrol et.', failedUndo:'Geri alma tamamlanmadı. Kalan kayıtlar işlem geçmişinde tutuluyor.', retry:'Başarısız eklemeleri yeniden dene', retryDone:'Başarısız kalan kayıtlar yeniden gönderildi.', interrupted:'Sekme işlem sırasında kapandı. Belirsiz adımlar tekrar gönderilmedi; Spotify’ı kontrol edin.', personalTitle:'Kişisel düzen ve tarifler', personalHelp:'Etiket ve notlar bu tarayıcıda, bağlı hesaba özel saklanır. Otomatik tür veya ruh hâli tahmini yapılmaz.', tagsLabel:'Seçili listelerin etiketleri (virgülle ayırın)', notesLabel:'Liste notu', recipeName:'Tarif adı', recipeAction:'Tarif işlemi', savePersonal:'Etiket ve notları kaydet', saveRecipe:'Tarifi kaydet', noSelection:'Önce bir veya daha fazla kaynak liste seçin.', saved:'Bu tarayıcıdaki hesaba özel düzen kaydedildi.', recipeSaved:'Tarif kaydedildi; çalıştırılınca Spotify verisi yeniden okunup yeni önizleme oluşturulur.', filterTags:'Etiket veya liste adıyla filtrele'
+    emptyDuration:'Hedef süreye sığan kayıt yok.', unknownUndo:'Geri alma yanıtı kayboldu. Yeniden denemeden önce Spotify listesini kontrol et.', failedUndo:'Geri alma tamamlanmadı. Kalan kayıtlar işlem geçmişinde tutuluyor.', retry:'Başarısız eklemeleri yeniden dene', retryDone:'Başarısız kalan kayıtlar yeniden gönderildi.', interrupted:'Sekme işlem sırasında kapandı. Belirsiz adımlar tekrar gönderilmedi; Spotify’ı kontrol edin.', personalTitle:'Kişisel düzen ve tarifler', personalHelp:'Etiket ve notlar bu tarayıcıda, bağlı hesaba özel saklanır. Otomatik tür veya ruh hâli tahmini yapılmaz.', tagsLabel:'Seçili listelerin etiketleri (virgülle ayırın)', notesLabel:'Liste notu', recipeName:'Tarif adı', recipeAction:'Tarif işlemi', savePersonal:'Etiket ve notları kaydet', saveRecipe:'Tarifi kaydet', noSelection:'Önce bir veya daha fazla kaynak liste seçin.', saved:'Bu tarayıcıdaki hesaba özel düzen kaydedildi.', recipeSaved:'Tarif kaydedildi; çalıştırılınca Spotify verisi yeniden okunup yeni önizleme oluşturulur.', filterTags:'Etiket veya liste adıyla filtrele', dedupeCopy:'Tekrarları yeni kopyada ayıkla', dedupeHelp:'Kaynak listeyi koru, hangi kopyanın kalacağını seç', duplicateKeep:'Tekrar varsa hangisi kalsın?', kept:'Kopyada tutulacak', removed:'Kaldırılacak tekrarlar', summaryDedupe:(kept, removed, unknown) => kept + ' parça kopyada tutulacak · ' + removed + ' tekrar çıkarılacak · ' + unknown + ' kimliksiz giriş dışarıda'
   },
   en: {
     kicker:'SMART ASSISTANT · RULE-BASED', title:'Compare and organize playlists', subtitle:'Choose rules, review the result, and approve before Spotify changes.', local:'No external AI · Spotify content is never sent to a model',
@@ -43,7 +43,7 @@ const COPY = {
     conflict:'The playlist changed after this operation. Undo stopped to protect later edits.', noHistory:'No operations recorded for this Spotify account yet.',
     nameDefault:'Tify Plus Mix', playlistSuffix:'Set ', titleCompare:'Playlist comparison', titleMerge:'Merge preview', titleSplit:'Duration split preview', titleOrder:'Reordered playlist preview',
     playlistCreateError:'Could not create a new Spotify playlist.', invalidDuration:'Target duration must be between 10 and 600 minutes.', writeError:'Could not save the operation record; Spotify was not changed.',
-    emptyDuration:'No tracks fit within the target duration.', unknownUndo:'Undo response was lost. Inspect the Spotify playlist before trying again.', failedUndo:'Undo is incomplete. Remaining entries are recorded in operation history.', retry:'Retry failed additions', retryDone:'Failed entries were submitted again.', interrupted:'The tab closed during an operation. Uncertain steps were not retried; check Spotify.', personalTitle:'Personal organization and recipes', personalHelp:'Tags and notes stay in this browser, scoped to the connected account. No genre or mood is guessed.', tagsLabel:'Tags for selected playlists (comma separated)', notesLabel:'Playlist note', recipeName:'Recipe name', recipeAction:'Recipe action', savePersonal:'Save tags and notes', saveRecipe:'Save recipe', noSelection:'Select one or more source playlists first.', saved:'Personal details saved for this account in this browser.', recipeSaved:'Recipe saved. Running it reads fresh Spotify data and prepares a new preview.', filterTags:'Filter by playlist name or tag'
+    emptyDuration:'No tracks fit within the target duration.', unknownUndo:'Undo response was lost. Inspect the Spotify playlist before trying again.', failedUndo:'Undo is incomplete. Remaining entries are recorded in operation history.', retry:'Retry failed additions', retryDone:'Failed entries were submitted again.', interrupted:'The tab closed during an operation. Uncertain steps were not retried; check Spotify.', personalTitle:'Personal organization and recipes', personalHelp:'Tags and notes stay in this browser, scoped to the connected account. No genre or mood is guessed.', tagsLabel:'Tags for selected playlists (comma separated)', notesLabel:'Playlist note', recipeName:'Recipe name', recipeAction:'Recipe action', savePersonal:'Save tags and notes', saveRecipe:'Save recipe', noSelection:'Select one or more source playlists first.', saved:'Personal details saved for this account in this browser.', recipeSaved:'Recipe saved. Running it reads fresh Spotify data and prepares a new preview.', filterTags:'Filter by playlist name or tag', dedupeCopy:'Remove repeats into a new copy', dedupeHelp:'Keep the source safe and choose which copy to keep', duplicateKeep:'Which duplicate should stay?', kept:'Kept in copy', removed:'Duplicate entries removed', summaryDedupe:(kept, removed, unknown) => kept + ' tracks kept in copy · ' + removed + ' repeats removed · ' + unknown + ' unverified entries excluded'
   }
 };
 
@@ -235,6 +235,25 @@ export function initializeLibraryWorkbench(dependencies) {
         },
         actions: supported.length ? [{ name, items: supported }] : [],
         sources, rules: { deduplicate, name, private: $('workbenchPrivate').checked }, canApply: supported.length > 0
+      });
+      return;
+    }
+    if (kind === 'dedupe') {
+      const keep = $('workbenchDuplicateKeep').value;
+      const result = createDeduplicationPlan(fresh[0].tracks, { keep });
+      const supported = result.kept.filter(item => /^spotify:track:[A-Za-z0-9]+$/.test(item.track.uri || '') && !item.track.isLocal);
+      const keptIndexes = new Set(supported.map(item => item.index));
+      const removed = result.removed.concat(result.kept.filter(item => !keptIndexes.has(item.index)).map(item => ({ ...item, reason: 'unsupported' })));
+      const name = (fresh[0].name + ' — ' + (getLanguage() === 'tr' ? 'Tekrarsız' : 'No Repeats')).slice(0, 100);
+      showPlan({
+        title: text('dedupeCopy'), summary: text('summaryDedupe')(supported.length, result.removed.length, result.unverifiable.length + result.kept.length - supported.length),
+        nextViews: {
+          kept: { label: text('kept'), rows: supported.map(item => ({ track: item.track, location: fresh[0].name })) },
+          removed: { label: text('removed'), rows: removed.map(item => ({ track: item.track, location: item.reason === 'duplicate' ? text('removed') + ' · ' + fresh[0].name : 'unsupported' })) },
+          unverified: { label: text('unverified'), rows: result.unverifiable.map(item => ({ track: item.track, location: fresh[0].name })) }
+        },
+        actions: supported.length ? [{ name, items: supported.map(item => ({ track: item.track, source: fresh[0] })) }] : [],
+        sources, rules: { sourcePlaylistId: fresh[0].id, keep, targetName: name, private: $('workbenchPrivate').checked }, canApply: supported.length > 0
       });
       return;
     }
@@ -480,8 +499,9 @@ export function initializeLibraryWorkbench(dependencies) {
     });
     const action = $('workbenchRecipeAction');
     if (action) action.innerHTML = getLanguage() === 'tr'
-      ? '<option value="merge">Birleştir</option><option value="compare">Karşılaştır</option><option value="split">Süreye göre böl</option><option value="order">Sanatçı aralığı</option>'
-      : '<option value="merge">Merge</option><option value="compare">Compare</option><option value="split">Split by duration</option><option value="order">Space artists</option>';
+      ? '<option value="merge">Birleştir</option><option value="compare">Karşılaştır</option><option value="dedupe">Tekrarları ayıkla</option><option value="split">Süreye göre böl</option><option value="order">Sanatçı aralığı</option>'
+      : '<option value="merge">Merge</option><option value="compare">Compare</option><option value="dedupe">Remove repeats</option><option value="split">Split by duration</option><option value="order">Space artists</option>';
+    $('workbenchDuplicateKeep').innerHTML = getLanguage() === 'tr' ? '<option value="first">İlk kayıt</option><option value="last">Son kayıt</option>' : '<option value="first">First occurrence</option><option value="last">Last occurrence</option>';
     renderSources();
     renderPersonal();
     if (plan) renderResultRows();
@@ -500,6 +520,7 @@ export function initializeLibraryWorkbench(dependencies) {
     sourceList.querySelectorAll('.workbench-source-option').forEach(option => { option.hidden = !option.textContent.toLocaleLowerCase(getLanguage()).includes(query); });
   });
   $('btnWorkbenchMerge').addEventListener('click', () => prepare('merge'));
+  $('btnWorkbenchDeduplicate').addEventListener('click', () => prepare('dedupe'));
   $('btnWorkbenchSplit').addEventListener('click', () => prepare('split'));
   $('btnWorkbenchOrder').addEventListener('click', () => prepare('order'));
   applyButton.addEventListener('click', applyPlan);
