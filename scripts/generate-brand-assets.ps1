@@ -1,4 +1,4 @@
-Add-Type -AssemblyName System.Drawing
+﻿Add-Type -AssemblyName System.Drawing
 
 $brandDirectory = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\public\brand'))
 [System.IO.Directory]::CreateDirectory($brandDirectory) | Out-Null
@@ -68,24 +68,9 @@ function Save-Mark {
 Save-Mark -Size 192 -FileName 'tify-plus-mark-192.png'
 Save-Mark -Size 512 -FileName 'tify-plus-mark-512.png'
 
-$social = [System.Drawing.Bitmap]::new(1200, 630)
-$g = [System.Drawing.Graphics]::FromImage($social)
-$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-$g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
-$background = [System.Drawing.Drawing2D.LinearGradientBrush]::new([System.Drawing.Rectangle]::new(0,0,1200,630), [System.Drawing.Color]::FromArgb(6,8,18), [System.Drawing.Color]::FromArgb(8,25,29), 18)
-$g.FillRectangle($background,0,0,1200,630)
-$glow = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(24,168,255,38)); $g.FillEllipse($glow,-180,-250,700,700)
-Draw-TifyPlusMark -Graphics $g -X 58 -Y 91 -Size 260
-
-$lime = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(168,255,38)); $white = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(244,248,241)); $muted = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(176,193,195)); $cyan = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(60,245,255))
-$titleFont = [System.Drawing.Font]::new('Segoe UI',68,[System.Drawing.FontStyle]::Bold); $subtitleFont = [System.Drawing.Font]::new('Segoe UI',27,[System.Drawing.FontStyle]::Regular); $labelFont = [System.Drawing.Font]::new('Segoe UI',18,[System.Drawing.FontStyle]::Bold); $smallFont = [System.Drawing.Font]::new('Segoe UI',17,[System.Drawing.FontStyle]::Regular)
-$g.DrawString('TIFY',$titleFont,$white,350,115); $tifyWidth = $g.MeasureString('TIFY',$titleFont).Width; $g.DrawString('PLUS',$titleFont,$lime,350+$tifyWidth-4,115)
-$g.DrawString('PERSONAL MUSIC LIBRARY',$subtitleFont,$cyan,355,225)
-$g.DrawString('İncele  •  Düzenle  •  Eşleştir  •  Spotify ile oynat',$smallFont,$muted,357,286)
-$chipBackground = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(22,168,255,38)); $chipBorder = [System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(92,168,255,38),2); $chipPath = New-RoundedRectanglePath -Rectangle ([System.Drawing.RectangleF]::new(355,354,318,54)) -Radius 18
-$g.FillPath($chipBackground,$chipPath); $g.DrawPath($chipBorder,$chipPath); $g.DrawString('KİŞİSEL  •  GİZLİLİK ODAKLI',$labelFont,$lime,377,366)
-$g.DrawString('tifyplus.com',$labelFont,$cyan,357,485); $g.DrawString('Bağımsız ürün • Spotify resmi ürünü değildir',$smallFont,$muted,357,528)
-$social.Save((Join-Path $brandDirectory 'tify-plus-social-1200x630.png'),[System.Drawing.Imaging.ImageFormat]::Png)
-$background.Dispose(); $glow.Dispose(); $lime.Dispose(); $white.Dispose(); $muted.Dispose(); $cyan.Dispose(); $titleFont.Dispose(); $subtitleFont.Dispose(); $labelFont.Dispose(); $smallFont.Dispose(); $chipBackground.Dispose(); $chipBorder.Dispose(); $chipPath.Dispose(); $g.Dispose(); $social.Dispose()
+python (Join-Path $PSScriptRoot 'generate-social-preview.py') tr
+if ($LASTEXITCODE -ne 0) { throw 'Turkish social preview generation failed.' }
+python (Join-Path $PSScriptRoot 'generate-social-preview.py') en
+if ($LASTEXITCODE -ne 0) { throw 'English social preview generation failed.' }
 
 Write-Output "Tify Plus brand assets generated in $brandDirectory"

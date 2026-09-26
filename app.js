@@ -43,17 +43,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeMeta) themeMeta.content = nextTheme === 'light' ? '#e8e6df' : '#060812';
     if (themeToggle) {
       const isLight = nextTheme === 'light';
+      const isTurkish = document.documentElement.lang === 'tr';
       themeToggle.setAttribute('aria-pressed', String(isLight));
-      themeToggle.setAttribute('aria-label', isLight ? 'Koyu temaya geç' : 'Açık temaya geç');
+      themeToggle.setAttribute('aria-label', isTurkish
+        ? (isLight ? 'Koyu temaya geç' : 'Açık temaya geç')
+        : (isLight ? 'Switch to dark theme' : 'Switch to light theme'));
+      themeToggle.title = isTurkish ? 'Görünüm temasını değiştir' : 'Change appearance';
       themeToggle.querySelector('.theme-toggle-icon').innerHTML = `<i class="fa-solid ${isLight ? 'fa-sun' : 'fa-moon'}"></i>`;
-      themeToggle.querySelector('.theme-toggle-label').textContent = isLight ? 'Açık' : 'Koyu';
+      themeToggle.querySelector('.theme-toggle-label').textContent = isTurkish
+        ? (isLight ? 'Açık' : 'Koyu')
+        : (isLight ? 'Light' : 'Dark');
     }
     if (!persist) return;
     sessionStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     if (allowsFunctionalStorage()) localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
   }
 
-  applyTheme(document.documentElement.dataset.theme || 'light', false);
+  applyTheme(document.documentElement.dataset.theme || 'dark', false);
   themeToggle?.addEventListener('click', () => {
     applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
   });
@@ -127,6 +133,81 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentLanguage = 'en';
   const t = (key) => (LOCALES[currentLanguage] && LOCALES[currentLanguage][key]) || LOCALES.en[key] || key;
+  const footerTurkishCopy = new Map();
+  const footerEnglishCopy = {
+    '#footerBrandTitle': 'Your music library.<br><em>Your call.</em>',
+    '.footer-brand-copy p': 'Tify Plus is an independent music library product by <strong>Locked Co Labs</strong>.',
+    '.footer-contact .footer-kicker': 'GET IN TOUCH',
+    '#footerContactTitle': 'Feedback, collaboration,<br>or just say hello.',
+    '.footer-mail-cta small': 'Email us',
+    '.footer-data-block h4': '<i class="fa-solid fa-fingerprint"></i> OUR DATA APPROACH',
+    '.footer-data-block li:nth-child(1)': '<strong>No extra account</strong><span>No server-side Tify Plus account is created.</span>',
+    '.footer-data-block li:nth-child(2)': '<strong>Local</strong><span>Profile, playlists, and settings may be stored in this browser.</span>',
+    '.footer-data-block li:nth-child(3)': '<strong>Session-based</strong><span>OAuth tokens are kept only in the open tab session.</span>',
+    '.footer-data-block li:nth-child(4)': '<strong>Ad-free</strong><span>No behavioral analytics or data sales.</span>',
+    '.footer-control-block h4': '<i class="fa-solid fa-sliders"></i> YOUR CONTROLS',
+    '#btnOpenPrivacyPolicyModal span': 'Privacy Center<small>Policy and regional rights</small>',
+    '#btnFooterExportData span': 'Export My Data<small>Download your local archive</small>',
+    '#btnFooterDeleteData span': 'Delete Local Data<small>Clear records on this device</small>',
+    '.footer-disclaimer-block h4': 'INDEPENDENT PRODUCT',
+    '.footer-disclaimer-block .trademark-note': 'Spotify® is a registered trademark of Spotify AB. Tify Plus is not endorsed or sponsored by Spotify and is not an official Spotify product.',
+    '.legal-footer-bottom span:nth-child(1)': '© 2026 Locked Co Labs. All rights reserved.',
+    '.legal-footer-bottom span:nth-child(2)': 'Product: Tify Plus'
+  };
+  const authEnglishCopy = {
+    '#authModalTitle': 'Connect your Spotify account',
+    '.auth-modal-title-wrap p': 'New here? Choose the recommended option. It takes about 10 seconds.',
+    '#btnUseDefault > span:nth-child(2)': '<strong>Quick connection</strong><small>Recommended for most people</small>',
+    '#btnUseDefault em': 'RECOMMENDED',
+    '#btnUseCustom > span:nth-child(2)': '<strong>My own Spotify app</strong><small>For developers and custom Client IDs</small>',
+    '.auth-simple-intro strong': 'All you need to do is sign in to Spotify.',
+    '.auth-simple-intro p': "Tify Plus sends you to Spotify's official consent screen. Your password is never seen or stored by this app.",
+    '.auth-steps li:nth-child(1) div': "<strong>Choose Connect</strong><small>Spotify's secure sign-in page opens.</small>",
+    '.auth-steps li:nth-child(2) div': '<strong>Approve on Spotify</strong><small>Your profile and playlists become available.</small>',
+    '.auth-steps li:nth-child(3) div': '<strong>Return to your studio</strong><small>Your library loads automatically.</small>',
+    '.auth-premium-note p': '<strong>A free Spotify account can connect.</strong> Full in-app song playback requires Spotify Premium.',
+    '#btnStartOAuth .auth-primary-label': 'Connect securely with Spotify',
+    '#defaultModePanel > .auth-privacy-line': 'You can disconnect at any time from the Account menu.',
+    '.auth-advanced-details summary': 'I have a temporary access token',
+    '.auth-field label[for="accessTokenInput"]': 'Access Token <small>For technical users only</small>',
+    '.auth-developer-warning strong': 'This option is for advanced users.',
+    '.auth-developer-warning p': 'If you are unsure, use Quick connection. Never enter a Client Secret here.',
+    '.auth-setup-list li:nth-child(1) div > strong': 'Open the Spotify Developer Dashboard',
+    '.auth-setup-list li:nth-child(1) div > p': 'Sign in with Spotify and create a new app.',
+    '.auth-setup-list li:nth-child(1) div > a': 'Open Developer Dashboard <span aria-hidden="true">↗</span>',
+    '.auth-setup-list li:nth-child(2) strong': 'Add this redirect URI to your app',
+    '.auth-setup-list li:nth-child(2) p': 'Paste this exact URL into Spotify Dashboard → Settings → Redirect URIs.',
+    '#btnCopyRedirectUri span': 'Copy',
+    '.auth-setup-list li:nth-child(3) strong': 'Paste your Client ID',
+    '.auth-setup-list li:nth-child(3) p': 'Use only the public Client ID from your app in the dashboard.',
+    '.auth-field label[for="clientIdInput"]': 'Spotify Client ID <small>Not Client Secret</small>',
+    '#btnSaveCustomAuth .auth-primary-label': 'Save Client ID and connect Spotify',
+    '#customModePanel > .auth-privacy-line': 'Your Client ID stays in this browser only if you allow functional storage.'
+  };
+
+  function applyFooterLanguage(english) {
+    Object.entries({ ...footerEnglishCopy, ...authEnglishCopy }).forEach(([selector, translation]) => {
+      const node = document.querySelector(selector);
+      if (!node) return;
+      if (!footerTurkishCopy.has(selector)) footerTurkishCopy.set(selector, node.innerHTML);
+      node.innerHTML = english ? translation : footerTurkishCopy.get(selector);
+    });
+    const logo = document.querySelector('.footer-logo-lockup');
+    if (logo) logo.setAttribute('aria-label', english ? 'Open the Locked Co Labs website' : 'Locked Co Labs web sitesini aç');
+    const links = document.querySelector('.legal-links');
+    if (links) links.setAttribute('aria-label', english ? 'Legal links and data controls' : 'Yasal bağlantılar ve veri kontrolleri');
+    const closeAuth = document.getElementById('btnCloseAuthModal');
+    if (closeAuth) {
+      closeAuth.title = english ? 'Close' : 'Kapat';
+      closeAuth.setAttribute('aria-label', english ? 'Close Spotify connection dialog' : 'Spotify bağlantı penceresini kapat');
+    }
+    const authChoices = document.querySelector('.auth-choice-grid');
+    if (authChoices) authChoices.setAttribute('aria-label', english ? 'Connection method' : 'Bağlantı yöntemi');
+    const authSteps = document.querySelector('.auth-steps');
+    if (authSteps) authSteps.setAttribute('aria-label', english ? 'Quick connection steps' : 'Hızlı bağlantı adımları');
+    const regionBadge = document.getElementById('privacyRegionBadge');
+    if (regionBadge) regionBadge.textContent = `${english ? 'Region' : 'Bölge'}: ${regionBadge.textContent.replace(/^(Region|Bölge):\s*/, '')}`;
+  }
 
   function detectBrowserLocale() {
     const raw = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
@@ -149,8 +230,27 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLanguage = LOCALES[language] ? language : 'en';
     document.documentElement.lang = currentLanguage;
     document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+    applyTheme(document.documentElement.dataset.theme, false);
+    const englishIntroduction = currentLanguage !== 'tr';
+    const metadata = {
+      'meta[name="description"]': englishIntroduction
+        ? 'Explore your Spotify playlists, find duplicates, compare connections, and organize your personal music library with Tify Plus.'
+        : 'Tify Plus ile Spotify çalma listelerinizi inceleyin, tekrarları bulun, kişisel kütüphanenizi düzenleyin ve Spotify üzerinden oynatın.',
+      'meta[property="og:description"]': englishIntroduction
+        ? 'Explore, compare, and organize your Spotify playlists in one personal workspace.'
+        : 'Spotify çalma listelerini analiz et, akıllı eşleşmeler bul, toplu düzenle ve Spotify üzerinden oynat.',
+      'meta[name="twitter:description"]': englishIntroduction
+        ? 'Your Spotify playlists, in a new light. Explore, compare, and stay in control.'
+        : 'Spotify çalma listelerini analiz et, eşleştir, düzenle ve Spotify üzerinden oynat.',
+      'meta[property="og:image"]': `https://tifyplus.com/brand/tify-plus-social-${englishIntroduction ? 'en' : 'tr'}-1200x630.png`,
+      'meta[name="twitter:image"]': `https://tifyplus.com/brand/tify-plus-social-${englishIntroduction ? 'en' : 'tr'}-1200x630.png`,
+      'meta[property="og:locale"]': englishIntroduction ? 'en_US' : 'tr_TR'
+    };
+    document.title = englishIntroduction ? 'Tify Plus | Your Personal Music Studio' : 'Tify Plus — Kişisel Spotify Kütüphanesi';
+    Object.entries(metadata).forEach(([selector, content]) => document.querySelector(selector)?.setAttribute('content', content));
     if (persist && allowsFunctionalStorage()) localStorage.setItem('tify_ui_language', currentLanguage);
     document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+    applyFooterLanguage(englishIntroduction);
 
     const setText = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = value; };
     setText('#btnTryDemo span', currentLanguage === 'tr' ? 'Nasıl çalışır' : 'How it works');
@@ -186,9 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!selector) return;
     selector.innerHTML = Object.entries(LOCALES).map(([code, locale]) => `<option value="${code}">${locale.name}</option>`).join('');
     const saved = allowsFunctionalStorage() ? localStorage.getItem('tify_ui_language') : null;
-    applyLanguage(saved && LOCALES[saved] ? saved : detectBrowserLocale(), false);
+    const requested = new URLSearchParams(window.location.search).get('lang');
+    applyLanguage(requested && LOCALES[requested] ? requested : saved && LOCALES[saved] ? saved : detectBrowserLocale(), false);
     selector.addEventListener('change', () => {
       applyLanguage(selector.value, true);
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('lang', selector.value);
+      window.history.replaceState(window.history.state, '', nextUrl);
       renderPlaylistsCatalog();
       renderFastRecommendations();
       setAppSessionState(state.isLoggedIn);
@@ -291,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const landingHeroSection = document.getElementById('landingHeroSection');
   const landingView = document.getElementById('landingView');
+  const landingViewEn = document.getElementById('landingViewEn');
   const dashboardView = document.getElementById('dashboardView');
   const dashDisplayName = document.getElementById('dashDisplayName');
 
@@ -310,8 +415,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnHeroLogin = document.getElementById('btnHeroLogin');
   const btnHeroDemo = document.getElementById('btnHeroDemo');
   const btnLandingLogin = document.getElementById('btnLandingLogin');
+  const btnLandingLoginEn = document.getElementById('btnLandingLoginEn');
   const btnLandingPreview = document.getElementById('btnLandingPreview');
+  const btnLandingPreviewEn = document.getElementById('btnLandingPreviewEn');
   const landingPlaylistUrlInput = document.getElementById('landingPlaylistUrlInput');
+  const landingPlaylistUrlInputEn = document.getElementById('landingPlaylistUrlInputEn');
   const btnLogout = document.getElementById('btnLogout');
 
   const authModal = document.getElementById('authModal');
@@ -1169,13 +1277,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function setAppSessionState(isLoggedIn) {
     state.isLoggedIn = isLoggedIn;
     document.body.dataset.session = isLoggedIn ? 'dashboard' : 'landing';
+    const englishIntro = currentLanguage !== 'tr';
+    document.body.dataset.introLocale = englishIntro ? 'en' : 'tr';
     const footerStudioLink = document.getElementById('footerStudioLink');
     if (footerStudioLink) {
-      footerStudioLink.href = isLoggedIn ? '#studio' : '#landingHeroSection';
+      footerStudioLink.href = isLoggedIn ? '#studio' : englishIntro ? '#landingHeroSectionEn' : '#landingHeroSection';
       const label = footerStudioLink.querySelector('span');
       if (label) label.innerHTML = isLoggedIn
-        ? 'Web Player<small>Stüdyoya geri dönün</small>'
-        : 'Çalışma Alanı<small>Sayfanın başına dönün</small>';
+        ? englishIntro ? 'Web Player<small>Back to the studio</small>' : 'Web Player<small>Stüdyoya geri dönün</small>'
+        : englishIntro ? 'Workspace<small>Back to the top</small>' : 'Çalışma Alanı<small>Sayfanın başına dönün</small>';
     }
     updatePlaybackLockUi();
 
@@ -1205,6 +1315,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cockpitLoggedInActions) cockpitLoggedInActions.classList.remove('hidden');
 
       if (landingView) landingView.classList.add('hidden');
+      if (landingViewEn) landingViewEn.classList.add('hidden');
       if (dashboardView) dashboardView.classList.remove('hidden');
 
       if (state.accessToken) {
@@ -1253,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHeaderUserInfo();
     } else {
       if (appModeBadge) {
-        appModeBadge.textContent = "Tanıtım / Giriş Yapılmadı";
+        appModeBadge.textContent = englishIntro ? 'Preview / Not signed in' : 'Tanıtım / Giriş Yapılmadı';
         appModeBadge.style.background = "rgba(0, 242, 254, 0.15)";
         appModeBadge.style.color = "var(--cyan-accent)";
       }
@@ -1264,7 +1375,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cockpitLoggedOutActions) cockpitLoggedOutActions.classList.remove('hidden');
       if (cockpitLoggedInActions) cockpitLoggedInActions.classList.add('hidden');
 
-      if (landingView) landingView.classList.remove('hidden');
+      if (landingView) landingView.classList.toggle('hidden', englishIntro);
+      if (landingViewEn) landingViewEn.classList.toggle('hidden', !englishIntro);
       if (dashboardView) dashboardView.classList.add('hidden');
 
       // Public landing never exposes the developer's sample playlists. A
@@ -2753,9 +2865,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnConnectSpotify) btnConnectSpotify.addEventListener('click', triggerLoginModal);
   if (btnHeroLogin) btnHeroLogin.addEventListener('click', triggerLoginModal);
   if (btnLandingLogin) btnLandingLogin.addEventListener('click', triggerLoginModal);
+  if (btnLandingLoginEn) btnLandingLoginEn.addEventListener('click', triggerLoginModal);
   if (btnCloseAuthModal) btnCloseAuthModal.addEventListener('click', () => authModal.classList.add('hidden'));
 
-  if (btnTryDemo) btnTryDemo.addEventListener('click', () => document.getElementById('howItWorks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  if (btnTryDemo) btnTryDemo.addEventListener('click', () => document.getElementById(currentLanguage === 'tr' ? 'howItWorks' : 'howItWorksEn')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   if (btnHeroDemo) btnHeroDemo.addEventListener('click', () => setAppSessionState(false));
   if (btnLandingPreview) {
     btnLandingPreview.addEventListener('click', () => {
@@ -2771,6 +2884,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   landingPlaylistUrlInput?.addEventListener('keydown', event => {
     if (event.key === 'Enter') btnLandingPreview?.click();
+  });
+  btnLandingPreviewEn?.addEventListener('click', () => {
+    const value = landingPlaylistUrlInputEn?.value.trim() || '';
+    if (!value) {
+      showToast('Paste a Spotify playlist link first.', 'warning');
+      landingPlaylistUrlInputEn?.focus();
+      return;
+    }
+    playlistUrlInput.value = value;
+    btnAnalyze?.click();
+  });
+  landingPlaylistUrlInputEn?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') btnLandingPreviewEn?.click();
   });
 
   if (btnLogout) {
@@ -4903,7 +5029,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.privacy-tab').forEach(button => button.addEventListener('click', () => activatePrivacyTab(button.dataset.privacyTab)));
 
   const privacyRegion = getPrivacyRegion();
-  if (privacyRegionBadge) privacyRegionBadge.textContent = `Bölge: ${privacyRegion.label}`;
+  if (privacyRegionBadge) privacyRegionBadge.textContent = `${document.documentElement.lang === 'tr' ? 'Bölge' : 'Region'}: ${privacyRegion.label}`;
   if (navigator.globalPrivacyControl === true) localStorage.setItem('tify_external_metadata_disabled', 'true');
   updateStorageConsentUi();
   if (privacyNotice && storageConsent === 'unset') privacyNotice.classList.remove('hidden');

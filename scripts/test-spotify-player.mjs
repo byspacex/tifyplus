@@ -199,7 +199,7 @@ assert.match(html, /id="playerVolumeValue"/, 'Ses kontrolünde canlı yüzde gö
 assert.match(styles, /html\[data-theme="light"\][\s\S]*--bg:\s*#e8e6df/, 'Açık tema saf beyaz yerine düşük parlamalı sıcak zemin kullanmalı');
 assert.match(styles, /\.floating-web-player\s*\{[\s\S]*clip-path:\s*polygon/, 'Oynatıcı barı yuvarlak kapsül yerine kesik köşeli kasa kullanmalı');
 assert.match(themeInit, /document\.documentElement\.dataset\.theme\s*=\s*theme/, 'Tema ilk boyamadan önce belge köküne uygulanmalı');
-assert.match(themeInit, /\? savedTheme : 'light'/, 'İlk ziyaret düşük parlamalı açık tema ile başlamalı');
+assert.match(themeInit, /\? savedTheme : 'dark'/, 'İlk ziyaret güçlü koyu marka teması ile başlamalı');
 assert.match(styles, /@keyframes polarStarSpin/, 'Üst artı simgesi kutup yıldızı gibi dönmeli');
 assert.match(styles, /\.brand-title \.brand-plus::before[\s\S]*polarStarTwinkle/, 'Üst artı simgesinde yıldız ışını ve parıltı animasyonu bulunmalı');
 assert.match(styles, /--f-display:\s*'Noto Sans Variable'[\s\S]*'Noto Sans'/, 'Başlık font zinciri Türkçe ve farklı alfabelerde güvenli olmalı');

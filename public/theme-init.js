@@ -3,7 +3,7 @@
   const persistentTheme = consent === 'functional' ? localStorage.getItem('tify_ui_theme') : null;
   const sessionTheme = sessionStorage.getItem('tify_ui_theme');
   const savedTheme = persistentTheme || sessionTheme;
-  const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'light';
+  const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
 
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;

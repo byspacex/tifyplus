@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#e8e6df">
+  <meta name="theme-color" content="#060812">
   <meta name="description" content="Tify Plus ile Spotify çalma listelerinizi inceleyin, tekrarları bulun, kişisel kütüphanenizi düzenleyin ve Spotify üzerinden oynatın.">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -29,7 +29,7 @@
   <meta property="og:title" content="Tify Plus — Kişisel Spotify Kütüphanesi">
   <meta property="og:description" content="Spotify çalma listelerini analiz et, akıllı eşleşmeler bul, toplu düzenle ve Spotify üzerinden oynat.">
   <meta property="og:url" content="https://tifyplus.com/">
-  <meta property="og:image" content="https://tifyplus.com/brand/tify-plus-social-1200x630.png">
+  <meta property="og:image" content="https://tifyplus.com/brand/tify-plus-social-tr-1200x630.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Tify Plus marka simgesi ve kişisel Spotify kütüphanesi mesajı">
@@ -37,7 +37,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Tify Plus — Kişisel Spotify Kütüphanesi">
   <meta name="twitter:description" content="Spotify çalma listelerini analiz et, eşleştir, düzenle ve Spotify üzerinden oynat.">
-  <meta name="twitter:image" content="https://tifyplus.com/brand/tify-plus-social-1200x630.png">
+  <meta name="twitter:image" content="https://tifyplus.com/brand/tify-plus-social-tr-1200x630.png">
   <meta name="twitter:image:alt" content="Tify Plus kişisel müzik kütüphanesi">
 
   <script src="/spotify-sdk-bootstrap.js"></script>
@@ -98,7 +98,7 @@
           "Spotify Web Playback üzerinden oynatma",
           "Tarayıcı ağırlıklı gizlilik kontrolleri"
         ],
-        "image": "https://tifyplus.com/brand/tify-plus-social-1200x630.png",
+        "image": "https://tifyplus.com/brand/tify-plus-social-tr-1200x630.png",
         "publisher": { "@id": "https://tifyplus.com/#organization" }
       }
     ]
@@ -307,7 +307,7 @@
 
           <button id="btnStartOAuth" class="auth-primary-button" type="button">
             <span class="spotify-button-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M6.8 9.2c3.7-1 7.8-.7 10.7 1M7.5 12.3c3.1-.8 6.5-.5 9.1.8M8.2 15.1c2.5-.6 5.2-.4 7.4.7"/></svg></span>
-            Spotify ile güvenli şekilde bağlan
+            <span class="auth-primary-label">Spotify ile güvenli şekilde bağlan</span>
             <svg class="auth-button-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
           </button>
           <p class="auth-privacy-line">Bağlantıyı istediğiniz zaman Hesap menüsünden kaldırabilirsiniz.</p>
@@ -353,7 +353,7 @@
           </ol>
 
           <button id="btnSaveCustomAuth" class="auth-primary-button" type="button">
-            Client ID'yi kaydet ve Spotify'a bağlan
+            <span class="auth-primary-label">Client ID'yi kaydet ve Spotify'a bağlan</span>
             <svg class="auth-button-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
           </button>
           <p class="auth-privacy-line">Client ID, işlevsel depolamaya izin verdiyseniz yalnızca bu tarayıcıda saklanır.</p>
@@ -421,9 +421,9 @@
     <main id="landingView" class="landing-view">
       <section class="landing-hero" id="landingHeroSection" aria-labelledby="landingTitle">
         <div class="landing-copy">
-          <span class="landing-kicker">TIFY PLUS / KİŞİSEL MÜZİK KÜTÜPHANESİ</span>
-          <h1 id="landingTitle">Dağınık listelerden<br><em>kontrollü bir arşive.</em></h1>
-          <p>Spotify kütüphanenizi yalnızca görüntülemeyin. Kendi çalma listelerinizi inceleyin, tekrarları bulun, listeleriniz arasındaki ilişkileri görün ve izin verdiğiniz değişiklikleri tek çalışma alanından yönetin.</p>
+          <span class="landing-kicker">TIFY PLUS / KİŞİSEL MÜZİK STÜDYOSU</span>
+          <h1 id="landingTitle">Listelerini<br><em>yeniden keşfet.</em></h1>
+          <p>Tekrar eden parçaları bul, listelerin arasındaki bağı gör ve müzik arşivini kendi kurallarınla yönet. Hepsi tek çalışma alanında.</p>
           <div class="landing-provider-label"><span>SPOTIFY KÜTÜPHANENİZİ BAĞLAYIN</span><i></i></div>
           <div class="landing-provider-rail" aria-label="Müzik servisi bağlantıları">
             <button id="btnLandingLogin" class="provider-connect provider-spotify" type="button">
@@ -443,15 +443,13 @@
         </div>
 
         <div class="landing-console" aria-label="Örnek çalışma alanı görseli; gerçek hesap verisi içermez">
-          <div class="console-topline"><span>TIFY PLUS / ÇALIŞMA ALANI</span><b>ÖRNEK GÖRÜNÜM</b></div>
-          <div class="console-orbit" aria-hidden="true">
-            <span class="orbit-ring orbit-ring-a"></span><span class="orbit-ring orbit-ring-b"></span>
-            <div class="console-core"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Listeleriniz<br>bir arada</span></div>
-          </div>
+          <div class="console-topline"><span><i class="fa-solid fa-wave-square" aria-hidden="true"></i> TIFY PLUS / KÜTÜPHANE HARİTASI</span><b>ÖRNEK GÖRÜNÜM</b></div>
+          <div class="console-editorial"><span>ARŞİV / 001</span><strong>Her listenin bir ritmi var.</strong><p>Tify Plus, o ritmin nerede tekrar ettiğini ve hangi listelerle buluştuğunu gösterir.</p></div>
           <div class="console-sample-list" aria-hidden="true">
             <div><span class="console-sample-cover"><i class="fa-solid fa-wave-square"></i></span><span><strong>Çalma listesi A</strong><small>Kişisel liste</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
             <div><span class="console-sample-cover"><i class="fa-solid fa-compact-disc"></i></span><span><strong>Çalma listesi B</strong><small>Kişisel liste</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
           </div>
+          <div class="console-connection" aria-hidden="true"><span></span><i class="fa-solid fa-code-compare"></i><strong>Ortak parçalar görünür</strong><span></span></div>
           <div class="console-readout">
             <div><span>01 / İNCELE</span><strong>Parçalar</strong></div>
             <div><span>02 / KARŞILAŞTIR</span><strong>Listeler</strong></div>
@@ -461,7 +459,9 @@
       </section>
 
       <section class="landing-capability-rail" aria-label="Tify Plus yetenekleri">
-        <span>TEKRAR TESPİTİ</span><i></i><span>KÜTÜPHANE HARİTASI</span><i></i><span>TOPLU DÜZENLEME</span><i></i><span>SPOTIFY OYNATMA</span><i></i><span>GİZLİLİK KONTROLÜ</span>
+        <div><b>01</b><strong>Tekrarları bul.</strong><span>Aynı parçayı listeler arasında kolayca gör.</span></div>
+        <div><b>02</b><strong>Bağları keşfet.</strong><span>Listelerinin nerede kesiştiğini incele.</span></div>
+        <div><b>03</b><strong>Kontrolü al.</strong><span>Düzenlemeleri sen başlat, sen onayla.</span></div>
       </section>
 
       <section class="landing-process" id="howItWorks" aria-labelledby="howItWorksTitle">
@@ -507,6 +507,34 @@
           <details><summary>Spotify listelerimde izinsiz değişiklik yapılır mı?</summary><p>Hayır. Düzenleme adımlarını siz başlatırsınız. Tify Plus, Spotify tarafından geliştirilmiş veya desteklenmiş bir ürün değildir.</p></details>
         </div>
       </section>
+    </main>
+
+    <main id="landingViewEn" class="landing-view landing-view-en hidden" lang="en">
+      <section class="landing-hero" id="landingHeroSectionEn" aria-labelledby="landingTitleEn">
+        <div class="landing-copy">
+          <span class="landing-kicker">TIFY PLUS / YOUR PERSONAL MUSIC STUDIO</span>
+          <h1 id="landingTitleEn">Rediscover your<br><em>playlists.</em></h1>
+          <p>Find repeated tracks, see how your playlists connect, and manage your music library on your own terms. All in one workspace.</p>
+          <div class="landing-provider-label"><span>CONNECT YOUR SPOTIFY LIBRARY</span><i></i></div>
+          <div class="landing-provider-rail">
+            <button id="btnLandingLoginEn" class="provider-connect provider-spotify" type="button"><i class="fa-brands fa-spotify" aria-hidden="true"></i><span><strong>Continue with Spotify</strong><small>Connect through Spotify's official consent screen</small></span><i class="fa-solid fa-arrow-right-long provider-arrow" aria-hidden="true"></i></button>
+          </div>
+          <div class="landing-actions"><a class="landing-text-link" href="#howItWorksEn">See how it works <i class="fa-solid fa-arrow-down-long" aria-hidden="true"></i></a><a class="landing-text-link" href="#landingPreviewEn">Preview a public playlist <i class="fa-solid fa-arrow-right-long" aria-hidden="true"></i></a></div>
+          <div class="landing-trust-line"><span><i class="fa-solid fa-user-lock" aria-hidden="true"></i> Private to your session</span><span><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> No ad tracking</span><span><i class="fa-solid fa-shield" aria-hidden="true"></i> Changes are yours to approve</span></div>
+        </div>
+        <div class="landing-console" aria-label="Sample workspace illustration; contains no real account data">
+          <div class="console-topline"><span><i class="fa-solid fa-wave-square" aria-hidden="true"></i> TIFY PLUS / LIBRARY MAP</span><b>SAMPLE VIEW</b></div>
+          <div class="console-editorial"><span>LIBRARY / 001</span><strong>Every playlist has a pulse.</strong><p>See where your tracks repeat and where your playlists meet.</p></div>
+          <div class="console-sample-list" aria-hidden="true"><div><span class="console-sample-cover"><i class="fa-solid fa-wave-square"></i></span><span><strong>Playlist A</strong><small>Your library</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div><div><span class="console-sample-cover"><i class="fa-solid fa-compact-disc"></i></span><span><strong>Playlist B</strong><small>Your library</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div></div>
+          <div class="console-connection" aria-hidden="true"><span></span><i class="fa-solid fa-code-compare"></i><strong>Shared tracks, revealed</strong><span></span></div>
+          <div class="console-readout"><div><span>01 / EXPLORE</span><strong>Tracks</strong></div><div><span>02 / COMPARE</span><strong>Playlists</strong></div><div><span>03 / MANAGE</span><strong>Changes</strong></div></div>
+        </div>
+      </section>
+      <section class="landing-capability-rail" aria-label="Tify Plus capabilities"><div><b>01</b><strong>Find duplicates.</strong><span>Spot repeated tracks across your library.</span></div><div><b>02</b><strong>See connections.</strong><span>Explore where playlists overlap.</span></div><div><b>03</b><strong>Stay in control.</strong><span>You start and approve every change.</span></div></section>
+      <section class="landing-process" id="howItWorksEn" aria-labelledby="howItWorksTitleEn"><div class="landing-section-intro"><span>A PERSONAL WORKSPACE IN THREE STEPS</span><h2 id="howItWorksTitleEn">Your library comes into focus.</h2><p>The dashboard is built from the playlists you own or collaborate on through the Spotify account you connect.</p></div><ol class="landing-steps"><li><b>01</b><div><h3>Connect Spotify</h3><p>Review permissions on Spotify's official screen. Tify Plus never sees or stores your password.</p></div></li><li><b>02</b><div><h3>Open your workspace</h3><p>Your playlists and tools load for this browser session.</p></div></li><li><b>03</b><div><h3>Explore and organize</h3><p>Review duplicates and playlist relationships, then choose what to change.</p></div></li></ol></section>
+      <section class="landing-boundaries" aria-labelledby="boundaryTitleEn"><div class="boundary-copy"><span>WHAT YOU CAN EXPLORE</span><h2 id="boundaryTitleEn">Built around your library.</h2><p>Tify Plus works with the Spotify data your account can access. Public playlists from other accounts open in an official Spotify preview.</p></div><div class="boundary-lines"><div><i class="fa-solid fa-check" aria-hidden="true"></i><strong>Your playlists</strong><span>Track details, duplicate checks, and editing tools</span></div><div><i class="fa-brands fa-spotify" aria-hidden="true"></i><strong>Public external playlists</strong><span>Verified details and Spotify's official preview</span></div><div><i class="fa-solid fa-ban" aria-hidden="true"></i><strong>Other people's profiles</strong><span>Outside the scope of this personal workspace</span></div></div></section>
+      <section class="landing-preview" id="landingPreviewEn" aria-labelledby="previewTitleEn"><div><span>NO SIGN-IN NEEDED</span><h2 id="previewTitleEn">Preview a public playlist.</h2><p>This link stays separate from your personal library and recommendations.</p></div><div class="landing-preview-form"><i class="fa-brands fa-spotify" aria-hidden="true"></i><input type="url" id="landingPlaylistUrlInputEn" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Spotify playlist URL" placeholder="open.spotify.com/playlist/..."><button id="btnLandingPreviewEn" class="pill join" type="button">Preview on Spotify</button></div></section>
+      <section class="landing-faq" id="landingFaqEn" aria-labelledby="landingFaqTitleEn"><div class="landing-faq-intro"><span>GOOD TO KNOW</span><h2 id="landingFaqTitleEn">Before you connect.</h2><p>Clear answers about access, playback, and privacy.</p></div><div class="landing-faq-list"><details><summary>Do I need a Spotify account?</summary><p>Yes, to analyze and edit your library. You can preview a public playlist without signing in.</p></details><details><summary>Is Tify Plus free?</summary><p>Yes. Full in-browser playback may require Spotify Premium.</p></details><details><summary>Where is my data stored?</summary><p>Spotify session tokens stay in this tab's session storage. Preferences and caches are saved in this browser only if you allow functional storage.</p></details><details><summary>Will my playlists change automatically?</summary><p>No. You start every editing action. Tify Plus is independent and is not made or endorsed by Spotify.</p></details></div></section>
     </main>
 
     <main id="dashboardView" class="dashboard-view hidden">

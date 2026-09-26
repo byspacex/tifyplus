@@ -1,5 +1,7 @@
 # Tify Plus
 
+[English introduction](README.en.md) · [Türkçe site](https://tifyplus.com/?lang=tr) · [Global site](https://tifyplus.com/?lang=en)
+
 [![Canlı site](https://img.shields.io/badge/Canlı-tifyplus.com-78b900?style=for-the-badge)](https://tifyplus.com/)
 [![MIT Lisansı](https://img.shields.io/badge/Lisans-MIT-008e9a?style=for-the-badge)](LICENSE)
 [![Spotify Web API](https://img.shields.io/badge/Spotify-Web_API-1DB954?style=for-the-badge&logo=spotify&logoColor=white)](https://developer.spotify.com/documentation/web-api)
@@ -8,7 +10,7 @@
 
 **Canlı uygulama:** [https://tifyplus.com/](https://tifyplus.com/)
 
-![Tify Plus sosyal önizleme](public/brand/tify-plus-social-1200x630.png)
+![Tify Plus Türkçe tanıtım görseli](public/brand/tify-plus-social-tr-1200x630.png)
 
 ## Ne işe yarar?
 
