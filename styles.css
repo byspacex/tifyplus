@@ -4270,6 +4270,12 @@ html[data-theme="light"] .landing-capability-rail span { color: var(--intro-mute
   width: 100%; padding: clamp(28px, 4vw, 58px);
   background: #0c1819; box-shadow: 0 30px 70px rgba(12,41,30,.14);
 }
+html[data-theme="light"] .landing-view-en .provider-spotify { background: #14312a; border-color: #14312a; }
+html[data-theme="light"] .landing-view-en .landing-console { background: #0c1819; box-shadow: 0 30px 70px rgba(12,41,30,.14); }
+html[data-theme="light"] .landing-view-en .console-sample-list > div { background: rgba(255,255,255,.035); }
+html[data-theme="light"] .landing-view-en .console-readout div { background: rgba(168,255,38,.055); }
+html[data-theme="light"] .landing-view-en .console-readout strong { color: #f0f6f1; }
+html[data-theme="light"] .landing-view-en .console-topline { color: #9ba9b5; }
 .landing-view-en .console-topline { grid-column: 1 / -1; }
 .landing-view-en .console-editorial { grid-column: 1; grid-row: 2 / 4; padding: 46px 0 0; }
 .landing-view-en .console-editorial strong { font-size: clamp(40px, 4vw, 62px); }
