@@ -20,7 +20,7 @@ export function comparePlaylists(playlists) {
   records.forEach(record => (new Set(record.occurrences.map(item => item.playlistIndex)).size > 1 ? common : unique).push(record));
   return {
     totalEntries: playlists.reduce((sum, playlist) => sum + (playlist.tracks || []).length, 0),
-    common, unique, unverifiable,
+    records: [...records.values()], common, unique, unverifiable,
     byPlaylist: playlists.map((playlist, playlistIndex) => ({
       playlist, playlistIndex,
       onlyHere: unique.filter(record => record.occurrences[0].playlistIndex === playlistIndex),

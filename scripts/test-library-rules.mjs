@@ -10,6 +10,7 @@ const b = { id: 'b', name: 'B', tracks: [track('y'), track('z')] };
 assert.equal(getTrackIdentity({ id: 'fake' }), null, 'non-Spotify IDs are not treated as cross-playlist matches');
 const comparison = comparePlaylists([a, b]);
 assert.deepEqual(comparison.common.map(item => item.identity), ['spotify:track:y']);
+assert.equal(comparison.records.length, 3, 'comparison exposes every distinct Spotify recording');
 assert.deepEqual(comparison.unique.map(item => item.identity), ['spotify:track:x', 'spotify:track:z']);
 assert.equal(comparison.totalEntries, 5);
 const merged = createMergePlan([a, b]);

@@ -5,16 +5,16 @@ import { executePlaylistAddOperation, undoPlaylistAddOperation } from '../operat
 const COPY = {
   tr: {
     kicker:'AKILLI ASİSTAN · KURAL TABANLI', title:'Listeleri karşılaştır ve düzenle', subtitle:'Kuralları seç, sonucu incele; Spotify listen değişmeden önce sen onayla.', local:'Harici AI yok · Spotify içeriği modele gönderilmez',
-    sources:'Kaynak listeleri', sourcesHelp:'Karşılaştırmak için en az iki liste, diğer işlemler için bir liste seç.', actions:'Bir işlem seç', actionsHelp:'Önce sonuç hazırlanır. Spotify’a yalnızca onayladığında yazılır.',
+    sources:'Kaynak listeleri', sourcesHelp:'Karşılaştırmak için en az iki liste, diğer işlemler için bir liste seç.', actions:'Bir işlem seç', actionsHelp:'Önce sonuç hazırlanır. Spotify’a yalnızca onayladığında yazılır.', allDistinct:'Tüm benzersiz kayıtlar',
     compare:'Karşılaştır', compareHelp:'Ortakları ve listeye özgü parçaları gör', merge:'Yeni listede birleştir', mergeHelp:'Kaynakları koru, sıralarını takip et', split:'Süreye göre böl', splitHelp:'Bir listeyi hedef süreli parçalara ayır',
     order:'Sanatçı aralığı kur', orderHelp:'Aynı sanatçının art arda gelmesini azalt', mergeName:'Yeni listenin adı', targetMinutes:'Bölüm başına hedef dakika', pinnedFirst:'Sıralamada sabitlenecek ilk parça sayısı',
     dedupe:'Birleştirirken aynı Spotify kaydını bir kez ekle', private:'Yeni listeyi gizli oluştur', preview:'ÖNİZLEME', view:'Görünüm', apply:'Spotify’da uygula', undo:'Bu işlemi geri al', close:'Kapat', previous:'Önceki', next:'Sonraki', history:'Son işlemler',
-    common:'Ortak parçalar', onlyPrefix:'Yalnızca: ', unverified:'Kimliği doğrulanamayan', toAdd:'Eklenecek', skipped:'Atlananlar', segmentPrefix:'Bölüm ', ordered:'Yeni sıra', empty:'Bu görünümde parça yok.',
+    common:'Ortak parçalar', onlyPrefix:'Yalnızca: ', unverified:'Kimliği doğrulanamayan', oversized:'Hedefi aşan parçalar', toAdd:'Eklenecek', skipped:'Atlananlar', segmentPrefix:'Bölüm ', ordered:'Yeni sıra', empty:'Bu görünümde parça yok.',
     selectTwo:'En az iki kaynak liste seç.', selectOne:'Bu işlem için tek liste seç.', connect:'Önce Spotify hesabını bağla.', noTracks:'Listelerde karşılaştırılabilir parça bulunamadı.',
     loading:'Listeler Spotify’dan güncel olarak okunuyor…', stale:'Liste okunurken değişti. Yeniden önizleme hazırla.', mismatch:'Spotify tüm liste girişlerini döndürmedi; eksik veriyle işlem yapılmadı.',
     summaryCompare:(common, unique, unknown) => common + ' ortak Spotify kaydı · ' + unique + ' listeye özgü kayıt · ' + unknown + ' kimliği doğrulanamayan giriş',
     summaryMerge:(add, skip, unknown) => add + ' kayıt eklenecek · ' + skip + ' tekrar atlanacak · ' + unknown + ' yerel veya desteklenmeyen giriş dışarıda',
-    summarySplit:(count, unknown, oversized) => count + ' bölüm hazır · ' + unknown + ' süresi bilinmiyor · ' + oversized + ' hedef süreden uzun',
+    summarySplit:(count, unknown, oversized, unsupported) => count + ' bölüm hazır · ' + unknown + ' süresi bilinmiyor · ' + oversized + ' hedef süreden uzun · ' + unsupported + ' desteklenmeyen kayıt dışarıda',
     summaryOrder:(count, violations) => count + ' kayıt yeniden sıralandı · ' + violations + ' yerde sanatçı aralığı kuralı sağlanamadı',
     totalPage:(from, to, total, page, pages) => from + '–' + to + ' / ' + total + ' · Sayfa ' + page + '/' + pages,
     added:'Spotify listesi oluşturuldu ve parçalar eklendi.', partial:'İşlem kısmi kaldı; geçmişte tamamlanan ve bekleyen adımlar gösteriliyor.', unknown:'Spotify yanıtı kayboldu. Yinelenme riskine karşı ekleme otomatik tekrarlanmadı; Spotify listesini kontrol et.',
@@ -26,16 +26,16 @@ const COPY = {
   },
   en: {
     kicker:'SMART ASSISTANT · RULE-BASED', title:'Compare and organize playlists', subtitle:'Choose rules, review the result, and approve before Spotify changes.', local:'No external AI · Spotify content is never sent to a model',
-    sources:'Source playlists', sourcesHelp:'Choose at least two for comparison, or one for the other tools.', actions:'Choose an action', actionsHelp:'Results are prepared first. Spotify is only changed after approval.',
+    sources:'Source playlists', sourcesHelp:'Choose at least two for comparison, or one for the other tools.', actions:'Choose an action', actionsHelp:'Results are prepared first. Spotify is only changed after approval.', allDistinct:'All unique recordings',
     compare:'Compare playlists', compareHelp:'See shared and playlist-specific tracks', merge:'Merge into a new playlist', mergeHelp:'Keep sources and follow their order', split:'Split by duration', splitHelp:'Divide one playlist into target-length sets',
     order:'Space out artists', orderHelp:'Reduce consecutive tracks by one artist', mergeName:'New playlist name', targetMinutes:'Target minutes per set', pinnedFirst:'Keep the first tracks in place',
     dedupe:'Add each Spotify recording once', private:'Create the new playlist as private', preview:'PREVIEW', view:'View', apply:'Apply to Spotify', undo:'Undo this operation', close:'Close', previous:'Previous', next:'Next', history:'Recent operations',
-    common:'Shared tracks', onlyPrefix:'Only in: ', unverified:'Unverified identity', toAdd:'To add', skipped:'Skipped', segmentPrefix:'Set ', ordered:'New order', empty:'No tracks in this view.',
+    common:'Shared tracks', onlyPrefix:'Only in: ', unverified:'Unverified identity', oversized:'Over target duration', toAdd:'To add', skipped:'Skipped', segmentPrefix:'Set ', ordered:'New order', empty:'No tracks in this view.',
     selectTwo:'Select at least two source playlists.', selectOne:'Select one playlist for this action.', connect:'Connect your Spotify account first.', noTracks:'No comparable tracks were found.',
     loading:'Reading the latest playlists from Spotify…', stale:'A playlist changed while it was being read. Prepare a new preview.', mismatch:'Spotify did not return every playlist entry; no partial-data operation was prepared.',
     summaryCompare:(common, unique, unknown) => common + ' shared Spotify recordings · ' + unique + ' playlist-specific recordings · ' + unknown + ' unverified entries',
     summaryMerge:(add, skip, unknown) => add + ' recordings will be added · ' + skip + ' repeats skipped · ' + unknown + ' local or unsupported entries excluded',
-    summarySplit:(count, unknown, oversized) => count + ' sets ready · ' + unknown + ' durations unknown · ' + oversized + ' tracks longer than the target',
+    summarySplit:(count, unknown, oversized, unsupported) => count + ' sets ready · ' + unknown + ' durations unknown · ' + oversized + ' tracks longer than the target · ' + unsupported + ' unsupported entries excluded',
     summaryOrder:(count, violations) => count + ' tracks reordered · artist spacing could not be met at ' + violations + ' positions',
     totalPage:(from, to, total, page, pages) => from + '–' + to + ' / ' + total + ' · Page ' + page + '/' + pages,
     added:'Spotify playlist created and tracks added.', partial:'Operation is partial; completed and pending steps are recorded in history.', unknown:'Spotify response was lost. The add was not retried to avoid duplicates; check the playlist in Spotify.',
@@ -200,6 +200,7 @@ export function initializeLibraryWorkbench(dependencies) {
     const sources = fresh.map(playlist => ({ id: playlist.id, name: playlist.name, snapshotId: playlist.snapshotId }));
     if (kind === 'compare') {
       const nextViews = {
+        all: { label: text('allDistinct'), rows: comparison.records.map(record => ({ track: record.track, location: [...new Set(record.occurrences.map(item => item.playlist.name))].join(' · ') })) },
         common: {
           label: text('common'),
           rows: comparison.common.map(record => {
@@ -287,7 +288,8 @@ export function initializeLibraryWorkbench(dependencies) {
     if (kind === 'split') {
       const minutes = Number($('workbenchTargetMinutes').value);
       if (!Number.isFinite(minutes) || minutes < 10 || minutes > 600) { showToast(text('invalidDuration'), 'warning'); return; }
-      const result = planDurationBuckets(fresh[0].tracks.filter(track => /^spotify:track:[A-Za-z0-9]+$/.test(track.uri || '') && !track.isLocal), minutes);
+      const eligibleTracks = fresh[0].tracks.filter(track => /^spotify:track:[A-Za-z0-9]+$/.test(track.uri || '') && !track.isLocal);
+      const result = planDurationBuckets(eligibleTracks, minutes);
       const nextViews = {};
       result.buckets.forEach((bucket, index) => {
         nextViews['bucket:' + index] = {
@@ -296,12 +298,14 @@ export function initializeLibraryWorkbench(dependencies) {
         };
       });
       nextViews.unknown = { label: text('unverified'), rows: result.unknown.map(item => ({ track: item.track, location: fresh[0].name })) };
+      nextViews.oversized = { label: text('oversized'), rows: result.oversized.map(item => ({ track: item.track, location: text('targetMinutes') })) };
+      nextViews.unsupported = { label: text('unsupported'), rows: fresh[0].tracks.filter(track => !eligibleTracks.includes(track)).map(track => ({ track, location: text('unsupported') })) };
       const actions = result.buckets.map((bucket, index) => ({
         name: text('playlistSuffix') + (index + 1) + ' — ' + fresh[0].name,
         items: bucket.items.map(item => ({ track: item.track, source: fresh[0] }))
       }));
       showPlan({
-        title: text('titleSplit'), summary: text('summarySplit')(result.buckets.length, result.unknown.length, result.oversized.length),
+        title: text('titleSplit'), summary: text('summarySplit')(result.buckets.length, result.unknown.length, result.oversized.length, fresh[0].tracks.length - eligibleTracks.length),
         nextViews, actions, sources,
         rules: { targetMinutes: minutes, sourcePlaylistId: fresh[0].id, private: $('workbenchPrivate').checked },
         canApply: actions.length > 0
