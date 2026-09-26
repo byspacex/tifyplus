@@ -806,19 +806,19 @@
 
           <!-- Quick Action Badges / Health Score / DJ Mode on Banner -->
           <div class="banner-action-pills">
-            <button id="btnOpenHealthModal" class="studio-pill-btn health-pill" title="Sağlık Skoru ve Kalite İndeksi">
+            <button id="btnOpenHealthModal" class="studio-pill-btn health-pill" title="Çalma listesi bulguları">
               <i class="fa-solid fa-heart-pulse text-green"></i>
-              <span id="bannerHealthScoreText">Sağlık Skoru: %98 (Mükemmel)</span>
+              <span id="bannerHealthScoreText">Çalma listesi bulguları</span>
             </button>
 
-            <button id="btnOpenDjModal" class="studio-pill-btn dj-pill" title="Camelot Wheel Harmonik Sıralama">
+            <button id="btnOpenDjModal" class="studio-pill-btn dj-pill" title="Kural tabanlı liste asistanı">
               <i class="fa-solid fa-sliders text-cyan"></i>
-              <span>Harmonik DJ & Enerji Sıralayıcı</span>
+              <span>Akıllı Asistan: listeleri düzenle</span>
             </button>
 
-            <button id="btnTriggerAntiShuffle" class="studio-pill-btn shuffle-pill" title="Fisher-Yates Deterministik Anti-Shuffle">
+            <button id="btnTriggerAntiShuffle" class="studio-pill-btn shuffle-pill" title="Sanatçı aralığı önizlemesi">
               <i class="fa-solid fa-shuffle text-purple"></i>
-              <span>Anti-Shuffle (Gerçek Rastgelelik)</span>
+              <span>Akıllı Asistan: sanatçıları aralıklı sırala</span>
             </button>
 
             <button id="btnOpenZombieModal" class="studio-pill-btn zombie-pill" title="Ölü / Grileşen Parçaları Tara ve Canlı Sürümlerle Değiştir">
@@ -1026,10 +1026,10 @@
         <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
           <div>
             <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-heart-pulse text-green"></i> Çalma Listesi Sağlık Raporu
+              <i class="fa-solid fa-list-check text-green"></i> Çalma Listesi Bulguları
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-              Yalnızca bu oturumda yüklenen parçaları değerlendirir. Başka listelerde tekrar eden şarkılar hata sayılmaz.
+              Yalnızca yüklenen girişleri, Spotify URI tekrarlarını ve bilinen parça erişim durumunu sayar.
             </p>
           </div>
           <button id="btnCloseHealthModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -1039,8 +1039,8 @@
           <!-- Circular Health Score Deck -->
           <div class="health-score-deck">
             <div class="health-gauge-box">
-              <span class="health-score-number" id="healthModalScoreNumber">96</span>
-              <span class="health-score-label">/ 100 TEKİL VE ERİŞİLEBİLİR</span>
+              <span class="health-score-number" id="healthModalScoreNumber">0</span>
+              <span class="health-score-label">AYNI LİSTEDEKİ TEKRAR GİRİŞ</span>
             </div>
             <div class="health-gauge-info">
               <h4 id="healthModalStatusTitle" style="font-size:16px; font-weight:800; color:#fff;">Çok Yüksek Kalite</h4>
@@ -1067,7 +1067,7 @@
               <div class="factor-left">
                 <i class="fa-solid fa-users text-cyan"></i>
                 <div>
-                  <h6>Sanatçı Dağılımı ve Çeşitlilik</h6>
+                  <h6>Spotify sanatçı kimlikleri</h6>
                   <p id="healthFactorArtistDesc">Sanatçı dağılımı hesaplanıyor.</p>
                 </div>
               </div>
@@ -1096,16 +1096,16 @@
       </div>
     </div>
 
-    <!-- ZOMBIE / GREYED-OUT TRACKS MODAL (BÖLÜM 3) -->
+    <!-- TRACK AVAILABILITY FACTS -->
     <div id="zombieTrackModal" class="modal-overlay hidden">
       <div class="modal-card" style="max-width: 720px; padding: 24px;">
         <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
           <div>
-            <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Zombi Parça Diriltme & Lisans Eşleme Motoru
+              <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-circle-info text-warning"></i> Parça erişim durumu
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-              Telif/lisans süresi biten gri parçaları Spotify kataloğundaki canlı, resmi alternatifleriyle eşler.
+              Yalnızca Spotify'ın bildirdiği erişim bilgisini gösterir. Benzer kayıt arama veya otomatik değiştirme yapılmaz.
             </p>
           </div>
           <button id="btnCloseZombieModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -1117,8 +1117,8 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
           <button id="btnCloseZombieBottom" class="btn btn-secondary btn-sm">Kapat</button>
-          <button id="btnResurrectAll" class="btn btn-spotify btn-sm hidden">
-            <i class="fa-solid fa-rotate"></i> Bulunan Tüm Canlı Sürümleri Takas Et
+          <button id="btnResurrectAll" class="btn btn-spotify btn-sm hidden" disabled>
+            <i class="fa-solid fa-ban"></i> Otomatik sürüm değiştirme kullanılamıyor
           </button>
         </div>
       </div>
