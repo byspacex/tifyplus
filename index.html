@@ -676,6 +676,7 @@
       <div class="workbench-layout">
         <section class="workbench-panel" aria-labelledby="workbenchSourcesTitle">
           <div class="workbench-panel-heading"><span class="workbench-step">01</span><div><h3 id="workbenchSourcesTitle" data-workbench-copy="sources">Kaynak listeleri</h3><p data-workbench-copy="sourcesHelp">Karşılaştırmak için en az iki liste, birleştirmek için iki veya daha fazla liste seç.</p></div></div>
+          <label class="workbench-field workbench-source-filter"><span data-workbench-copy="filterTags">Etiket veya liste adıyla filtrele</span><input id="workbenchSourceFilter" type="search"></label>
           <div id="workbenchSourceList" class="workbench-source-list" role="group" aria-labelledby="workbenchSourcesTitle"></div>
           <p id="workbenchSourceStatus" class="workbench-status" role="status" aria-live="polite"></p>
         </section>
@@ -697,6 +698,18 @@
           </div>
         </section>
       </div>
+
+      <section class="workbench-personal" aria-labelledby="workbenchPersonalTitle">
+        <div><span class="workbench-step">03</span><h3 id="workbenchPersonalTitle" data-workbench-copy="personalTitle">Kişisel düzen</h3><p data-workbench-copy="personalHelp">Etiket ve notlar bu tarayıcıda, bağlı hesaba özel saklanır. Otomatik tür veya ruh hâli tahmini yapılmaz.</p></div>
+        <div class="workbench-personal-grid">
+          <label class="workbench-field"><span data-workbench-copy="tagsLabel">Seçili listelerin etiketleri (virgülle ayırın)</span><input id="workbenchTags" type="text" maxlength="240"></label>
+          <label class="workbench-field"><span data-workbench-copy="notesLabel">Liste notu</span><input id="workbenchNote" type="text" maxlength="240"></label>
+          <label class="workbench-field"><span data-workbench-copy="recipeName">Tarif adı</span><input id="workbenchRecipeName" type="text" maxlength="60"></label>
+          <label class="workbench-field"><span data-workbench-copy="recipeAction">Tarif işlemi</span><select id="workbenchRecipeAction"><option value="merge">Birleştir / Merge</option><option value="compare">Karşılaştır / Compare</option><option value="split">Süreye göre böl / Split</option><option value="order">Sanatçı aralığı / Space artists</option></select></label>
+          <div class="workbench-personal-actions"><button id="btnWorkbenchSavePersonal" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="savePersonal">Etiket ve notları kaydet</button><button id="btnWorkbenchSaveRecipe" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="saveRecipe">Tarifi kaydet</button></div>
+          <div id="workbenchRecipes" class="workbench-recipes" aria-live="polite"></div>
+        </div>
+      </section>
 
       <section id="workbenchResultPanel" class="workbench-result hidden" aria-labelledby="workbenchResultTitle">
         <div class="workbench-result-head">

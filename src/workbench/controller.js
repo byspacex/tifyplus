@@ -22,7 +22,7 @@ const COPY = {
     conflict:'Liste işlemden sonra değişmiş. Başka değişiklikleri ezmemek için geri alma durduruldu.', noHistory:'Bu Spotify hesabı için henüz işlem kaydı yok.',
     nameDefault:'Tify Plus Mix', playlistSuffix:'Bölüm ', titleCompare:'Liste karşılaştırması', titleMerge:'Birleştirme önizlemesi', titleSplit:'Süreye göre bölme', titleOrder:'Yeni sıra önizlemesi',
     playlistCreateError:'Yeni Spotify listesi oluşturulamadı.', invalidDuration:'Hedef süre 10–600 dakika arasında olmalı.', writeError:'İşlem kaydı kaydedilemedi; Spotify’da değişiklik yapılmadı.',
-    emptyDuration:'Hedef süreye sığan kayıt yok.', unknownUndo:'Geri alma yanıtı kayboldu. Yeniden denemeden önce Spotify listesini kontrol et.', failedUndo:'Geri alma tamamlanmadı. Kalan kayıtlar işlem geçmişinde tutuluyor.', retry:'Başarısız eklemeleri yeniden dene', retryDone:'Başarısız kalan kayıtlar yeniden gönderildi.', interrupted:'Sekme işlem sırasında kapandı. Belirsiz adımlar tekrar gönderilmedi; Spotify’ı kontrol edin.'
+    emptyDuration:'Hedef süreye sığan kayıt yok.', unknownUndo:'Geri alma yanıtı kayboldu. Yeniden denemeden önce Spotify listesini kontrol et.', failedUndo:'Geri alma tamamlanmadı. Kalan kayıtlar işlem geçmişinde tutuluyor.', retry:'Başarısız eklemeleri yeniden dene', retryDone:'Başarısız kalan kayıtlar yeniden gönderildi.', interrupted:'Sekme işlem sırasında kapandı. Belirsiz adımlar tekrar gönderilmedi; Spotify’ı kontrol edin.', personalTitle:'Kişisel düzen ve tarifler', personalHelp:'Etiket ve notlar bu tarayıcıda, bağlı hesaba özel saklanır. Otomatik tür veya ruh hâli tahmini yapılmaz.', tagsLabel:'Seçili listelerin etiketleri (virgülle ayırın)', notesLabel:'Liste notu', recipeName:'Tarif adı', recipeAction:'Tarif işlemi', savePersonal:'Etiket ve notları kaydet', saveRecipe:'Tarifi kaydet', noSelection:'Önce bir veya daha fazla kaynak liste seçin.', saved:'Bu tarayıcıdaki hesaba özel düzen kaydedildi.', recipeSaved:'Tarif kaydedildi; çalıştırılınca Spotify verisi yeniden okunup yeni önizleme oluşturulur.', filterTags:'Etiket veya liste adıyla filtrele'
   },
   en: {
     kicker:'SMART ASSISTANT · RULE-BASED', title:'Compare and organize playlists', subtitle:'Choose rules, review the result, and approve before Spotify changes.', local:'No external AI · Spotify content is never sent to a model',
@@ -43,7 +43,7 @@ const COPY = {
     conflict:'The playlist changed after this operation. Undo stopped to protect later edits.', noHistory:'No operations recorded for this Spotify account yet.',
     nameDefault:'Tify Plus Mix', playlistSuffix:'Set ', titleCompare:'Playlist comparison', titleMerge:'Merge preview', titleSplit:'Duration split preview', titleOrder:'Reordered playlist preview',
     playlistCreateError:'Could not create a new Spotify playlist.', invalidDuration:'Target duration must be between 10 and 600 minutes.', writeError:'Could not save the operation record; Spotify was not changed.',
-    emptyDuration:'No tracks fit within the target duration.', unknownUndo:'Undo response was lost. Inspect the Spotify playlist before trying again.', failedUndo:'Undo is incomplete. Remaining entries are recorded in operation history.', retry:'Retry failed additions', retryDone:'Failed entries were submitted again.', interrupted:'The tab closed during an operation. Uncertain steps were not retried; check Spotify.'
+    emptyDuration:'No tracks fit within the target duration.', unknownUndo:'Undo response was lost. Inspect the Spotify playlist before trying again.', failedUndo:'Undo is incomplete. Remaining entries are recorded in operation history.', retry:'Retry failed additions', retryDone:'Failed entries were submitted again.', interrupted:'The tab closed during an operation. Uncertain steps were not retried; check Spotify.', personalTitle:'Personal organization and recipes', personalHelp:'Tags and notes stay in this browser, scoped to the connected account. No genre or mood is guessed.', tagsLabel:'Tags for selected playlists (comma separated)', notesLabel:'Playlist note', recipeName:'Recipe name', recipeAction:'Recipe action', savePersonal:'Save tags and notes', saveRecipe:'Save recipe', noSelection:'Select one or more source playlists first.', saved:'Personal details saved for this account in this browser.', recipeSaved:'Recipe saved. Running it reads fresh Spotify data and prepares a new preview.', filterTags:'Filter by playlist name or tag'
   }
 };
 
@@ -88,14 +88,35 @@ export function initializeLibraryWorkbench(dependencies) {
     return result;
   }
 
+  function personalKey() { return 'tify.workbench.personal.v1.' + encodeURIComponent(state.userId || 'anonymous'); }
+  function readPersonal() {
+    try { return JSON.parse(storage().getItem(personalKey()) || '{"playlists":{},"recipes":[]}'); }
+    catch { return { playlists: {}, recipes: [] }; }
+  }
+  function writePersonal(value) {
+    try { storage().setItem(personalKey(), JSON.stringify(value)); return true; }
+    catch { showToast(text('writeError'), 'warning'); return false; }
+  }
+  function renderPersonal() {
+    const data = readPersonal();
+    const selected = selectedPlaylists();
+    const personal = selected.length === 1 ? data.playlists[selected[0].id] || {} : {};
+    $('workbenchTags').value = (personal.tags || []).join(', ');
+    $('workbenchNote').value = personal.note || '';
+    $('workbenchRecipes').innerHTML = (data.recipes || []).map(recipe =>
+      '<span class="workbench-recipe-chip"><button type="button" data-run-recipe="' + escapeHtml(recipe.id) + '">' + escapeHtml(recipe.name) + ' · ' + escapeHtml(recipe.action) + '</button><button type="button" data-delete-recipe="' + escapeHtml(recipe.id) + '" aria-label="' + escapeHtml(text('close')) + '">×</button></span>').join('');
+  }
+
   function renderSources() {
     if (!sourceList) return;
     const checked = new Set(Array.from(sourceList.querySelectorAll('input:checked')).map(input => input.value));
-    sourceList.innerHTML = state.playlists.map(playlist =>
-      '<label class="workbench-source-option"><input type="checkbox" value="' + escapeHtml(playlist.id) + '" aria-label="' + escapeHtml(playlist.name) + '">' +
+    const personalData = readPersonal();
+    sourceList.innerHTML = state.playlists.map(playlist => {
+      const tags = personalData.playlists?.[playlist.id]?.tags || [];
+      return '<label class="workbench-source-option"><input type="checkbox" value="' + escapeHtml(playlist.id) + '" aria-label="' + escapeHtml(playlist.name) + '">' +
       '<img src="' + escapeHtml(playlist.cover || '') + '" alt=""><span><strong>' + escapeHtml(playlist.name) +
-      '</strong><small>' + escapeHtml(playlist.owner || '') + '</small></span><span class="workbench-source-count">' +
-      (Number(playlist.trackTotal) || 0) + '</span></label>').join('') ||
+      '</strong><small>' + escapeHtml([playlist.owner, tags.join(' · ')].filter(Boolean).join(' · ')) + '</small></span><span class="workbench-source-count">' +
+      (Number(playlist.trackTotal) || 0) + '</span></label>'; }).join('') ||
       '<p class="workbench-status">' + (state.isLoggedIn ? text('noTracks') : text('connect')) + '</p>';
     sourceList.querySelectorAll('input').forEach(input => { input.checked = checked.has(input.value); });
     const status = $('workbenchSourceStatus');
@@ -103,6 +124,7 @@ export function initializeLibraryWorkbench(dependencies) {
       ? state.playlists.length + ' ' + text('sources').toLocaleLowerCase()
       : '';
     renderHistory();
+    renderPersonal();
   }
 
   function selectedPlaylists() {
@@ -456,7 +478,12 @@ export function initializeLibraryWorkbench(dependencies) {
       const value = copy[node.dataset.workbenchCopy];
       if (typeof value === 'string') node.textContent = value;
     });
+    const action = $('workbenchRecipeAction');
+    if (action) action.innerHTML = getLanguage() === 'tr'
+      ? '<option value="merge">Birleştir</option><option value="compare">Karşılaştır</option><option value="split">Süreye göre böl</option><option value="order">Sanatçı aralığı</option>'
+      : '<option value="merge">Merge</option><option value="compare">Compare</option><option value="split">Split by duration</option><option value="order">Space artists</option>';
     renderSources();
+    renderPersonal();
     if (plan) renderResultRows();
   }
 
@@ -465,8 +492,13 @@ export function initializeLibraryWorkbench(dependencies) {
     const count = sourceList.querySelectorAll('input:checked').length;
     $('workbenchSourceStatus').textContent = count + ' / ' + state.playlists.length + ' ' + text('sources').toLocaleLowerCase();
     $('workbenchMergeName').value = count ? text('nameDefault') : '';
+    renderPersonal();
   });
   $('btnWorkbenchCompare').addEventListener('click', () => prepare('compare'));
+  $('workbenchSourceFilter').addEventListener('input', event => {
+    const query = event.target.value.trim().toLocaleLowerCase(getLanguage());
+    sourceList.querySelectorAll('.workbench-source-option').forEach(option => { option.hidden = !option.textContent.toLocaleLowerCase(getLanguage()).includes(query); });
+  });
   $('btnWorkbenchMerge').addEventListener('click', () => prepare('merge'));
   $('btnWorkbenchSplit').addEventListener('click', () => prepare('split'));
   $('btnWorkbenchOrder').addEventListener('click', () => prepare('order'));
@@ -502,6 +534,42 @@ export function initializeLibraryWorkbench(dependencies) {
     undoButton.classList.remove('hidden');
     applyButton.disabled = true;
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  $('btnWorkbenchSavePersonal').addEventListener('click', () => {
+    const selected = selectedPlaylists();
+    if (!selected.length) { showToast(text('noSelection'), 'warning'); return; }
+    const data = readPersonal();
+    const tags = [...new Set($('workbenchTags').value.split(',').map(tag => tag.trim()).filter(Boolean))].slice(0, 20);
+    selected.forEach(playlist => { data.playlists[playlist.id] = { ...(data.playlists[playlist.id] || {}), tags, note: $('workbenchNote').value.trim().slice(0, 240), protected: data.playlists[playlist.id]?.protected || false }; });
+    if (writePersonal(data)) { renderSources(); showToast(text('saved'), 'success'); }
+  });
+  $('btnWorkbenchSaveRecipe').addEventListener('click', () => {
+    const selected = selectedPlaylists();
+    if (!selected.length) { showToast(text('noSelection'), 'warning'); return; }
+    const name = $('workbenchRecipeName').value.trim();
+    if (!name) { $('workbenchRecipeName').focus(); return; }
+    const data = readPersonal();
+    data.recipes.unshift({ id: 'recipe_' + (globalThis.crypto?.randomUUID?.() || Date.now().toString(36)), name, action: $('workbenchRecipeAction').value, sourceIds: selected.map(playlist => playlist.id), options: { deduplicate: $('workbenchDedupe').checked, isPrivate: $('workbenchPrivate').checked, targetMinutes: Number($('workbenchTargetMinutes').value), pinnedFirst: Number($('workbenchPinnedFirst').value) || 0 }, createdAt: new Date().toISOString() });
+    data.recipes = data.recipes.slice(0, 20);
+    if (writePersonal(data)) { renderPersonal(); showToast(text('recipeSaved'), 'success'); }
+  });
+  $('workbenchRecipes').addEventListener('click', event => {
+    const run = event.target.closest('[data-run-recipe]');
+    const remove = event.target.closest('[data-delete-recipe]');
+    const data = readPersonal();
+    if (remove) { data.recipes = data.recipes.filter(recipe => recipe.id !== remove.dataset.deleteRecipe); writePersonal(data); renderPersonal(); return; }
+    if (!run) return;
+    const recipe = data.recipes.find(item => item.id === run.dataset.runRecipe);
+    if (!recipe) return;
+    const available = new Set(state.playlists.map(item => String(item.id)));
+    const sourceIds = recipe.sourceIds.map(String).filter(id => available.has(id));
+    sourceList.querySelectorAll('input').forEach(input => { input.checked = sourceIds.includes(input.value); });
+    $('workbenchDedupe').checked = !!recipe.options.deduplicate;
+    $('workbenchPrivate').checked = !!recipe.options.isPrivate;
+    $('workbenchTargetMinutes').value = recipe.options.targetMinutes;
+    $('workbenchPinnedFirst').value = recipe.options.pinnedFirst;
+    renderPersonal();
+    prepare(recipe.action);
   });
   document.addEventListener('tify:languagechange', renderCopy);
   document.addEventListener('tify:librarychange', renderSources);
