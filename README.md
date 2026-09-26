@@ -23,7 +23,7 @@ Tify Plus, Spotify müzik arşivini tek bir kişisel çalışma alanında daha a
 - Birden fazla erişilebilir listeyi tam yükleyerek ortak ve listeye özgü parçaları karşılaştırma
 - Kaynakları değiştirmeden yeni listede birleştirme; tekrarları ayıklama ve ilk kayıtları sabitleyerek sanatçıları aralıklı sıralama seçenekleri
 - Tekrarlı bir listeyi ilk veya son kopyayı seçerek yeni temiz listeye aktarma
-- Spotify sanatçı kimliğiyle seçilen sanatçıyı kaynak listeyi değiştirmeden yeni kopyadan çıkarma
+- Seçilen Spotify sanatçı kimliğini bir veya daha fazla kaynaktan yeni kopyalara ayıklama
 - Süreye göre sıralı bölümler üretme ve sanatçı aralıklı yeni sıralamayı kopya listeye kaydetme
 - Kural tabanlı Akıllı Asistan: her Spotify yazımından önce sayfalanabilir önizleme ve açık onay
 - İşlem geçmişi, güvenli geri alma, başarısız istekleri ayırma ve belirsiz ağ yanıtlarında otomatik yinelemeyi durdurma
