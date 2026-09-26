@@ -35,22 +35,26 @@ export function writeOperations(storage, userId, operations) {
 export function recoverInterruptedOperations(operations) {
   let changed = false;
   const recovered = operations.map(operation => {
-    let itemsChanged = false;
+    let hadRunningItem = false;
     const items = operation.items.map(item => {
       if (item.status !== 'running') return item;
       changed = true;
-      itemsChanged = true;
+      hadRunningItem = true;
       return { ...item, status: 'unknown', error: 'page_interrupted' };
     });
-    const creationMayHaveCompleted = operation.status === 'applying' && !operation.targetPlaylistId;
-    if (!itemsChanged && !creationMayHaveCompleted) return operation;
+    const interrupted = operation.status === 'applying';
+    if (!interrupted) return operation;
+    const creationMayHaveCompleted = !operation.targetPlaylistId;
     changed = true;
+    const status = creationMayHaveCompleted || hadRunningItem
+      ? 'unknown'
+      : items.every(item => item.status === 'succeeded' || item.status === 'skipped') ? 'completed' : 'partial';
     return {
       ...operation,
       items,
-      status: 'unknown',
-      error: creationMayHaveCompleted ? 'playlist_creation_outcome_unknown' : operation.error,
-      undo: { ...operation.undo, status: operation.undo?.items?.length ? 'review_required' : 'unavailable' },
+      status,
+      error: creationMayHaveCompleted ? 'playlist_creation_outcome_unknown' : hadRunningItem ? 'page_interrupted' : operation.error,
+      undo: status === 'unknown' ? { ...operation.undo, status: operation.undo?.items?.length ? 'review_required' : 'unavailable' } : operation.undo,
       updatedAt: new Date().toISOString()
     };
   });

@@ -1,15 +1,20 @@
 export async function executePlaylistAddOperation({ operation, playlistId, token, fetchImpl = fetch, persist }) {
   const mutable = structuredClone(operation);
+  const checkpoint = async () => (await persist?.(structuredClone(mutable))) !== false;
   mutable.status = 'applying';
   mutable.targetPlaylistId = playlistId;
   mutable.undo = { status: 'available', items: mutable.results.added.map(item => item.uri), snapshotId: mutable.latestSnapshotId || null };
-  await persist?.(mutable);
+  if (!await checkpoint()) { mutable.status = 'failed'; mutable.error = 'journal_write_failed'; return mutable; }
 
   const pending = mutable.items.filter(item => item.status === 'pending' && item.uri);
   for (let offset = 0; offset < pending.length; offset += 100) {
     const batch = pending.slice(offset, offset + 100);
     batch.forEach(item => { item.status = 'running'; });
-    await persist?.(mutable);
+    if (!await checkpoint()) {
+      batch.forEach(item => { item.status = 'pending'; });
+      mutable.status = 'partial'; mutable.error = 'journal_write_failed';
+      return mutable;
+    }
     let response;
     try {
       response = await fetchImpl('https://api.spotify.com/v1/playlists/' + encodeURIComponent(playlistId) + '/items', {
@@ -22,7 +27,7 @@ export async function executePlaylistAddOperation({ operation, playlistId, token
       mutable.status = 'partial';
       mutable.undo.status = 'review_required';
       mutable.results.failed.push(...batch.map(item => ({ uri: item.uri, status: 'unknown' })));
-      await persist?.(mutable);
+      await checkpoint();
       return mutable;
     }
     if (!response.ok) {
@@ -32,7 +37,7 @@ export async function executePlaylistAddOperation({ operation, playlistId, token
       mutable.status = uncertain || mutable.results.added.length ? 'partial' : 'failed';
       if (uncertain) mutable.undo.status = 'review_required';
       mutable.results.failed.push(...batch.map(item => ({ uri: item.uri, status: uncertain ? 'unknown' : 'failed', error: item.error })));
-      await persist?.(mutable);
+      await checkpoint();
       return mutable;
     }
     const result = await response.json().catch(() => ({}));
@@ -42,11 +47,15 @@ export async function executePlaylistAddOperation({ operation, playlistId, token
       mutable.results.added.push({ uri: item.uri, sourcePlaylistId: item.source?.id || null });
     });
     mutable.undo = { status: 'available', items: mutable.results.added.map(item => item.uri), snapshotId: mutable.latestSnapshotId };
-    await persist?.(mutable);
+    if (!await checkpoint()) {
+      batch.forEach(item => { item.status = 'unknown'; item.error = 'journal_write_failed_after_response'; });
+      mutable.status = 'partial'; mutable.undo.status = 'review_required'; mutable.error = 'journal_write_failed_after_response';
+      return mutable;
+    }
   }
   mutable.status = mutable.items.every(item => item.status === 'succeeded' || item.status === 'skipped') ? 'completed' : 'partial';
   mutable.undo.status = mutable.results.added.length ? 'available' : 'unavailable';
-  await persist?.(mutable);
+  await checkpoint();
   return mutable;
 }
 

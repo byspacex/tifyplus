@@ -345,8 +345,8 @@ export function initializeLibraryWorkbench(dependencies) {
           items: action.items.map(item => ({ uri: item.track.uri, track: item.track, source: item.source || null }))
         });
         operation.status = 'applying';
-        if (!saveOperation(operation)) throw new Error(text('writeError'));
         shownOperationId = operation.id;
+        if (!saveOperation(operation)) throw new Error(text('writeError'));
         showLoader(true, text('loading'), 35);
         let response;
         try {
@@ -472,13 +472,17 @@ export function initializeLibraryWorkbench(dependencies) {
     if (!historyList) return;
     const store = storage();
     const all = readOperations(store, state.userId);
-    const recovery = recoverInterruptedOperations(all);
-    if (recovery.changed) writeOperations(store, state.userId, recovery.operations);
-    const operations = recovery.operations.slice(0, 8);
+    const safeToRecover = applying && shownOperationId ? all.filter(item => item.id !== shownOperationId) : all;
+    const recovery = recoverInterruptedOperations(safeToRecover);
+    if (recovery.changed) {
+      const recoveredById = new Map(recovery.operations.map(operation => [operation.id, operation]));
+      writeOperations(store, state.userId, all.map(operation => recoveredById.get(operation.id) || operation));
+    }
+    const operations = readOperations(store, state.userId).slice(0, 8);
     historyList.innerHTML = operations.map(operation =>
       '<div class="workbench-history-item"><span><strong>' + escapeHtml(operation.rules?.targetName || operation.type) +
       '</strong><small>' + escapeHtml(localizeStatus(operation.status)) + ' · ' + escapeHtml(new Date(operation.updatedAt).toLocaleString(getLanguage())) +
-      '</small></span>' + (operation.items?.some(item => item.status === 'failed') && operation.targetPlaylistId
+      '</small></span>' + ((operation.items?.some(item => item.status === 'failed') || (operation.status === 'partial' && operation.items?.some(item => item.status === 'pending'))) && operation.targetPlaylistId
         ? '<button class="btn btn-secondary btn-sm" type="button" data-workbench-retry="' + escapeHtml(operation.id) + '">' + escapeHtml(text('retry')) + '</button>'
         : '') + (operation.results?.added?.length && ['available', 'failed'].includes(operation.undo?.status)
         ? '<button class="btn btn-secondary btn-sm" type="button" data-workbench-undo="' + escapeHtml(operation.id) + '">' + escapeHtml(text('undo')) + '</button>'
@@ -498,8 +502,10 @@ export function initializeLibraryWorkbench(dependencies) {
     const operation = readOperations(storage(), state.userId).find(item => item.id === operationId);
     if (!operation?.targetPlaylistId || operation.items.some(item => item.status === 'unknown')) return;
     const failed = operation.items.filter(item => item.status === 'failed');
-    if (!failed.length) return;
+    const pending = operation.items.filter(item => item.status === 'pending');
+    if (!failed.length && !pending.length) return;
     applying = true;
+    shownOperationId = operation.id;
     try {
       operation.items = operation.items.map(item => item.status === 'failed' ? { ...item, status: 'pending', error: null } : item);
       operation.results.failed = operation.results.failed.filter(item => !failed.some(candidate => candidate.uri === item.uri));

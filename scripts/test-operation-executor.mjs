@@ -60,6 +60,22 @@ const serverUncertain = await executePlaylistAddOperation({
 });
 assert.equal(serverUncertain.items[0].status, 'unknown', 'a server error may follow a committed write and must not be retried blindly');
 assert.equal(serverUncertain.undo.status, 'review_required');
+let storageFailureRequests = 0;
+const refusedWrite = await executePlaylistAddOperation({
+  operation: makeOperation(1), playlistId: 'playlist', token: 'secret',
+  fetchImpl: async () => { storageFailureRequests++; return response(true); }, persist: async () => false
+});
+assert.equal(storageFailureRequests, 0, 'no Spotify write starts when the operation journal cannot be saved');
+assert.equal(refusedWrite.status, 'failed');
+let checkpoints = 0, writeThenStorageFailureRequests = 0;
+const lostCheckpoint = await executePlaylistAddOperation({
+  operation: makeOperation(1), playlistId: 'playlist', token: 'secret',
+  fetchImpl: async () => { writeThenStorageFailureRequests++; return response(true); },
+  persist: async () => ++checkpoints < 3
+});
+assert.equal(writeThenStorageFailureRequests, 1);
+assert.equal(lostCheckpoint.items[0].status, 'unknown', 'a successful Spotify write without a persisted result is marked uncertain');
+assert.equal(lostCheckpoint.undo.status, 'review_required');
 
 const interrupted = recoverInterruptedOperations([{
   status: 'applying', targetPlaylistId: 'playlist',
@@ -72,5 +88,7 @@ assert.equal(interrupted.operations[0].items[0].status, 'unknown');
 assert.equal(interrupted.operations[0].items[1].status, 'pending', 'unsubmitted items remain pending but are not automatically retried');
 const uncertainCreate = recoverInterruptedOperations([{ status: 'applying', items: [], results: { added: [] }, undo: {} }]);
 assert.equal(uncertainCreate.operations[0].status, 'unknown', 'an interrupted create request is never silently repeated');
+const resumable = recoverInterruptedOperations([{ status: 'applying', targetPlaylistId: 'playlist', items: [{ uri: 'spotify:track:later', status: 'pending' }], results: { added: [] }, undo: {} }]);
+assert.equal(resumable.operations[0].status, 'partial', 'a confirmed unsent pending step can be resumed');
 
 console.log('OPERATION_EXECUTOR_TEST=PASS');
