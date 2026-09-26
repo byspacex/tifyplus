@@ -261,6 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setText('#btnAnalyze span', t('analyze'));
     setText('#btnViewVinyl span', t('vinyl'));
     setText('#btnViewRack span', t('rack'));
+    setText('#transferPreviewTitle', currentLanguage === 'tr' ? 'Aktarımı gözden geçirin' : 'Review your transfer');
+    setText('.transfer-cancel-label', currentLanguage === 'tr' ? 'Vazgeç' : 'Cancel');
+    setText('.transfer-confirm-label', currentLanguage === 'tr' ? 'Spotify’a ekle' : 'Add to Spotify');
+    setText('.transfer-undo-note', currentLanguage === 'tr' ? 'Geri alma noktası oluşturulur.' : 'An undo point will be created.');
+    setText('#transferPreviewSummary', currentLanguage === 'tr'
+      ? 'Spotify listeniz henüz değiştirilmedi.'
+      : 'Your Spotify playlist has not been changed yet.');
     const search = document.getElementById('catalogSearchInput');
     if (search) search.placeholder = t('search');
     const selector = document.getElementById('languageSelector');
@@ -440,6 +447,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectedTracksCountText = document.getElementById('selectedTracksCountText');
   const selectBatchTargetPlaylist = document.getElementById('selectBatchTargetPlaylist');
   const btnApplyBatchTransfer = document.getElementById('btnApplyBatchTransfer');
+  const transferPreviewModal = document.getElementById('transferPreviewModal');
+  const transferPreviewList = document.getElementById('transferPreviewList');
+  const transferPreviewSummary = document.getElementById('transferPreviewSummary');
+  const btnConfirmTransfer = document.getElementById('btnConfirmTransfer');
+  let pendingTransfer = null;
 
   const undoSafetyBar = document.getElementById('undoSafetyBar');
   const btnTriggerUndo = document.getElementById('btnTriggerUndo');
@@ -453,9 +465,31 @@ document.addEventListener('DOMContentLoaded', () => {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) {
-      throw new Error(`Profil Okuma Hatası (${res.status})`);
+      throw await createSpotifyResponseError(res, 'Profiliniz okunamadı');
     }
     return await res.json();
+  }
+
+  async function createSpotifyResponseError(response, context = 'Spotify isteği tamamlanamadı') {
+    const body = await response.json().catch(() => ({}));
+    const reason = body?.error?.reason || body?.reason || '';
+    const message = reason === 'QUOTA_EXCEEDED'
+      ? 'Spotify API kotası doldu. Bir süre bekleyip yeniden deneyin.'
+      : response.status === 401
+        ? 'Spotify oturumunuz sona ermiş. Yeniden bağlanın.'
+        : response.status === 403
+          ? 'Spotify bu işlem için izin vermedi. Liste sahibi/ortak çalışanı olduğunuzu ve gerekli erişimlerin açık olduğunu kontrol edin.'
+          : response.status === 429
+            ? 'Spotify istek sınırına ulaşıldı. Biraz bekleyip yeniden deneyin.'
+            : body?.error?.message || `${context} (HTTP ${response.status})`;
+    const error = new Error(message);
+    error.status = response.status;
+    error.reason = reason;
+    error.retryAfter = Math.max(1, Number(response.headers.get('Retry-After')) || 60);
+    error.isRateLimit = response.status === 429;
+    error.isTokenExpired = response.status === 401;
+    error.isForbidden = response.status === 403;
+    return error;
   }
 
   async function fetchSpotifyPlaylistDetails(token, rawPlaylistId) {
@@ -469,8 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
       throw error;
     }
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body?.error?.message || `Spotify playlist bilgisi alınamadı (${res.status})`);
+      throw await createSpotifyResponseError(res, 'Çalma listesi bilgisi alınamadı');
     }
     return res.json();
   }
@@ -486,8 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Dual Endpoint Fetcher: Tries /v1/me/playlists first, then /v1/users/{userId}/playlists
-   * On 429: NO retry. Throws a special RateLimitError so caller can handle it.
+   * Fetch the current user's playlists and stop cleanly on quota or permission errors.
    */
   async function fetchSpotifyPlaylists(token, userId = null) {
     let allPlaylists = [];
@@ -515,10 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw err;
       }
 
-      if (!res.ok) {
-        console.warn(`Playlist Fetch Warning (${res.status}): ${res.statusText}`);
-        break;
-      }
+      if (!res.ok) throw await createSpotifyResponseError(res, 'Çalma listeleri alınamadı');
 
       const data = await res.json();
       if (data.items && data.items.length > 0) {
@@ -611,11 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2026 Spotify Web API uses /items endpoint
-    const endpointsToTry = [
-      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items?limit=100`,
-      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}`,
-      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks?limit=100`
-    ];
+    const endpointsToTry = [`https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items?limit=50`];
 
     let lastError = null;
 
@@ -637,27 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
           break;
         }
 
-        if (res.status === 429) {
-          const retryAfterSeconds = parseInt(res.headers.get('Retry-After') || '2', 10);
-          console.warn(`[429 Rate Limit] Bekleniyor: ${retryAfterSeconds}s...`);
-          await new Promise(resolve => setTimeout(resolve, (retryAfterSeconds * 1000) + 300));
-          continue;
-        }
-
-        if (res.status === 401) {
-          const err = new Error(`HTTP 401 Unauthorized: Oturum süresi dolmuş`);
-          err.isTokenExpired = true;
-          throw err;
-        }
-
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          const errMsg = errBody?.error?.message || errBody?.message || res.statusText || 'Forbidden';
-          console.warn(`[Spotify API ${res.status}] ${currentUrl}:`, errMsg, errBody);
-          lastError = new Error(`HTTP ${res.status}: ${errMsg}`);
-          if (res.status === 403) lastError.isForbidden = true;
-          break; // Try next endpoint
-        }
+        if (!res.ok) throw await createSpotifyResponseError(res, 'Çalma listesi parçaları alınamadı');
 
         const data = await res.json();
 
@@ -677,9 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      if (isSuccess && endpointTracks.length > 0) {
-        return endpointTracks;
-      }
+      if (isSuccess) return endpointTracks;
     }
 
     if (tracks.length === 0 && lastError) {
@@ -835,15 +838,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     saveSafetySnapshotsToStorage();
     updateUndoBar(actionLabel);
+    return snapshot;
   }
 
   let _undoBarTimeout = null;
   function updateUndoBar(actionLabel) {
     if (!undoSafetyBar) return;
     const undoBarText = document.getElementById('undoBarText');
-    if (undoBarText) {
-      undoBarText.innerHTML = `<strong>Spotify Yedeği Hazır!</strong> ${actionLabel} (Geri almak için tıklayın)`;
-    }
+    if (undoBarText) undoBarText.textContent = `${currentLanguage === 'tr' ? 'Geri alma noktası hazır: ' : 'Undo point ready: '}${actionLabel}`;
     undoSafetyBar.classList.remove('hidden');
     if (_undoBarTimeout) clearTimeout(_undoBarTimeout);
     _undoBarTimeout = setTimeout(() => {
@@ -851,11 +853,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 12000);
   }
 
-  function restoreSafetySnapshot(snapshotId) {
+  async function restoreSafetySnapshot(snapshotId) {
     const targetSnap = state.versionedHistory.find(s => s.id === snapshotId) || state.versionedHistory[0];
     if (!targetSnap || !targetSnap.playlists) {
       showToast("Geri yüklenecek geçerli bir yedek bulunamadı.", "warning");
       return;
+    }
+
+    if (targetSnap.spotifyUndo) {
+      try {
+        await undoSpotifyAdditions(targetSnap.spotifyUndo);
+      } catch (error) {
+        showToast(error.message || 'Spotify işlemi geri alınamadı.', 'error');
+        return;
+      }
     }
 
     state.playlists = JSON.parse(JSON.stringify(targetSnap.playlists));
@@ -879,7 +890,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (historyModal) historyModal.classList.add('hidden');
 
     const formattedTime = new Date(targetSnap.timestamp).toLocaleTimeString();
-    showToast(`Kütüphane "${targetSnap.actionLabel}" öncesi durumuna (${formattedTime}) geri yüklendi!`, "success");
+    showToast(targetSnap.spotifyUndo
+      ? `Spotify listesine eklenen ${targetSnap.spotifyUndo.addedUris.length} parça geri alındı.`
+      : `Kütüphane "${targetSnap.actionLabel}" öncesi durumuna (${formattedTime}) geri yüklendi!`, 'success');
+  }
+
+  async function undoSpotifyAdditions(undo) {
+    let snapshotId = undo.snapshotId;
+    const token = await getValidSpotifyAccessToken();
+    for (let index = 0; index < undo.addedUris.length; index += 100) {
+      const uris = undo.addedUris.slice(index, index + 100);
+      const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: uris.map(uri => ({ uri })), ...(snapshotId ? { snapshot_id: snapshotId } : {}) })
+      });
+      if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify eklemeleri geri alınamadı');
+      const result = await response.json().catch(() => ({}));
+      snapshotId = result.snapshot_id || snapshotId;
+    }
   }
 
   function renderHistoryModalList() {
@@ -994,6 +1023,9 @@ document.addEventListener('DOMContentLoaded', () => {
           id: pl.id,
           name: pl.name,
           owner: pl.owner ? pl.owner.display_name || pl.owner.id : state.userName,
+          ownerId: pl.owner?.id || '',
+          isCollaborative: Boolean(pl.collaborative),
+          isEditable: Boolean(pl.owner?.id === state.userId || pl.collaborative),
           followers: 0,
           isPrivate: pl.public === false,
           url: pl.external_urls ? pl.external_urls.spotify : "",
@@ -1029,6 +1061,12 @@ document.addEventListener('DOMContentLoaded', () => {
       showLoader(false);
 
       // 429 — No retry. Show Retry-After to user and disable sync button for that duration.
+      if (err.reason === 'QUOTA_EXCEEDED') {
+        showToast(currentLanguage === 'tr'
+          ? 'Spotify geliştirici API kotası doldu. Kota yenilenene kadar tekrar deneyin.'
+          : 'Spotify developer API quota is exhausted. Retry after the quota window resets.', 'warning');
+        return;
+      }
       if (err.isRateLimit) {
         const waitSec = err.retryAfter || 60;
         const waitMin = Math.ceil(waitSec / 60);
@@ -1777,12 +1815,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dashPlCountText) dashPlCountText.textContent = `${state.playlists.length} Liste`;
 
     if (selectBatchTargetPlaylist) {
-      selectBatchTargetPlaylist.innerHTML = state.playlists.map(pl => {
+      const writablePlaylists = state.playlists.filter(pl => pl.isEditable);
+      selectBatchTargetPlaylist.innerHTML = writablePlaylists.length ? writablePlaylists.map(pl => {
         const count = (typeof pl.trackTotal === 'number' && pl.trackTotal > 0)
           ? pl.trackTotal
           : (Array.isArray(pl.tracks) ? pl.tracks.length : 0);
         return `<option value="${pl.id}">${pl.name} (${count} Şarkı)</option>`;
-      }).join('');
+      }).join('') : '<option value="">' + (currentLanguage === 'tr' ? 'Düzenlenebilir listeniz bulunamadı' : 'No editable playlists found') + '</option>';
     }
 
     renderFastRecommendations();
@@ -1937,47 +1976,34 @@ document.addEventListener('DOMContentLoaded', () => {
   function computePlaylistHealth(playlist) {
     const tracks = playlist.tracks || [];
     const N = tracks.length;
-    if (N === 0) return { score: 100, dupCount: 0, deadCount: 0, artistMax: 0, status: "Kusursuz" };
-
-    let dupCount = 0;
-    const artistMap = {};
+    const trackCounts = new Map();
+    const artistCounts = new Map();
     let deadCount = 0;
-
-    tracks.forEach(t => {
-      const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-      const presence = state.presenceMap[key];
-      if (presence && presence.playlists && presence.playlists.length > 1) {
-        dupCount++;
-      }
-      const art = (t.artist || 'Bilinmeyen').trim();
-      artistMap[art] = (artistMap[art] || 0) + 1;
-      if (t.isDead || t.duration_ms === 0) {
-        deadCount++;
-      }
+    let crossPlaylistCount = 0;
+    tracks.forEach(track => {
+      const identity = track.uri || `${(track.title || '').trim().toLocaleLowerCase()} - ${(track.artist || '').trim().toLocaleLowerCase()}`;
+      trackCounts.set(identity, (trackCounts.get(identity) || 0) + 1);
+      const artist = (track.artist || 'Bilinmeyen Sanatçı').trim();
+      artistCounts.set(artist, (artistCounts.get(artist) || 0) + 1);
+      if (track.isPlayable === false || track.isDead === true) deadCount++;
+      const key = `${(track.title || '').trim().toLocaleLowerCase()} - ${(track.artist || '').trim().toLocaleLowerCase()}`;
+      if ((state.presenceMap[key]?.playlists || []).filter(item => item.plId !== playlist.id).length > 0) crossPlaylistCount++;
     });
-
-    const maxArtistTracks = Math.max(...Object.values(artistMap), 0);
-    const R_dead = (deadCount / N) * 100;
-    const R_dup = (dupCount / N) * 100;
-    const C_artist = (maxArtistTracks / N) * 100;
-
-    // H_score = 100 - (0.45 * R_dead + 0.35 * R_dup + 0.20 * C_artist)
-    let score = Math.round(100 - (0.45 * R_dead + 0.30 * R_dup + 0.15 * C_artist));
-    score = Math.max(15, Math.min(100, score));
-
-    let status = "Mükemmel";
-    if (score < 60) status = "Kritik Bakım Gerekli";
-    else if (score < 80) status = "İyileştirme Önerilir";
-    else if (score < 95) status = "Yüksek Kalite";
-
-    return { score, dupCount, deadCount, maxArtistTracks, status };
+    const duplicateExtraCount = [...trackCounts.values()].reduce((sum, count) => sum + Math.max(0, count - 1), 0);
+    const maxArtistTracks = Math.max(0, ...artistCounts.values());
+    const uniquePlayable = new Set(tracks
+      .filter(track => track.isPlayable !== false && track.isDead !== true)
+      .map(track => track.uri || ((track.title || '').trim().toLocaleLowerCase() + ' - ' + (track.artist || '').trim().toLocaleLowerCase()))).size;
+    const score = N ? Math.round(uniquePlayable / N * 100) : 0;
+    const status = !N ? 'Henüz analiz edilmedi' : score >= 95 ? 'Az tekrar / erişilemeyen parça' : score >= 80 ? 'Bazı parçalar gözden geçirilebilir' : 'Tekrarları ve erişimi gözden geçirin';
+    return { score, dupCount: duplicateExtraCount, crossPlaylistCount, deadCount, maxArtistTracks, artistCount: artistCounts.size, trackCount: N, status };
   }
 
   function updatePlaylistHealthBadge(playlist) {
     const bannerHealthScoreText = document.getElementById('bannerHealthScoreText');
     if (!bannerHealthScoreText) return;
     const health = computePlaylistHealth(playlist);
-    bannerHealthScoreText.textContent = `Sağlık Skoru: %${health.score} (${health.status})`;
+    bannerHealthScoreText.textContent = health.trackCount ? `Tekil ve erişilebilir: %${health.score}` : 'Sağlık raporu için listeyi yükleyin';
   }
 
   // --- RENDER FOCUSED TRACK INSPECTOR TABLE ---
@@ -2391,45 +2417,105 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- BATCH TRANSFER ACTION ---
-  if (btnApplyBatchTransfer) {
-    btnApplyBatchTransfer.addEventListener('click', async () => {
-      if (state.selectedTrackIds.size === 0) {
-        showToast("Lütfen önce aktarılacak en az bir şarkı seçin!", "warning");
-        return;
+  async function prepareTransferPreview() {
+    if (!state.accessToken || !state.currentPlaylist) { showToast('Önce Spotify hesabınızı bağlayın ve bir liste açın.', 'warning'); return; }
+    if (!state.selectedTrackIds.size) { showToast('Lütfen önce aktarılacak en az bir şarkı seçin!', 'warning'); return; }
+    const target = state.playlists.find(playlist => playlist.id === selectBatchTargetPlaylist.value);
+    if (!target || !target.isEditable) { showToast('Bu Spotify listesine ekleme yetkiniz yok.', 'warning'); return; }
+    if (target.id === state.currentPlaylist.id) { showToast('Kaynak ve hedef liste aynı olamaz.', 'warning'); return; }
+    showLoader(true, currentLanguage === 'tr' ? 'Aktarım önizlemesi hazırlanıyor…' : 'Preparing transfer preview…', 45);
+    try {
+      const token = await getValidSpotifyAccessToken();
+      if (!target.tracksLoaded) {
+        target.tracks = await fetchSpotifyPlaylistTracks(token, target.id);
+        target.tracksLoaded = true;
+        saveTrackCache(target.id, target.tracks);
       }
-
-      const targetPlId = selectBatchTargetPlaylist.value;
-      const targetPl = state.playlists.find(p => p.id === targetPlId);
-      if (!targetPl) return;
-
-      pushSafetySnapshot(`Seçilen ${state.selectedTrackIds.size} Şarkı "${targetPl.name}" Listesine Aktarıldı`);
-
-      const tracksToMove = (state.currentPlaylist.tracks || []).filter(t => state.selectedTrackIds.has(t.id));
-      
-      targetPl.tracks = targetPl.tracks || [];
-      const existingIds = new Set(targetPl.tracks.map(t => `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`));
-      
-      let addedCount = 0;
-      tracksToMove.forEach(t => {
-        const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-        if (!existingIds.has(key)) {
-          targetPl.tracks.push(t);
-          existingIds.add(key);
-          addedCount++;
-        }
+      const selected = (state.currentPlaylist.tracks || []).filter(track => state.selectedTrackIds.has(track.id));
+      const existing = new Set((target.tracks || []).map(track => track.uri).filter(Boolean));
+      const unique = new Set(), additions = [];
+      let alreadyThere = 0, invalid = 0;
+      selected.forEach(track => {
+        if (!/^spotify:track:[A-Za-z0-9]+$/.test(track.uri || '') || track.isLocal) { invalid++; return; }
+        if (existing.has(track.uri) || unique.has(track.uri)) { alreadyThere++; return; }
+        unique.add(track.uri); additions.push(track);
       });
-
-      targetPl.trackTotal = targetPl.tracks.length;
-      buildGlobalPresenceMap();
-      saveLibraryCache(state.playlists);
-
-      state.selectedTrackIds.clear();
-      renderPlaylistsCatalog();
-      renderProTrackTable(state.currentPlaylist);
-      updateSelectedCountText();
-      showToast(`Seçilen şarkılardan ${addedCount} benzersiz parça "${targetPl.name}" listesine aktarıldı! (Otomatik Yedek Alındı)`, "success");
-    });
+      pendingTransfer = { target, additions };
+      const english = currentLanguage !== 'tr';
+      transferPreviewSummary.textContent = english
+        ? additions.length + ' track(s) will be added to “' + target.name + '”. Spotify has not been changed. ' + alreadyThere + ' already present; ' + invalid + ' unavailable.'
+        : '“' + target.name + '” listesine ' + additions.length + ' parça eklenecek. Spotify listeniz henüz değiştirilmedi. ' + alreadyThere + ' zaten mevcut; ' + invalid + ' uygun değil.';
+      transferPreviewList.innerHTML = additions.slice(0, 40).map(track => '<div class="transfer-preview-row"><img src="' + escapeMarkup(track.cover || '') + '" alt=""><span><strong>' + escapeMarkup(track.title) + '</strong><small>' + escapeMarkup(track.artist) + '</small></span><em>' + (english ? 'Ready' : 'Hazır') + '</em></div>').join('')
+        + (additions.length > 40 ? '<p>' + (english ? 'and ' + (additions.length - 40) + ' more…' : 've ' + (additions.length - 40) + ' parça daha…') + '</p>' : '')
+        + (additions.length ? '' : '<p>' + (english ? 'No new Spotify tracks to add.' : 'Eklenecek yeni Spotify parçası yok.') + '</p>');
+      const label = btnConfirmTransfer.querySelector('.transfer-confirm-label');
+      if (label) label.textContent = english ? 'Add to Spotify' : 'Spotify’a ekle';
+      btnConfirmTransfer.disabled = additions.length === 0;
+      transferPreviewModal.classList.remove('hidden');
+    } catch (error) { showToast(error.message || 'Spotify listesi okunamadı.', 'error'); }
+    finally { showLoader(false); }
   }
+
+  async function commitPendingTransfer() {
+    if (!pendingTransfer?.additions?.length) return;
+    const { target, additions } = pendingTransfer;
+    const uris = additions.map(track => track.uri);
+    const safetySnapshot = pushSafetySnapshot('Spotify’ya ' + additions.length + ' parça eklendi — ' + target.name);
+    safetySnapshot.spotifyUndo = { playlistId: target.id, addedUris: [], snapshotId: null };
+    saveSafetySnapshotsToStorage();
+    if (undoSafetyBar) undoSafetyBar.classList.add('hidden');
+    btnConfirmTransfer.disabled = true;
+    try {
+      const token = await getValidSpotifyAccessToken();
+      for (let index = 0; index < uris.length; index += 100) {
+        const batch = uris.slice(index, index + 100);
+        const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(target.id) + '/items', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uris: batch })
+        });
+        if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
+        const result = await response.json().catch(() => ({}));
+        safetySnapshot.spotifyUndo.addedUris.push(...batch);
+        safetySnapshot.spotifyUndo.snapshotId = result.snapshot_id || safetySnapshot.spotifyUndo.snapshotId;
+      }
+      target.tracks = (target.tracks || []).concat(additions);
+      target.trackTotal = (target.trackTotal || 0) + additions.length;
+      target.tracksLoaded = true;
+      saveTrackCache(target.id, target.tracks);
+      buildGlobalPresenceMap(); saveLibraryCache(state.playlists); saveSafetySnapshotsToStorage();
+      state.selectedTrackIds.clear(); renderPlaylistsCatalog();
+      if (state.currentPlaylist) renderProTrackTable(state.currentPlaylist);
+      updateSelectedCountText();
+      updateUndoBar(currentLanguage === 'tr' ? additions.length + ' parça Spotify’a eklendi' : additions.length + ' tracks added to Spotify');
+      transferPreviewModal.classList.add('hidden');
+      showToast(currentLanguage === 'tr'
+        ? additions.length + ' parça Spotify’a eklendi. Bildirimden işlemi geri alabilirsiniz.'
+        : additions.length + ' tracks added to Spotify. Use the undo notice to revert.', 'success');
+      pendingTransfer = null;
+    } catch (error) {
+      saveSafetySnapshotsToStorage();
+      if (safetySnapshot.spotifyUndo.addedUris.length) {
+        const succeeded = new Set(safetySnapshot.spotifyUndo.addedUris);
+        target.tracks = (target.tracks || []).concat(additions.filter(track => succeeded.has(track.uri)));
+        target.trackTotal = (target.trackTotal || 0) + succeeded.size;
+        target.tracksLoaded = true;
+        saveTrackCache(target.id, target.tracks);
+        buildGlobalPresenceMap(); saveLibraryCache(state.playlists);
+        updateUndoBar(currentLanguage === 'tr' ? 'Kısmi Spotify aktarımı yapıldı; geri alabilirsiniz' : 'Partial Spotify transfer; you can undo it');
+      }
+      else {
+        state.versionedHistory = state.versionedHistory.filter(snapshot => snapshot.id !== safetySnapshot.id);
+        saveSafetySnapshotsToStorage();
+      }
+      showToast(error.message || 'Spotify aktarımı başarısız oldu.', 'error');
+    } finally { btnConfirmTransfer.disabled = !pendingTransfer?.additions?.length; }
+  }
+  if (btnApplyBatchTransfer) btnApplyBatchTransfer.addEventListener('click', prepareTransferPreview);
+  if (btnConfirmTransfer) btnConfirmTransfer.addEventListener('click', commitPendingTransfer);
+  document.getElementById('btnCancelTransferPreview')?.addEventListener('click', () => { transferPreviewModal.classList.add('hidden'); pendingTransfer = null; });
+  document.getElementById('btnCloseTransferPreview')?.addEventListener('click', () => { transferPreviewModal.classList.add('hidden'); pendingTransfer = null; });
+  transferPreviewModal?.addEventListener('click', event => { if (event.target === transferPreviewModal) { transferPreviewModal.classList.add('hidden'); pendingTransfer = null; } });
 
   // --- SINGLE QUICK TRANSFER HELPER ---
   window.quickTransferTrack = function(trackId) {
@@ -2606,11 +2692,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (statusTitle) statusTitle.textContent = health.status;
     if (statusDesc) {
       statusDesc.textContent = health.score >= 90
-        ? "Bu liste kütüphanenizde mükemmel kürasyon dengesine sahip."
-        : "Listede mükerrer şarkı ve sanatçı yoğunluğu tespit edildi. Tek tıkla optimize edebilirsiniz.";
+        ? "Parçalar erişilebilir ve bu listede gereksiz tekrar az."
+        : "Bu rapor yalnızca yüklenen parçaları değerlendirir. Tekrar ve erişim durumunu kontrol edin.";
     }
-    if (dupDesc) dupDesc.textContent = `${health.dupCount} şarkı diğer listelerinizde de yer alıyor.`;
-    if (dupBadge) dupBadge.textContent = health.dupCount > 0 ? `-${Math.min(25, health.dupCount)} Puan` : 'Tam Puan';
+    if (dupDesc) dupDesc.textContent = `${health.dupCount} yinelenen giriş bu listenin içinde; ${health.crossPlaylistCount} parça başka listelerinizde de var.`;
+    if (dupBadge) dupBadge.textContent = health.dupCount > 0 ? `${health.dupCount} tekrar` : 'Tekrar yok';
+    const artistDesc = document.getElementById('healthFactorArtistDesc');
+    const artistBadge = document.getElementById('healthFactorArtistBadge');
+    const deadDesc = document.getElementById('healthFactorDeadDesc');
+    const deadBadge = document.getElementById('healthFactorDeadBadge');
+    if (artistDesc) artistDesc.textContent = `${health.artistCount} sanatçı · en sık sanatçıdan ${health.maxArtistTracks} parça`;
+    if (artistBadge) artistBadge.textContent = health.trackCount ? `${health.artistCount} sanatçı` : 'Veri yok';
+    if (deadDesc) deadDesc.textContent = `${health.deadCount} parça Spotify tarafından bu pazarda çalınamaz olarak işaretlenmiş.`;
+    if (deadBadge) deadBadge.textContent = health.deadCount ? `${health.deadCount} erişilemiyor` : 'Sorun yok';
 
     if (playlistHealthModal) playlistHealthModal.classList.remove('hidden');
   };
@@ -2622,28 +2716,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnAutoHealPlaylist) {
     btnAutoHealPlaylist.addEventListener('click', () => {
       if (!state.currentPlaylist || !state.currentPlaylist.tracks) return;
-
-      pushSafetySnapshot(`"${state.currentPlaylist.name}" Sağlık Reçetesi & Otomatik İyileştirme`);
-
-      // Deduplicate inside this playlist
-      const seen = new Set();
-      const healedTracks = [];
-      state.currentPlaylist.tracks.forEach(t => {
-        const key = `${t.title.trim().toLowerCase()} - ${t.artist.trim().toLowerCase()}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          healedTracks.push(t);
-        }
-      });
-
-      state.currentPlaylist.tracks = healedTracks;
-      state.currentPlaylist.trackTotal = healedTracks.length;
-      saveTrackCache(state.currentPlaylist.id, healedTracks);
-      buildGlobalPresenceMap();
+      currentTrackFilter = 'duplicate';
+      trackCurrentPage = 1;
+      updateFilterPillsUI();
       renderProTrackTable(state.currentPlaylist);
-      renderPlaylistsCatalog();
       if (playlistHealthModal) playlistHealthModal.classList.add('hidden');
-      showToast(`🩺 Sağlık Reçetesi uygulandı! Liste optimize edildi ve puanı %100'e yükseltildi.`, "success");
+      showToast('Bu listedeki tekrarlar filtrelendi. Spotify listenizde henüz değişiklik yapılmadı.', 'info');
     });
   }
 
@@ -2892,6 +2970,7 @@ document.addEventListener('DOMContentLoaded', () => {
       landingPlaylistUrlInputEn?.focus();
       return;
     }
+
     playlistUrlInput.value = value;
     btnAnalyze?.click();
   });
@@ -4789,6 +4868,9 @@ document.addEventListener('DOMContentLoaded', () => {
               id: data.id,
               name: data.name,
               owner: state.userName || 'S O O N D',
+              ownerId: state.userId,
+              isEditable: true,
+              isCollaborative: false,
               followers: 0,
               isPrivate: isPrivate,
               url: data.external_urls?.spotify || `https://open.spotify.com/playlist/${data.id}`,
@@ -4806,6 +4888,9 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'custom_' + Date.now(),
             name: name,
             owner: state.userName || 'S O O N D',
+            ownerId: state.userId,
+            isEditable: false,
+            isCollaborative: false,
             followers: 0,
             isPrivate: isPrivate,
             url: 'https://open.spotify.com',

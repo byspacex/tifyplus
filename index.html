@@ -376,6 +376,24 @@
       </div>
     </div>
 
+    <div id="transferPreviewModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="transferPreviewTitle">
+      <div class="modal-card transfer-preview-card">
+        <div class="modal-header">
+          <div>
+            <span class="modal-kicker">SPOTIFY PLAYLIST CHANGE</span>
+            <h3 id="transferPreviewTitle">Aktarımı gözden geçirin</h3>
+            <p id="transferPreviewSummary">Spotify listeniz henüz değiştirilmedi.</p>
+          </div>
+          <button id="btnCloseTransferPreview" class="pill" type="button" aria-label="Önizlemeyi kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="transferPreviewList" class="transfer-preview-list"></div>
+        <div class="transfer-preview-footer">
+          <span><i class="fa-solid fa-clock-rotate-left"></i> <span class="transfer-undo-note">Geri alma noktası oluşturulur.</span></span>
+          <div><button id="btnCancelTransferPreview" class="btn btn-secondary btn-sm" type="button"><span class="transfer-cancel-label">Vazgeç</span></button><button id="btnConfirmTransfer" class="btn btn-spotify btn-sm" type="button"><i class="fa-brands fa-spotify"></i> <span class="transfer-confirm-label">Spotify'a ekle</span></button></div>
+        </div>
+      </div>
+    </div>
+
     <!-- SMART MATCH / COMPARISON MODAL -->
     <div id="smartMatchModal" class="modal-overlay hidden">
       <div class="modal-card" style="max-width: 750px;">
@@ -937,10 +955,10 @@
         <div class="modal-header" style="padding: 0 0 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
           <div>
             <h3 style="font-family: var(--font-display); font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-heart-pulse text-green"></i> Çalma Listesi Sağlık Skoru & Kalite İndeksi
+              <i class="fa-solid fa-heart-pulse text-green"></i> Çalma Listesi Sağlık Raporu
             </h3>
             <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-              Mükerrerlik, ölü parçalar ve sanatçı çeşitliliği üzerinden hesaplanan derin kütüphane sağlık analizi.
+              Yalnızca bu oturumda yüklenen parçaları değerlendirir. Başka listelerde tekrar eden şarkılar hata sayılmaz.
             </p>
           </div>
           <button id="btnCloseHealthModal" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
@@ -951,12 +969,12 @@
           <div class="health-score-deck">
             <div class="health-gauge-box">
               <span class="health-score-number" id="healthModalScoreNumber">96</span>
-              <span class="health-score-label">/ 100 PUAN</span>
+              <span class="health-score-label">/ 100 TEKİL VE ERİŞİLEBİLİR</span>
             </div>
             <div class="health-gauge-info">
               <h4 id="healthModalStatusTitle" style="font-size:16px; font-weight:800; color:#fff;">Çok Yüksek Kalite</h4>
               <p id="healthModalStatusDesc" style="font-size:12px; color:var(--text-muted); margin-top:4px;">
-                Bu listede mükerrer veya ölü parça yoğunluğu minimum seviyede.
+                Rapor, bu oturumda yüklenen parça verisine dayanır.
               </p>
             </div>
           </div>
@@ -967,8 +985,8 @@
               <div class="factor-left">
                 <i class="fa-solid fa-clone text-warning"></i>
                 <div>
-                  <h6>Mükerrer Parça Yoğunluğu</h6>
-                  <p id="healthFactorDupDesc">46 parça diğer listelerde de mevcut</p>
+                  <h6>Bu listedeki tekrarlar</h6>
+                  <p id="healthFactorDupDesc">Liste parçaları yüklenince hesaplanır.</p>
                 </div>
               </div>
               <span class="factor-badge" id="healthFactorDupBadge">-4 Puan</span>
@@ -979,7 +997,7 @@
                 <i class="fa-solid fa-users text-cyan"></i>
                 <div>
                   <h6>Sanatçı Dağılımı ve Çeşitlilik</h6>
-                  <p id="healthFactorArtistDesc">Dengeli dağılım, aşırı sanatçı yığılması yok</p>
+                  <p id="healthFactorArtistDesc">Sanatçı dağılımı hesaplanıyor.</p>
                 </div>
               </div>
               <span class="factor-badge green" id="healthFactorArtistBadge">Tam Puan</span>
@@ -989,8 +1007,8 @@
               <div class="factor-left">
                 <i class="fa-solid fa-skull text-muted"></i>
                 <div>
-                  <h6>Grileşen / Ölü Parçalar</h6>
-                  <p id="healthFactorDeadDesc">0 adet çalınamaz parça tespit edildi</p>
+                  <h6>Spotify'da erişilemeyen parçalar</h6>
+                  <p id="healthFactorDeadDesc">Spotify parça durumları yüklenince hesaplanır.</p>
                 </div>
               </div>
               <span class="factor-badge green" id="healthFactorDeadBadge">0 Kayıp</span>
@@ -1000,7 +1018,7 @@
 
         <div style="display: flex; justify-content: space-between; align-items:center; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
           <button id="btnAutoHealPlaylist" class="btn btn-spotify btn-sm">
-            <i class="fa-solid fa-shield-halved"></i> 1-Tıkla Sağlık Reçetesini Uygula
+            <i class="fa-solid fa-filter"></i> Bu listedeki tekrarları filtrele
           </button>
           <button id="btnCloseHealthModalBottom" class="btn btn-secondary btn-sm">Kapat</button>
         </div>
