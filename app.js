@@ -1,6 +1,7 @@
 /**
  * Tify Plus - Official Spotify Web API Engine (Dual Endpoint & Auto Fallback Fetcher)
  */
+import { initializeLibraryWorkbench } from './src/workbench/controller.js';
 
 // The removed mobile dock used URL fragments such as #catalogSection. Mobile
 // browsers persist that fragment between visits and otherwise jump halfway down
@@ -273,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selector = document.getElementById('languageSelector');
     if (selector) selector.value = currentLanguage;
     renderHeroTitle();
+    document.dispatchEvent(new CustomEvent('tify:languagechange', { detail: { language: currentLanguage } }));
   }
 
   let neonFaultTimer = null;
@@ -867,6 +869,30 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(error.message || 'Spotify işlemi geri alınamadı.', 'error');
         return;
       }
+      const target = state.playlists.find(playlist => playlist.id === targetSnap.spotifyUndo.playlistId);
+      if (target) {
+        try {
+          const token = await getValidSpotifyAccessToken();
+          target.tracks = await fetchSpotifyPlaylistTracks(token, target.id);
+          target.trackTotal = target.tracks.length;
+          target.tracksLoaded = true;
+          saveTrackCache(target.id, target.tracks);
+        } catch (error) {
+          showToast(currentLanguage === 'tr' ? 'Spotify geri alındı ancak yerel liste yenilenemedi; yeniden eşitleyin.' : 'Spotify undo succeeded, but the local playlist could not refresh; sync it again.', 'warning');
+        }
+      }
+      buildGlobalPresenceMap();
+      saveLibraryCache(state.playlists);
+      renderPlaylistsCatalog();
+      state.versionedHistory = state.versionedHistory.map(snapshot => snapshot.id === targetSnap.id
+        ? { ...snapshot, spotifyUndo: { ...snapshot.spotifyUndo, undone: true } }
+        : snapshot);
+      saveSafetySnapshotsToStorage();
+      if (undoSafetyBar) undoSafetyBar.classList.add('hidden');
+      const historyModal = document.getElementById('historyModal');
+      if (historyModal) historyModal.classList.add('hidden');
+      showToast(currentLanguage === 'tr' ? `Spotify listesine eklenen ${targetSnap.spotifyUndo.addedUris.length} parça geri alındı.` : `Undid ${targetSnap.spotifyUndo.addedUris.length} Spotify additions.`, 'success');
+      return;
     }
 
     state.playlists = JSON.parse(JSON.stringify(targetSnap.playlists));
@@ -896,8 +922,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function undoSpotifyAdditions(undo) {
+    if (undo.undone) throw new Error(currentLanguage === 'tr' ? 'Bu işlem daha önce geri alınmış.' : 'This operation has already been undone.');
     let snapshotId = undo.snapshotId;
     const token = await getValidSpotifyAccessToken();
+    const current = await fetchSpotifyPlaylistDetails(token, undo.playlistId);
+    if (!snapshotId || current.snapshot_id !== snapshotId) throw new Error(currentLanguage === 'tr' ? 'Liste işlemden sonra değişti. Güvenli geri alma durduruldu.' : 'The playlist changed after this operation. Safe undo stopped.');
     for (let index = 0; index < undo.addedUris.length; index += 100) {
       const uris = undo.addedUris.slice(index, index + 100);
       const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(undo.playlistId) + '/items', {
@@ -1824,6 +1853,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('') : '<option value="">' + (currentLanguage === 'tr' ? 'Düzenlenebilir listeniz bulunamadı' : 'No editable playlists found') + '</option>';
     }
 
+    document.dispatchEvent(new Event('tify:librarychange'));
     renderFastRecommendations();
   }
 
@@ -2426,11 +2456,16 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoader(true, currentLanguage === 'tr' ? 'Aktarım önizlemesi hazırlanıyor…' : 'Preparing transfer preview…', 45);
     try {
       const token = await getValidSpotifyAccessToken();
-      if (!target.tracksLoaded) {
-        target.tracks = await fetchSpotifyPlaylistTracks(token, target.id);
-        target.tracksLoaded = true;
-        saveTrackCache(target.id, target.tracks);
-      }
+      const first = await fetchSpotifyPlaylistDetails(token, target.id);
+      const latestTracks = await fetchSpotifyPlaylistTracks(token, target.id);
+      const last = await fetchSpotifyPlaylistDetails(token, target.id);
+      if (first.snapshot_id && last.snapshot_id && first.snapshot_id !== last.snapshot_id) throw new Error(currentLanguage === 'tr' ? 'Hedef liste okunurken değişti. Önizlemeyi yenileyin.' : 'The target playlist changed while loading. Refresh the preview.');
+      const declaredTotal = first.items?.total ?? first.tracks?.total;
+      if (Number.isFinite(declaredTotal) && declaredTotal > latestTracks.length) throw new Error(currentLanguage === 'tr' ? 'Hedef listenin tüm parçaları yüklenmedi; eksik veride işlem yapılmadı.' : 'The target playlist did not fully load; no partial-data operation was prepared.');
+      target.tracks = latestTracks;
+      target.tracksLoaded = true;
+      target.snapshotId = last.snapshot_id || first.snapshot_id || null;
+      saveTrackCache(target.id, latestTracks);
       const selected = (state.currentPlaylist.tracks || []).filter(track => state.selectedTrackIds.has(track.id));
       const existing = new Set((target.tracks || []).map(track => track.uri).filter(Boolean));
       const unique = new Set(), additions = [];
@@ -2440,7 +2475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (existing.has(track.uri) || unique.has(track.uri)) { alreadyThere++; return; }
         unique.add(track.uri); additions.push(track);
       });
-      pendingTransfer = { target, additions };
+      pendingTransfer = { target, additions, snapshotId: target.snapshotId };
       const english = currentLanguage !== 'tr';
       transferPreviewSummary.textContent = english
         ? additions.length + ' track(s) will be added to “' + target.name + '”. Spotify has not been changed. ' + alreadyThere + ' already present; ' + invalid + ' unavailable.'
@@ -2458,7 +2493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function commitPendingTransfer() {
     if (!pendingTransfer?.additions?.length) return;
-    const { target, additions } = pendingTransfer;
+    const { target, additions, snapshotId } = pendingTransfer;
     const uris = additions.map(track => track.uri);
     const safetySnapshot = pushSafetySnapshot('Spotify’ya ' + additions.length + ' parça eklendi — ' + target.name);
     safetySnapshot.spotifyUndo = { playlistId: target.id, addedUris: [], snapshotId: null };
@@ -2467,17 +2502,26 @@ document.addEventListener('DOMContentLoaded', () => {
     btnConfirmTransfer.disabled = true;
     try {
       const token = await getValidSpotifyAccessToken();
+      const current = await fetchSpotifyPlaylistDetails(token, target.id);
+      if (snapshotId && current.snapshot_id && snapshotId !== current.snapshot_id) throw new Error(currentLanguage === 'tr' ? 'Hedef liste önizlemeden sonra değişti. Yeni önizleme hazırlayın.' : 'The target playlist changed after preview. Prepare a new preview.');
       for (let index = 0; index < uris.length; index += 100) {
         const batch = uris.slice(index, index + 100);
-        const response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(target.id) + '/items', {
+        let response;
+        try { response = await fetch('https://api.spotify.com/v1/playlists/' + encodeURIComponent(target.id) + '/items', {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
           body: JSON.stringify({ uris: batch })
-        });
+        }); } catch (networkError) {
+          // The server may have applied this batch; keep it out of any retry and surface uncertainty.
+          pendingTransfer.additions = additions.slice(index + batch.length);
+          throw new Error(currentLanguage === 'tr' ? 'Spotify yanıtı alınamadı. Bu parça grubu tekrar gönderilmedi; hedef listeyi kontrol edin.' : 'Spotify did not return a response. This batch was not retried; check the target playlist.');
+        }
         if (!response.ok) throw await createSpotifyResponseError(response, 'Spotify listesine ekleme başarısız');
         const result = await response.json().catch(() => ({}));
         safetySnapshot.spotifyUndo.addedUris.push(...batch);
         safetySnapshot.spotifyUndo.snapshotId = result.snapshot_id || safetySnapshot.spotifyUndo.snapshotId;
+        pendingTransfer.additions = additions.slice(index + batch.length);
+        saveSafetySnapshotsToStorage();
       }
       target.tracks = (target.tracks || []).concat(additions);
       target.trackTotal = (target.trackTotal || 0) + additions.length;
@@ -5197,6 +5241,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   syncModalDocumentState();
 
+  initializeLibraryWorkbench({
+    state,
+    getLanguage: () => currentLanguage === 'tr' ? 'tr' : 'en',
+    getToken: () => getValidSpotifyAccessToken(),
+    getPlaylistDetails: (token, id) => fetchSpotifyPlaylistDetails(token, id),
+    getPlaylistTracks: (token, id) => fetchSpotifyPlaylistTracks(token, id),
+    createResponseError: (response, context) => createSpotifyResponseError(response, context),
+    allowsFunctionalStorage,
+    showLoader,
+    showToast,
+    renderPlaylists: renderPlaylistsCatalog,
+    buildPresence: buildGlobalPresenceMap,
+    saveTrackCache,
+    saveLibraryCache
+  });
   initLanguageSelector();
   initFrequencyNeon();
 

@@ -663,6 +663,60 @@
       </div>
     </section>
 
+    <section id="libraryWorkbench" class="library-workbench margin-top" aria-labelledby="libraryWorkbenchTitle">
+      <div class="workbench-heading">
+        <div>
+          <span class="studio-tag green" data-workbench-copy="kicker">KÜTÜPHANE ATÖLYESİ</span>
+          <h2 id="libraryWorkbenchTitle" data-workbench-copy="title">Listeleri karşılaştır ve düzenle</h2>
+          <p data-workbench-copy="subtitle">Kuralları seç, sonucu incele; Spotify listen değişmeden önce sen onayla.</p>
+        </div>
+        <span class="workbench-local-note"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span data-workbench-copy="local">Harici AI yok · Spotify içeriği modele gönderilmez</span></span>
+      </div>
+
+      <div class="workbench-layout">
+        <section class="workbench-panel" aria-labelledby="workbenchSourcesTitle">
+          <div class="workbench-panel-heading"><span class="workbench-step">01</span><div><h3 id="workbenchSourcesTitle" data-workbench-copy="sources">Kaynak listeleri</h3><p data-workbench-copy="sourcesHelp">Karşılaştırmak için en az iki liste, birleştirmek için iki veya daha fazla liste seç.</p></div></div>
+          <div id="workbenchSourceList" class="workbench-source-list" role="group" aria-labelledby="workbenchSourcesTitle"></div>
+          <p id="workbenchSourceStatus" class="workbench-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="workbench-panel" aria-labelledby="workbenchActionsTitle">
+          <div class="workbench-panel-heading"><span class="workbench-step">02</span><div><h3 id="workbenchActionsTitle" data-workbench-copy="actions">Bir işlem seç</h3><p data-workbench-copy="actionsHelp">Hiçbir seçenek Spotify'a yazmaz; önce sonuç hazırlanır.</p></div></div>
+          <div class="workbench-action-grid">
+            <button id="btnWorkbenchCompare" class="workbench-action" type="button"><i class="fa-solid fa-code-compare" aria-hidden="true"></i><span><strong data-workbench-copy="compare">Karşılaştır</strong><small data-workbench-copy="compareHelp">Ortakları ve listeye özgü parçaları gör</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchMerge" class="workbench-action" type="button"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span><strong data-workbench-copy="merge">Yeni listede birleştir</strong><small data-workbench-copy="mergeHelp">Kaynakları koru, sıralarını takip et</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchSplit" class="workbench-action" type="button"><i class="fa-solid fa-scissors" aria-hidden="true"></i><span><strong data-workbench-copy="split">Süreye göre böl</strong><small data-workbench-copy="splitHelp">Bir listeyi hedef süreli parçalara ayır</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+            <button id="btnWorkbenchOrder" class="workbench-action" type="button"><i class="fa-solid fa-shuffle" aria-hidden="true"></i><span><strong data-workbench-copy="order">Sanatçı aralığı kur</strong><small data-workbench-copy="orderHelp">Aynı sanatçının art arda gelmesini azalt</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+          </div>
+          <div class="workbench-options">
+            <label class="workbench-field"><span data-workbench-copy="mergeName">Yeni listenin adı</span><input id="workbenchMergeName" type="text" maxlength="100" autocomplete="off"></label>
+            <label class="workbench-field"><span data-workbench-copy="targetMinutes">Bölüm başına hedef dakika</span><input id="workbenchTargetMinutes" type="number" min="10" max="600" step="5" value="60"></label>
+            <label class="workbench-field"><span data-workbench-copy="pinnedFirst">Sıralamada sabitlenecek ilk parça sayısı</span><input id="workbenchPinnedFirst" type="number" min="0" max="50" step="1" value="0"></label>
+            <label class="workbench-check"><input id="workbenchDedupe" type="checkbox" checked><span data-workbench-copy="dedupe">Birleştirirken aynı Spotify kaydını bir kez ekle</span></label>
+            <label class="workbench-check"><input id="workbenchPrivate" type="checkbox" checked><span data-workbench-copy="private">Yeni listeyi gizli oluştur</span></label>
+          </div>
+        </section>
+      </div>
+
+      <section id="workbenchResultPanel" class="workbench-result hidden" aria-labelledby="workbenchResultTitle">
+        <div class="workbench-result-head">
+          <div><span class="studio-tag" data-workbench-copy="preview">ÖNİZLEME</span><h3 id="workbenchResultTitle">İşlem sonucu</h3><p id="workbenchResultSummary" role="status" aria-live="polite"></p></div>
+          <div class="workbench-result-actions">
+            <label class="workbench-field workbench-mode-field"><span data-workbench-copy="view">Görünüm</span><select id="workbenchResultMode"></select></label>
+            <button id="btnWorkbenchApply" class="btn btn-spotify btn-sm" type="button" disabled><i class="fa-brands fa-spotify" aria-hidden="true"></i><span data-workbench-copy="apply">Spotify'da uygula</span></button>
+            <button id="btnWorkbenchUndo" class="btn btn-secondary btn-sm hidden" type="button"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span data-workbench-copy="undo">Bu işlemi geri al</span></button>
+            <button id="btnWorkbenchClose" class="btn btn-secondary btn-sm" type="button" data-workbench-copy="close">Kapat</button>
+          </div>
+        </div>
+        <div id="workbenchResultRows" class="workbench-result-rows" role="region" aria-label="Önizleme sonuçları" tabindex="0"></div>
+        <div class="workbench-pagination"><span id="workbenchPageStatus" aria-live="polite"></span><div><button id="btnWorkbenchPrev" class="btn btn-secondary btn-sm" type="button" disabled data-workbench-copy="previous">Önceki</button><button id="btnWorkbenchNext" class="btn btn-secondary btn-sm" type="button" disabled data-workbench-copy="next">Sonraki</button></div></div>
+      </section>
+      <details class="workbench-history">
+        <summary data-workbench-copy="history">Son işlemler</summary>
+        <div id="workbenchHistoryList" class="workbench-history-list"></div>
+      </details>
+    </section>
+
     <!-- MASTER CURATION WORKSPACE (ÇALMA LİSTELERİ VİTRİNİ) -->
     <section id="catalogSection" class="master-workspace-section margin-top">
       
