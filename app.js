@@ -1169,6 +1169,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function setAppSessionState(isLoggedIn) {
     state.isLoggedIn = isLoggedIn;
     document.body.dataset.session = isLoggedIn ? 'dashboard' : 'landing';
+    const footerStudioLink = document.getElementById('footerStudioLink');
+    if (footerStudioLink) {
+      footerStudioLink.href = isLoggedIn ? '#studio' : '#landingHeroSection';
+      const label = footerStudioLink.querySelector('span');
+      if (label) label.innerHTML = isLoggedIn
+        ? 'Web Player<small>Stüdyoya geri dönün</small>'
+        : 'Çalışma Alanı<small>Sayfanın başına dönün</small>';
+    }
     updatePlaybackLockUi();
 
     const cockpitLoggedOutActions = document.getElementById('cockpitLoggedOutActions');

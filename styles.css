@@ -1447,6 +1447,60 @@ body::before {
 .landing-preview-form input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 600 13px var(--f-body); }
 .landing-preview-form .pill { min-height: 48px; border-radius: 2px; }
 
+/* Public introduction: a compact, readable product preview. */
+.landing-view {
+  --landing-accent: var(--lime);
+  --landing-subtle: var(--muted);
+  --landing-hairline: rgba(153, 169, 177, .18);
+}
+.landing-hero { gap: clamp(38px, 5vw, 82px); }
+.landing-copy h1 { font-size: clamp(48px, 5.45vw, 80px); max-width: 15ch; }
+.landing-copy > p { max-width: 58ch; }
+.landing-provider-rail { display: block; max-width: 450px; }
+.provider-spotify { width: 100%; grid-template-columns: 34px minmax(0, 1fr) auto; min-height: 76px; }
+.provider-spotify > i:first-child { color: #1ed760; font-size: 26px; }
+.provider-spotify strong { font-size: 16px; }
+.provider-spotify small { font-size: 10px; letter-spacing: .02em; text-transform: none; }
+.landing-actions { gap: 12px 28px; }
+.landing-text-link { display: inline-flex; align-items: center; min-height: 40px; }
+.landing-text-link:focus-visible, .provider-connect:focus-visible, .landing-faq summary:focus-visible,
+.landing-preview-form input:focus-visible, .landing-preview-form button:focus-visible {
+  outline: 3px solid var(--cyan); outline-offset: 4px;
+}
+.landing-console { min-height: 0; padding: 30px; }
+.console-corner, .console-techline, .console-signal { display: none; }
+.console-topline { padding-bottom: 24px; border-bottom: 1px solid var(--landing-hairline); }
+.console-orbit { width: 210px; height: 210px; margin: 28px auto; }
+.orbit-ring-b { inset: 27px; }
+.console-core { width: 126px; height: 126px; gap: 0; align-content: center; }
+.console-core > i { color: var(--lime); font-size: 28px; }
+.console-core span { margin-top: 8px; font-size: 10px; }
+.console-sample-list { position: relative; display: grid; gap: 7px; margin-bottom: 20px; }
+.console-sample-list > div { display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 9px; background: rgba(255,255,255,.045); border: 1px solid var(--landing-hairline); }
+.console-sample-cover { display: grid; place-items: center; width: 42px; height: 42px; color: var(--lime); background: rgba(168,255,38,.12); }
+.console-sample-list > div:nth-child(2) .console-sample-cover { color: var(--cyan); background: rgba(60,245,255,.12); }
+.console-sample-list strong, .console-sample-list small { display: block; }
+.console-sample-list strong { color: var(--text); font-size: 12px; }
+.console-sample-list small { color: var(--landing-subtle); font-size: 10px; }
+.console-sample-list > div > i { color: var(--landing-subtle); font-size: 10px; }
+.console-readout div { border: 1px solid var(--landing-hairline); }
+.console-readout span { font-size: 8px; }
+.console-readout strong { font-size: 12px; }
+.landing-faq { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(36px, 8vw, 120px); margin: clamp(90px, 10vw, 140px) 0 0; }
+.landing-faq-intro > span { color: var(--lime); font: 760 10px/1.2 var(--f-mono); letter-spacing: .17em; }
+.landing-faq h2 { margin: 18px 0; color: var(--text); font: 790 clamp(36px, 4vw, 60px)/1.05 var(--f-display); letter-spacing: -.055em; }
+.landing-faq-intro p, .landing-faq-list p { color: var(--landing-subtle); font-size: 14px; line-height: 1.7; }
+.landing-faq-list { border-top: 1px solid var(--landing-hairline); }
+.landing-faq-list details { border-bottom: 1px solid var(--landing-hairline); }
+.landing-faq-list summary { list-style: none; position: relative; cursor: pointer; padding: 21px 32px 21px 0; color: var(--text); font-weight: 720; }
+.landing-faq-list summary::-webkit-details-marker { display: none; }
+.landing-faq-list summary::after { content: '+'; position: absolute; right: 4px; top: 16px; color: var(--lime); font-size: 24px; font-weight: 400; }
+.landing-faq-list details[open] summary::after { content: '−'; }
+.landing-faq-list p { padding: 0 32px 22px 0; max-width: 65ch; }
+html[data-theme="light"] .landing-view { --landing-accent: #78b900; --landing-subtle: #586369; --landing-hairline: rgba(31,38,41,.14); }
+html[data-theme="light"] .console-sample-list > div { background: rgba(27,35,38,.045); }
+html[data-theme="light"] .provider-spotify > i:first-child { color: #087b36; }
+
 @keyframes tifyOrbit { to { transform: rotate(360deg); } }
 @keyframes consoleSignal { to { height: 100%; opacity: .95; } }
 
@@ -1547,6 +1601,19 @@ body[data-session="landing"] #btnConnectSpotify { border-radius:5px; clip-path:p
 
 @media (prefers-reduced-motion: reduce) {
   .orbit-ring, .console-signal i { animation: none !important; }
+}
+
+@media (max-width: 900px) {
+  .landing-faq { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 720px) {
+  .landing-copy h1 { max-width: 13ch; }
+  .landing-console { padding: 20px 16px; }
+  .console-orbit { width: 180px; height: 180px; margin: 20px auto; }
+  .console-core { width: 112px; height: 112px; }
+  .console-readout span { font-size: 7px; }
+  .landing-faq { margin-top: 80px; }
+  .landing-faq h2 { font-size: 36px; }
 }
 
 /* External playlists stay outside the signed-in user's personal library. */

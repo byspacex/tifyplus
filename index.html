@@ -126,7 +126,7 @@
           <img src="/brand/tify-plus-mark.svg" class="brand-symbol-svg" width="36" height="36" alt="" aria-hidden="true">
         </div>
         <div class="brand-text-container">
-          <h1 class="brand-title" aria-label="Tify Plus">Tify <span>Plus</span><sup class="brand-plus" aria-hidden="true">+</sup></h1>
+          <span class="brand-title" aria-label="Tify Plus">Tify <span>Plus</span><sup class="brand-plus" aria-hidden="true">+</sup></span>
           <span class="app-mode-badge" id="appModeBadge">ÜCRETSİZ // GİRİŞ GEREKMEZ</span>
         </div>
       </a>
@@ -424,19 +424,16 @@
           <span class="landing-kicker">TIFY PLUS / KİŞİSEL MÜZİK KÜTÜPHANESİ</span>
           <h1 id="landingTitle">Dağınık listelerden<br><em>kontrollü bir arşive.</em></h1>
           <p>Spotify kütüphanenizi yalnızca görüntülemeyin. Kendi çalma listelerinizi inceleyin, tekrarları bulun, listeleriniz arasındaki ilişkileri görün ve izin verdiğiniz değişiklikleri tek çalışma alanından yönetin.</p>
-          <div class="landing-provider-label"><span>BAĞLANTI KANALI SEÇİN</span><i></i></div>
+          <div class="landing-provider-label"><span>SPOTIFY KÜTÜPHANENİZİ BAĞLAYIN</span><i></i></div>
           <div class="landing-provider-rail" aria-label="Müzik servisi bağlantıları">
             <button id="btnLandingLogin" class="provider-connect provider-spotify" type="button">
-              <span class="provider-index">01</span><i class="fa-brands fa-spotify"></i>
-              <span><strong>Spotify</strong><small>Şimdi bağlan</small></span><i class="fa-solid fa-arrow-right-long provider-arrow"></i>
-            </button>
-            <button id="btnLandingYouTube" class="provider-connect provider-youtube" type="button" disabled aria-disabled="true" title="YouTube Music bağlantısı ileride kullanıma açılacak">
-              <span class="provider-index">02</span><i class="fa-brands fa-youtube"></i>
-              <span><strong>YouTube Music</strong><small>Yakında</small></span><span class="provider-coming">SIRADA</span>
+              <i class="fa-brands fa-spotify" aria-hidden="true"></i>
+              <span><strong>Spotify ile başlayın</strong><small>Resmî izin ekranıyla bağlanın</small></span><i class="fa-solid fa-arrow-right-long provider-arrow" aria-hidden="true"></i>
             </button>
           </div>
           <div class="landing-actions">
             <a class="landing-text-link" href="#howItWorks">Sistemi keşfet <i class="fa-solid fa-arrow-down-long"></i></a>
+            <a class="landing-text-link" href="#landingPreview">Girişsiz liste önizlemesi <i class="fa-solid fa-arrow-right-long"></i></a>
           </div>
           <div class="landing-trust-line" aria-label="Tify Plus temel ilkeleri">
             <span><i class="fa-solid fa-user-lock"></i> Oturumunuza özel</span>
@@ -445,20 +442,21 @@
           </div>
         </div>
 
-        <div class="landing-console" aria-label="Tify Plus çalışma alanı önizlemesi">
-          <span class="console-corner console-corner-a" aria-hidden="true">A-01</span><span class="console-corner console-corner-b" aria-hidden="true">SYS</span>
-          <div class="console-topline"><span>TIFY PLUS / LIBRARY CONTROL</span><b>HAZIR</b></div>
+        <div class="landing-console" aria-label="Örnek çalışma alanı görseli; gerçek hesap verisi içermez">
+          <div class="console-topline"><span>TIFY PLUS / ÇALIŞMA ALANI</span><b>ÖRNEK GÖRÜNÜM</b></div>
           <div class="console-orbit" aria-hidden="true">
             <span class="orbit-ring orbit-ring-a"></span><span class="orbit-ring orbit-ring-b"></span>
-            <div class="console-core"><img src="/brand/tify-plus-mark.svg" alt=""><span>KÜTÜPHANE<br>SİNYALİ</span></div>
+            <div class="console-core"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Listeleriniz<br>bir arada</span></div>
+          </div>
+          <div class="console-sample-list" aria-hidden="true">
+            <div><span class="console-sample-cover"><i class="fa-solid fa-wave-square"></i></span><span><strong>Çalma listesi A</strong><small>Kişisel liste</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+            <div><span class="console-sample-cover"><i class="fa-solid fa-compact-disc"></i></span><span><strong>Çalma listesi B</strong><small>Kişisel liste</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
           </div>
           <div class="console-readout">
-            <div><span>TEKRAR KONTROLÜ</span><strong>Hazır</strong></div>
-            <div><span>LİSTE İLİŞKİLERİ</span><strong>Özel</strong></div>
-            <div><span>VERİ KONUMU</span><strong>Bu sekme</strong></div>
+            <div><span>01 / İNCELE</span><strong>Parçalar</strong></div>
+            <div><span>02 / KARŞILAŞTIR</span><strong>Listeler</strong></div>
+            <div><span>03 / YÖNET</span><strong>Değişiklikler</strong></div>
           </div>
-          <div class="console-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="console-techline" aria-hidden="true"><span>LOCAL SESSION</span><span>ENCRYPTED OAUTH</span><span>NO TRACKING</span></div>
         </div>
       </section>
 
@@ -492,12 +490,21 @@
         </div>
       </section>
 
-      <section class="landing-preview" aria-labelledby="previewTitle">
+      <section class="landing-preview" id="landingPreview" aria-labelledby="previewTitle">
         <div><span>GİRİŞ YAPMADAN</span><h2 id="previewTitle">Herkese açık bir playlisti önizleyin.</h2><p>Bu bağlantı kişisel kütüphanenize, karşılaştırmalarınıza veya önerilerinize eklenmez.</p></div>
         <div class="landing-preview-form">
           <i class="fa-brands fa-spotify"></i>
           <input type="url" id="landingPlaylistUrlInput" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Spotify playlist bağlantısı" placeholder="open.spotify.com/playlist/...">
           <button id="btnLandingPreview" class="pill join" type="button">Spotify'da önizle</button>
+        </div>
+      </section>
+      <section class="landing-faq" id="landingFaq" aria-labelledby="landingFaqTitle">
+        <div class="landing-faq-intro"><span>MERAK EDİLENLER</span><h2 id="landingFaqTitle">Başlamadan önce.</h2><p>Bağlantı ve oynatma koşullarını açıkça anlatalım.</p></div>
+        <div class="landing-faq-list">
+          <details><summary>Spotify hesabım gerekli mi?</summary><p>Kişisel kütüphanenizi analiz etmek ve düzenlemek için Spotify bağlantısı gerekir. Herkese açık playlist bağlantısını giriş yapmadan önizleyebilirsiniz.</p></details>
+          <details><summary>Tify Plus ücretsiz mi?</summary><p>Tify Plus ücretsizdir. Tarayıcı içinden tam parça oynatma için Spotify Premium gerekebilir.</p></details>
+          <details><summary>Verilerim nerede tutulur?</summary><p>Spotify oturum belirteçleri açık sekmenin oturum depolamasında tutulur. Tercih ve önbellek, yalnızca işlevsel depolamayı kabul ederseniz bu tarayıcıda kalıcı saklanır.</p></details>
+          <details><summary>Spotify listelerimde izinsiz değişiklik yapılır mı?</summary><p>Hayır. Düzenleme adımlarını siz başlatırsınız. Tify Plus, Spotify tarafından geliştirilmiş veya desteklenmiş bir ürün değildir.</p></details>
         </div>
       </section>
     </main>
@@ -1287,7 +1294,7 @@
             <button id="btnOpenPrivacyPolicyModal"><i class="fa-solid fa-shield-halved"></i><span>Gizlilik Merkezi<small>Politika ve bölgesel haklar</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button id="btnFooterExportData"><i class="fa-solid fa-file-export"></i><span>Verilerimi Dışa Aktar<small>Yerel arşivinizi indirin</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button id="btnFooterDeleteData"><i class="fa-solid fa-trash-can"></i><span>Yerel Verilerimi Sil<small>Bu cihazdaki kayıtları temizleyin</small></span><i class="fa-solid fa-chevron-right"></i></button>
-            <a href="#studio"><i class="fa-solid fa-headphones"></i><span>Web Player<small>Stüdyoya geri dönün</small></span><i class="fa-solid fa-chevron-up"></i></a>
+            <a id="footerStudioLink" href="#landingHeroSection"><i class="fa-solid fa-headphones"></i><span>Çalışma Alanı<small>Sayfanın başına dönün</small></span><i class="fa-solid fa-chevron-up"></i></a>
           </nav>
         </section>
 
