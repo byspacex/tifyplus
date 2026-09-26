@@ -62,6 +62,16 @@ export function createDeduplicationPlan(tracks, { keep = 'first' } = {}) {
   return { kept, removed, unverifiable };
 }
 
+export function createArtistExclusionPlan(tracks, artistId) {
+  const removed = [], kept = [];
+  (tracks || []).forEach((track, index) => {
+    const record = { track, index };
+    if (artistId && (track.artistIds || []).includes(artistId)) removed.push(record);
+    else kept.push(record);
+  });
+  return { kept, removed };
+}
+
 export function planDurationBuckets(tracks, targetMinutes) {
   const targetMs = Math.max(1, Number(targetMinutes)) * 60_000;
   const known = [], unknown = [], oversized = [];

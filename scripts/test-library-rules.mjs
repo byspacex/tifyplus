@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { getTrackIdentity } from '../src/library/identity.js';
-import { comparePlaylists, createDeduplicationPlan, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../src/rules/library-rules.js';
+import { comparePlaylists, createArtistExclusionPlan, createDeduplicationPlan, createMergePlan, planArtistSpacedOrder, planDurationBuckets } from '../src/rules/library-rules.js';
 import { createOperation, operationStorageKey, readOperations, updateOperation, writeOperations } from '../src/operations/journal.js';
 
 const track = (id, artist = 'A', durationMs = 60_000) => ({ id, uri: `spotify:track:${id}`, title: id, artist, durationMs });
@@ -22,6 +22,13 @@ assert.deepEqual(dedupeFirst.removed.map(item => item.index), [2]);
 const dedupeLast = createDeduplicationPlan(a.tracks, { keep: 'last' });
 assert.deepEqual(dedupeLast.kept.map(item => item.track.id), ['x', 'y']);
 assert.equal(dedupeLast.kept[1].index, 2, 'last occurrence is retained without changing source order');
+const artistFiltered = createArtistExclusionPlan([
+  { id: '1', artist: 'Same Name', artistIds: ['spotify-id-1'] },
+  { id: '2', artist: 'Same Name', artistIds: ['spotify-id-2'] },
+  { id: '3', artist: 'Guest', artistIds: ['spotify-id-2', 'spotify-id-3'] }
+], 'spotify-id-1');
+assert.deepEqual(artistFiltered.removed.map(item => item.track.id), ['1']);
+assert.deepEqual(artistFiltered.kept.map(item => item.track.id), ['2', '3'], 'display names do not merge artists with distinct Spotify IDs');
 
 const duration = planDurationBuckets([
   { id: '1', durationMs: 40_000 }, { id: 'unknown', durationMs: 0 },
